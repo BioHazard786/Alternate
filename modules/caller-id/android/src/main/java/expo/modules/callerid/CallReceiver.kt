@@ -41,9 +41,17 @@ class CallReceiver : BroadcastReceiver() {
         private var autoDismissRunnable: Runnable? = null
         private const val AUTO_DISMISS_DELAY = 5000L // 5 seconds
     }
-
+    
     override fun onReceive(context: Context, intent: Intent) {
         if (!Settings.canDrawOverlays(context)) {
+            return
+        }
+
+        // Check if popup display is enabled in settings
+        val sharedPreferences = context.getSharedPreferences("caller_id_settings", Context.MODE_PRIVATE)
+        val showPopup = sharedPreferences.getBoolean("show_popup", true)
+        
+        if (!showPopup) {
             return
         }
 

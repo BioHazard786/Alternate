@@ -1,6 +1,9 @@
 package expo.modules.callerid
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
+import android.util.Log
 import android.provider.Settings
 import androidx.core.net.toUri
 import expo.modules.callerid.database.CallerRepository
@@ -10,11 +13,13 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.core.content.edit
 
 class CallerIdModule : Module() {
 
     // Repository for database operations
     private lateinit var callerRepository: CallerRepository
+    private lateinit var sharedPreferences: SharedPreferences
 
     // Each module class must implement the definition function. The definition consists of components
     // that describes the module's functionality and behavior.
@@ -27,9 +32,11 @@ class CallerIdModule : Module() {
 
         // Initialize Room database repository when module is created
         OnCreate {
-            callerRepository = CallerRepository(
+            val context =
                 appContext.reactContext ?: throw IllegalStateException("React context is null")
-            )
+            callerRepository = CallerRepository(context)
+            sharedPreferences =
+                context.getSharedPreferences("caller_id_settings", Context.MODE_PRIVATE)
         }
 
         AsyncFunction("hasOverlayPermission") { promise: Promise ->
@@ -67,7 +74,7 @@ class CallerIdModule : Module() {
                     val dialog = builder.create()
                     dialog.show()
                 } catch (e: Exception) {
-                    android.util.Log.e(
+                    Log.e(
                         "CallerIdModule",
                         "Error in requestOverlayPermission: ${e.message}",
                         e
@@ -92,7 +99,7 @@ class CallerIdModule : Module() {
                         )
                     promise.resolve(result)
                 } catch (e: Exception) {
-                    android.util.Log.e(
+                    Log.e(
                         "CallerIdModule",
                         "Error storing caller info: ${e.message}",
                         e
@@ -122,7 +129,7 @@ class CallerIdModule : Module() {
                         promise.resolve(null)
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e(
+                    Log.e(
                         "CallerIdModule",
                         "Error getting caller info: ${e.message}",
                         e
@@ -139,7 +146,7 @@ class CallerIdModule : Module() {
                     val result = callerRepository.removeCallerInfo(phoneNumber)
                     promise.resolve(result)
                 } catch (e: Exception) {
-                    android.util.Log.e(
+                    Log.e(
                         "CallerIdModule",
                         "Error removing caller info: ${e.message}",
                         e
@@ -167,7 +174,7 @@ class CallerIdModule : Module() {
                     }
                     promise.resolve(result)
                 } catch (e: Exception) {
-                    android.util.Log.e(
+                    Log.e(
                         "CallerIdModule",
                         "Error getting all caller info: ${e.message}",
                         e
@@ -184,7 +191,7 @@ class CallerIdModule : Module() {
                     val phoneNumbers = callerRepository.getAllStoredNumbers()
                     promise.resolve(phoneNumbers)
                 } catch (e: Exception) {
-                    android.util.Log.e(
+                    Log.e(
                         "CallerIdModule",
                         "Error getting stored numbers: ${e.message}",
                         e
@@ -201,7 +208,7 @@ class CallerIdModule : Module() {
                     val result = callerRepository.clearAllCallerInfo()
                     promise.resolve(result)
                 } catch (e: Exception) {
-                    android.util.Log.e(
+                    Log.e(
                         "CallerIdModule",
                         "Error clearing caller info: ${e.message}",
                         e
@@ -210,9 +217,34 @@ class CallerIdModule : Module() {
                 }
             }
         }
+
+        // Settings functions
+        Function("setShowPopup") { showPopup: Boolean ->
+            try {
+                getPreferences().edit { putBoolean("show_popup", showPopup) }
+                true
+            } catch (e: Exception) {
+                Log.e("CallerIdModule", "Error setting show popup: ${e.message}", e)
+                false
+            }
+        }
+
+        Function("getShowPopup") {
+            try {
+                val showPopup = getPreferences().getBoolean("show_popup", true)
+                showPopup
+            } catch (e: Exception) {
+                Log.e("CallerIdModule", "Error getting show popup: ${e.message}", e)
+                true
+            }
+        }
     }
 
     // Helper property to get context safely
     private val context
         get() = requireNotNull(appContext.reactContext) { "React context is null" }
+    
+    private fun getPreferences(): SharedPreferences {
+    return context.getSharedPreferences(context.packageName + ".settings", Context.MODE_PRIVATE)
+  }
 }

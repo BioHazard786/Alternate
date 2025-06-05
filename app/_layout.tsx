@@ -3,7 +3,7 @@ import CustomNavigationBar from "@/components/navigation-bar";
 import { useTheme } from "@/hooks/useTheme";
 import useContactStore from "@/store/contactStore";
 import { ThemeProvider } from "@react-navigation/native";
-import { SplashScreen, Stack } from "expo-router";
+import { router, SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -46,14 +46,34 @@ export default function RootLayout() {
                 header: (props) => <CustomNavigationBar {...props} />,
               }}
             >
-              <Stack.Screen name="index" options={{ title: "Contacts" }} />
+              <Stack.Screen
+                name="index"
+                options={{
+                  title: "Contact",
+                  header: (props) => (
+                    <CustomNavigationBar
+                      action={{
+                        icon: "cog",
+                        onPress: () => router.push("/settings"),
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
+              />
               <Stack.Screen
                 name="new-contact"
-                options={{ title: "Add New Contact" }}
+                options={{ title: "Add Contact" }}
               />
               <Stack.Screen
                 name="edit-contact"
                 options={{ title: "Edit Contact" }}
+              />
+              <Stack.Screen
+                name="settings"
+                options={{
+                  title: "Settings",
+                }}
               />
             </Stack>
           </CountrySelectorProvider>

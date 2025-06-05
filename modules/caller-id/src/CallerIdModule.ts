@@ -19,6 +19,10 @@ declare class CallerIdModule extends NativeModule<CallerIdModuleEvents> {
   getAllCallerInfo(): Promise<CallerInfo[]>;
   getAllStoredNumbers(): Promise<string[]>;
   clearAllCallerInfo(): Promise<boolean>;
+
+  // Settings functions
+  setShowPopup(showPopup: boolean): boolean;
+  getShowPopup(): boolean;
 }
 
 // This call loads the native module object from the JSI.

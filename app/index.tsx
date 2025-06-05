@@ -1,16 +1,16 @@
+import { ContactItem } from "@/components/contact-item";
+import { EmptyContactsList } from "@/components/empty-contactsList";
 import { ErrorState } from "@/components/error-state";
+import { SectionHeader } from "@/components/section-header";
+import { getSectionedContacts } from "@/lib/avatar-utils";
 import { requestAndroidPermissions } from "@/lib/permissions";
 import { ListItem } from "@/lib/types";
+import useContactStore from "@/store/contactStore";
 import { FlashList } from "@shopify/flash-list";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { FAB } from "react-native-paper";
-import { ContactItem } from "../components/contact-item";
-import { EmptyContactsList } from "../components/empty-contactsList";
-import { SectionHeader } from "../components/section-header";
-import { getSectionedContacts } from "../lib/avatar-utils";
-import useContactStore from "../store/contactStore";
 
 export default function ContactsScreen() {
   const contacts = useContactStore.use.contacts();

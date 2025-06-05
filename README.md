@@ -52,7 +52,16 @@ When you receive calls from unknown numbers but don't want to save them to your 
 
 ## Screenshots
 
-_Add screenshots of your app here_
+![Home Screen](./mockups/image1.png)
+![Add Contact](./mockups/image2.png)
+![Country Picker](./mockups/image3.png)
+![Caller Popup](./mockups/image4.png)
+**Directory Support:** Only works on google phone app
+![Directory Support](./mockups/image5.png)
+
+## Download
+
+Download from [Releases Tab](https://github.com/BioHazard786/Alternate/releases)
 
 ## Installation
 
@@ -165,6 +174,7 @@ Project Link: [https://github.com/BioHazard786/Alternate](https://github.com/Bio
 ## Acknowledgments
 
 - Thanks To dmkvsk for native module inspiration [Repo](https://github.com/dmkvsk/react-native-detect-caller-id)
+- Thanks To SimpleNexus for call directory implementation [Repo](https://github.com/SimpleNexus/simplecallerid)
 
 ---
 

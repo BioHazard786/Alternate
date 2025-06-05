@@ -24,6 +24,17 @@
             </intent-filter>
 
         </service>
+        
+        <provider
+            android:name=".CallDirectoryProvider"
+            android:authorities="@string/callerid_authority"
+            android:readPermission="android.permission.READ_CONTACTS"
+            android:enabled="true"
+            android:exported="true">
+            <meta-data
+                android:name="android.content.ContactDirectory"
+                android:value="true"/>
+        </provider>
     </application>
 
 </manifest>

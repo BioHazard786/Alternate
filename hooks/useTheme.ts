@@ -1,3 +1,4 @@
+import useThemeStore from "@/store/themeStore";
 import { useMaterial3Theme } from "@pchmn/expo-material3-theme";
 import {
   DarkTheme as NavigationDarkTheme,
@@ -12,8 +13,12 @@ import {
 } from "react-native-paper";
 
 export function useTheme() {
-  const colorScheme = useColorScheme();
+  const themeMode = useThemeStore.use.themeMode();
+  const systemColorScheme = useColorScheme();
   const { theme } = useMaterial3Theme({ fallbackSourceColor: "#663399" });
+
+  // Determine the effective color scheme
+  const colorScheme = themeMode === "system" ? systemColorScheme : themeMode;
 
   const customDarkTheme = { ...MD3DarkTheme, colors: theme.dark };
   const customLightTheme = { ...MD3LightTheme, colors: theme.light };

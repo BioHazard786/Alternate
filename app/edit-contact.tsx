@@ -179,7 +179,6 @@ export default function EditContactScreen() {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   error={!!errors.name}
-                  style={styles.input}
                   mode="outlined"
                 />
               )}
@@ -215,10 +214,7 @@ export default function EditContactScreen() {
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
-                  style={styles.input}
                   mode="outlined"
-                  multiline
-                  numberOfLines={3}
                 />
               )}
             />
@@ -234,7 +230,6 @@ export default function EditContactScreen() {
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
-                  style={styles.input}
                   mode="outlined"
                 />
               )}
@@ -305,9 +300,6 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingHorizontal: 40,
     gap: 16,
-  },
-  input: {
-    marginBottom: 8,
   },
   buttonContainer: {
     marginTop: 20,
