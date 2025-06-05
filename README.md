@@ -53,13 +53,14 @@ When you receive calls from unknown numbers but don't want to save them to your 
 ## Screenshots
 
 <p align="center">
-  <img src="./mockups/image1.png" alt="Home Screen" width="250" />
-  <img src="./mockups/image2.png" alt="Add Contact" width="250" />
-  <img src="./mockups/image3.png" alt="Country Picker" width="250" />
-  <img src="./mockups/image4.png" alt="Caller Popup" width="250" />
-  <img src="./mockups/image5.png" alt="Directory Support" width="250" />
+  <img src="./mockups/image1.png" alt="Home Screen" width="200" style="margin:10px;" />
+  <img src="./mockups/image2.png" alt="Add Contact" width="200" style="margin:10px;" />
+  <img src="./mockups/image3.png" alt="Country Picker" width="200" style="margin:10px;" />
 </p>
-
+<p align="center">
+  <img src="./mockups/image4.png" alt="Caller Popup" width="200" style="margin:10px;" />
+  <img src="./mockups/image5.png" alt="Directory Support" width="200" style="margin:10px;" />
+</p>
 ## Download
 
 Download from [Releases Tab](https://github.com/BioHazard786/Alternate/releases)
