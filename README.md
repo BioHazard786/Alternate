@@ -52,12 +52,13 @@ When you receive calls from unknown numbers but don't want to save them to your 
 
 ## Screenshots
 
-![Home Screen](./mockups/image1.png)
-![Add Contact](./mockups/image2.png)
-![Country Picker](./mockups/image3.png)
-![Caller Popup](./mockups/image4.png)
-**Directory Support:** Only works on google phone app
-![Directory Support](./mockups/image5.png)
+<p align="center">
+  <img src="./mockups/image1.png" alt="Home Screen" width="250" />
+  <img src="./mockups/image2.png" alt="Add Contact" width="250" />
+  <img src="./mockups/image3.png" alt="Country Picker" width="250" />
+  <img src="./mockups/image4.png" alt="Caller Popup" width="250" />
+  <img src="./mockups/image5.png" alt="Directory Support" width="250" />
+</p>
 
 ## Download
 
