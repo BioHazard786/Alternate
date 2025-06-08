@@ -1,0 +1,55 @@
+Categories:
+  - Phone & SMS
+  - System
+License: MIT
+AuthorName: Mohd Zaid
+AuthorEmail: bzatch70@gmail.com
+AuthorWebSite: https://github.com/BioHazard786
+WebSite: https://github.com/BioHazard786/Alternate
+SourceCode: https://github.com/BioHazard786/Alternate
+IssueTracker: https://github.com/BioHazard786/Alternate/issues
+Changelog: https://github.com/BioHazard786/Alternate/releases
+
+AutoName: Alternate
+Name: Alternate - Local Caller ID
+Summary: Privacy-focused local caller ID detector
+
+Description: |
+    A privacy-focused React Native app that helps you identify unknown callers 
+    without cluttering your device's main contact list. Perfect for temporary 
+    number storage when you need to know who's calling but don't want the number 
+    to appear in WhatsApp, Telegram, or other messaging apps.
+
+    Features:
+    * Local Caller ID Detection - Identify incoming calls using your private database
+    * Temporary Number Storage - Save numbers locally without affecting your main contacts
+    * Privacy Protection - Numbers won't appear in messaging apps
+    * Phone Number Validation - Smart phone number input with country selection
+    * Offline Storage - All data stored locally using Android's native SQLite database
+    * Material Design - Modern UI following Material Design 3 principles
+
+RepoType: git
+Repo: https://github.com/BioHazard786/Alternate.git
+
+Builds:
+  - versionName: '1.0.0'
+    versionCode: 1
+    commit: main  # Replace with actual commit hash
+    subdir: android
+    sudo:
+      - apt-get update || apt-get update
+      - apt-get install -y nodejs npm
+    gradle:
+      - yes
+    prebuild:
+      - cd ..
+      - npm install
+      - npx expo prebuild --platform android --no-install
+    build:
+      - cd ..
+      - npx expo run:android --variant release --no-build-cache
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+CurrentVersion: '1.0.0'
+CurrentVersionCode: 1
