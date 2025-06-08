@@ -127,6 +127,52 @@ npx eas build:configure
 npx eas build --platform android
 ```
 
+### Local Production Build
+
+To build a production APK locally without EAS:
+
+#### Method 1: Quick Build (Debug-Signed)
+
+For development and testing purposes:
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+**Note:** This creates a release APK but signed with debug keystore. The APK will be generated at `android/app/build/outputs/apk/release/`
+
+#### Method 2: Properly Signed APK (Recommended for Distribution)
+
+For production distribution, use Android Studio to create a properly signed APK:
+
+1. **Open the project in Android Studio**:
+
+   - Open Android Studio
+   - Select "Open an existing Android Studio project"
+   - Navigate to the `android` folder in your project
+   - Click "OK"
+
+2. **Generate Signed APK**:
+
+   - Go to `Build` → `Generate Signed Bundle / APK`
+   - Select "APK" and click "Next"
+   - Choose "Create new..." to generate a new keystore or "Choose existing..." if you have one
+   - Fill in the keystore details (store this information securely!)
+   - Click "Next"
+   - Select "release" build variant
+   - Click "Create"
+
+3. **Locate the signed APK**:
+   - The signed APK will be generated in `android/app/release/`
+   - This APK is properly signed and ready for distribution
+
+**Important Notes:**
+
+- Debug-signed APKs (from `./gradlew assembleRelease`) are fine for development and testing
+- For Play Store or distribution to users, always use properly signed APKs from Android Studio
+- APKs signed with different keystores cannot update each other on Android devices
+
 ## Project Structure
 
 ```
