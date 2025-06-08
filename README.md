@@ -135,6 +135,14 @@ To build a production APK locally without EAS:
 
 For development and testing purposes:
 
+1. Install dependencies:
+
+```bash
+npm ci
+```
+
+2. Build for Android:
+
 ```bash
 cd android
 ./gradlew assembleRelease
