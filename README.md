@@ -61,6 +61,7 @@ When you receive calls from unknown numbers but don't want to save them to your 
   <img src="./mockups/image4.png" alt="Caller Popup" width="200" style="margin:10px;" />
   <img src="./mockups/image5.png" alt="Directory Support" width="200" style="margin:10px;" />
 </p>
+
 ## Download
 
 Download from [Releases Tab](https://github.com/BioHazard786/Alternate/releases)
