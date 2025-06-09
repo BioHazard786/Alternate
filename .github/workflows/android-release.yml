@@ -28,8 +28,8 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: ${{ env.JAVA_VERSION }}    
-        
+        java-version: ${{ env.JAVA_VERSION }}
+          
     - name: Install dependencies
       run: npm ci
 
@@ -45,18 +45,19 @@ jobs:
       run: |
         echo $KEYSTORE_BASE64 | base64 -d > android/app/release.jks
 
+    - name: Generate keystore.properties
+      run: |
+        cat <<EOF > android/keystore.properties
+        storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+        keyPassword=${{ secrets.KEY_PASSWORD }}
+        keyAlias=${{ secrets.KEY_ALIAS }}
+        storeFile=app/release.jks
+        EOF
+
     - name: Build Release APKs
-      env:
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
         cd android
-        ./gradlew assembleRelease \
-          -Pandroid.injected.signing.store.file=release.jks \
-          -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
-          -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
-          -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+        ./gradlew assembleRelease
 
     - name: Get tag name
       id: tag
