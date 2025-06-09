@@ -31,6 +31,11 @@ allprojects {
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
+
+    tasks.withType(Zip) {
+        reproducibleFileOrder = true
+        preserveFileTimestamps = false
+    }
   }
 }
 
