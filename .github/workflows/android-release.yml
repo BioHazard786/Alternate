@@ -8,6 +8,7 @@ on:
 env:
   NODE_VERSION: '18'
   JAVA_VERSION: '17'
+  KEYSTORE_FILE: 'release.jks'
 
 jobs:
   build:
@@ -29,7 +30,7 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: ${{ env.JAVA_VERSION }}
-          
+        
     - name: Install dependencies
       run: npm ci
 
@@ -43,7 +44,7 @@ jobs:
       env:
         KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
       run: |
-        echo $KEYSTORE_BASE64 | base64 -d > android/app/release.jks
+        echo $KEYSTORE_BASE64 | base64 -d > android/app/${{ env.KEYSTORE_FILE }}
 
     - name: Generate keystore.properties
       run: |
@@ -51,7 +52,7 @@ jobs:
         storePassword=${{ secrets.KEYSTORE_PASSWORD }}
         keyPassword=${{ secrets.KEY_PASSWORD }}
         keyAlias=${{ secrets.KEY_ALIAS }}
-        storeFile=app/release.jks
+        storeFile=${{ env.KEYSTORE_FILE }}
         EOF
 
     - name: Build Release APKs
