@@ -3,7 +3,7 @@ name: Android Release Build
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
 
 env:
   NODE_VERSION: '18'

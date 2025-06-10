@@ -101,6 +101,26 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
         versionName "1.1.0"
+        
+        // NDK configuration for reproducible builds
+        // This helps ensure consistent NT_GNU_BUILD_ID across different build environments
+        ndk {
+            debugSymbolLevel 'NONE'
+            // Disable build ID generation for reproducible builds
+            ldFlags += ["--build-id=none"]
+        }
+        
+        // CMake configuration for reproducible builds
+        externalNativeBuild {
+            cmake {
+                arguments "-DCMAKE_SHARED_LINKER_FLAGS=--build-id=none",
+                          "-DCMAKE_EXE_LINKER_FLAGS=--build-id=none",
+                          "-DCMAKE_MODULE_LINKER_FLAGS=--build-id=none"
+            }
+        }
+        
+        // Consistent build configuration
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
         debug {
@@ -133,6 +153,11 @@ android {
             debuggable false
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
+            
+            // Reproducible builds configuration
+            zipAlignEnabled true
+            // Disable build timestamp for reproducible builds
+            buildConfigField "long", "BUILD_TIME", "0L"
         }
     }
     splits {
@@ -147,6 +172,8 @@ android {
         jniLibs {
             useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
         }
+        // Reproducible builds: strip debug info from native libraries
+        doNotStrip '**/*.so'
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
