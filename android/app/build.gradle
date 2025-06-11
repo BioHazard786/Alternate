@@ -1,3 +1,4 @@
+import org.apache.tools.ant.taskdefs.condition.Os
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
@@ -101,27 +102,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
         versionName "1.1.0"
-        
-        // NDK configuration for reproducible builds
-        // This helps ensure consistent NT_GNU_BUILD_ID across different build environments
-        ndk {
-            debugSymbolLevel 'NONE'
-            // Disable build ID generation for reproducible builds
-            ldFlags += ["--build-id=none"]
-        }
-        
-        // CMake configuration for reproducible builds
-        externalNativeBuild {
-            cmake {
-                arguments "-DCMAKE_SHARED_LINKER_FLAGS=--build-id=none",
-                          "-DCMAKE_EXE_LINKER_FLAGS=--build-id=none",
-                          "-DCMAKE_MODULE_LINKER_FLAGS=--build-id=none"
-            }
-        }
-        
-        // Consistent build configuration
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -138,13 +120,12 @@ android {
             }
         }
     }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.release
             // shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             // minifyEnabled enableProguardInReleaseBuilds
@@ -153,13 +134,9 @@ android {
             debuggable false
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
-            
-            // Reproducible builds configuration
-            zipAlignEnabled true
-            // Disable build timestamp for reproducible builds
-            buildConfigField "long", "BUILD_TIME", "0L"
         }
     }
+
     splits {
         abi {
             reset()
@@ -168,16 +145,17 @@ android {
             include "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
         }
     }
+
     packagingOptions {
         jniLibs {
             useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
         }
-        // Reproducible builds: strip debug info from native libraries
-        doNotStrip '**/*.so'
     }
+
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
+
     dependenciesInfo {
         // Disables dependency metadata when building APKs (for IzzyOnDroid/F-Droid)
         includeInApk = false
@@ -232,5 +210,50 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+// --- Custom task to strip .so files and remove NT_GNU_BUILD_ID ---
+
+def getNdkStripExe() {
+    def sdkDir = android.sdkDirectory
+    def ndkVersion = android.ndkVersion
+    if (!sdkDir || !ndkVersion) throw new GradleException("NDK path or version not found. Ensure android.sdkDirectory and android.ndkVersion are set.")
+    def exe = Os.isFamily(Os.FAMILY_WINDOWS) ? 'llvm-strip.exe' : 'llvm-strip'
+    def hostTag = Os.isFamily(Os.FAMILY_WINDOWS) ? 'windows-x86_64' : 'linux-x86_64'
+    return new File(sdkDir, "ndk/${ndkVersion}\\toolchains\\llvm\\prebuilt/${hostTag}\\bin\\${exe}").absolutePath
+}
+
+def createStripTaskForVariant(variantName, libDir) {
+    tasks.register("stripSoFiles${variantName}") {
+        doLast {
+            def stripExe = getNdkStripExe()
+            def soFiles = fileTree(dir: libDir, include: '**/*.so')
+            if (!soFiles.isEmpty()) {
+                soFiles.each { soFile ->
+                    project.exec {
+                        commandLine stripExe, '--remove-section=.note.gnu.build-id', soFile
+                    }
+                    println "Stripping NT_GNU_BUILD_ID from: ${soFile}"
+                }
+            } else {
+                println "No .so files found to strip for ${variantName}."
+            }
+        }
+    }
+}
+
+afterEvaluate {
+    android.applicationVariants.all { variant ->
+        def capName = variant.name.capitalize()
+        def libDir = "$buildDir\\intermediates\\merged_native_libs\\${variant.name}\\mergeReleaseNativeLibs\\out\\lib"
+        createStripTaskForVariant(capName, libDir)
+        def stripTask = tasks["stripSoFiles${capName}"]
+        if (tasks.findByName("merge${capName}NativeLibs")) {
+            tasks["merge${capName}NativeLibs"].finalizedBy(stripTask)
+        }
+        if (tasks.findByName("package${capName}")) {
+            tasks["package${capName}"].mustRunAfter(stripTask)
+        }
     }
 }
