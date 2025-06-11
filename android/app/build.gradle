@@ -221,7 +221,10 @@ def getNdkStripExe() {
     if (!sdkDir || !ndkVersion) throw new GradleException("NDK path or version not found. Ensure android.sdkDirectory and android.ndkVersion are set.")
     def exe = Os.isFamily(Os.FAMILY_WINDOWS) ? 'llvm-strip.exe' : 'llvm-strip'
     def hostTag = Os.isFamily(Os.FAMILY_WINDOWS) ? 'windows-x86_64' : 'linux-x86_64'
-    return new File(sdkDir, "ndk/${ndkVersion}\\toolchains\\llvm\\prebuilt/${hostTag}\\bin\\${exe}").absolutePath
+    def ndkPath = Os.isFamily(Os.FAMILY_WINDOWS) ?
+        "ndk\\${ndkVersion}\\toolchains\\llvm\\prebuilt\\${hostTag}\\bin\\${exe}" :
+        "ndk/${ndkVersion}/toolchains/llvm/prebuilt/${hostTag}/bin/${exe}"
+    return new File(sdkDir, ndkPath).absolutePath
 }
 
 def createStripTaskForVariant(variantName, libDir) {

@@ -58,7 +58,7 @@ jobs:
     - name: Build Release APKs
       run: |
         cd android
-        ./gradlew assembleRelease
+        ./gradlew assembleRelease --info
 
     - name: Get tag name
       id: tag
