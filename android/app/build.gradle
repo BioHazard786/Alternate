@@ -1,4 +1,5 @@
 import org.apache.tools.ant.taskdefs.condition.Os
+
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
@@ -22,7 +23,7 @@ react {
     bundleCommand = "export:embed"
 
     /* Folders */
-     //   The root of your project, i.e. where "package.json" lives. Default is '../..'
+    //   The root of your project, i.e. where "package.json" lives. Default is '../..'
     // root = file("../../")
     //   The folder where the react-native NPM package is. Default is ../../node_modules/react-native
     // reactNativeDir = file("../../node_modules/react-native")
@@ -126,14 +127,16 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            signingConfig signingConfigs.release
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
             // shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             // minifyEnabled enableProguardInReleaseBuilds
             shrinkResources true
             minifyEnabled true
             debuggable false
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-            crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
+            crunchPngs(findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
         }
     }
 
@@ -148,7 +151,7 @@ android {
 
     packagingOptions {
         jniLibs {
-            useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
+            useLegacyPackaging(findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
         }
     }
 
@@ -215,27 +218,27 @@ dependencies {
 
 // --- Custom task to strip .so files and remove NT_GNU_BUILD_ID ---
 
-def getNdkStripExe() {
+def getLLVMStrip() {
     def sdkDir = android.sdkDirectory
     def ndkVersion = android.ndkVersion
     if (!sdkDir || !ndkVersion) throw new GradleException("NDK path or version not found. Ensure android.sdkDirectory and android.ndkVersion are set.")
     def exe = Os.isFamily(Os.FAMILY_WINDOWS) ? 'llvm-strip.exe' : 'llvm-strip'
     def hostTag = Os.isFamily(Os.FAMILY_WINDOWS) ? 'windows-x86_64' : 'linux-x86_64'
     def ndkPath = Os.isFamily(Os.FAMILY_WINDOWS) ?
-        "ndk\\${ndkVersion}\\toolchains\\llvm\\prebuilt\\${hostTag}\\bin\\${exe}" :
-        "ndk/${ndkVersion}/toolchains/llvm/prebuilt/${hostTag}/bin/${exe}"
+            "ndk\\${ndkVersion}\\toolchains\\llvm\\prebuilt\\${hostTag}\\bin\\${exe}" :
+            "ndk/${ndkVersion}/toolchains/llvm/prebuilt/${hostTag}/bin/${exe}"
     return new File(sdkDir, ndkPath).absolutePath
 }
 
 def createStripTaskForVariant(variantName, libDir) {
     tasks.register("stripSoFiles${variantName}") {
         doLast {
-            def stripExe = getNdkStripExe()
+            def strip = getLLVMStrip()
             def soFiles = fileTree(dir: libDir, include: '**/*.so')
             if (!soFiles.isEmpty()) {
                 soFiles.each { soFile ->
                     project.exec {
-                        commandLine stripExe, '--remove-section=.note.gnu.build-id', soFile
+                        commandLine strip, '--remove-section=.note.gnu.build-id', soFile
                     }
                     println "Stripping NT_GNU_BUILD_ID from: ${soFile}"
                 }
