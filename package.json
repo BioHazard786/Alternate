@@ -19,12 +19,10 @@
     "@react-navigation/native": "^7.1.6",
     "@shopify/flash-list": "^1.7.6",
     "expo": "~53.0.9",
-    "expo-constants": "~17.1.6",
-    "expo-linking": "~7.1.5",
+    "expo-dev-client": "~5.2.0",
     "expo-router": "~5.0.6",
     "expo-splash-screen": "~0.30.8",
     "expo-status-bar": "~2.2.3",
-    "expo-system-ui": "~5.0.7",
     "libphonenumber-js": "^1.12.8",
     "react": "19.0.0",
     "react-hook-form": "^7.56.4",
@@ -36,8 +34,7 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.10.0",
     "tslib": "^2.8.1",
-    "zustand": "^5.0.5",
-    "expo-dev-client": "~5.2.0"
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

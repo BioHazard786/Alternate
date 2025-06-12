@@ -1,0 +1,6 @@
+Initial release of Alternate - 1.0.0 Updates:
+• Local caller ID detection
+• Privacy-focused contact storage
+• Material 3 UI design
+• Offline SQLite database
+• Multiple architecture support

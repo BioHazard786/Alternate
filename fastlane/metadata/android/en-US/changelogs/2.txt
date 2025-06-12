@@ -1,0 +1,7 @@
+Version 1.1.0 Updates:
+• Performance optimizations for smoother experience
+• Call Directory integration with Google Phone app
+• Dark mode toggle option
+• Caller popup UI controls
+• Enhanced interface and usability improvements
+• Bug fixes and stability improvements
