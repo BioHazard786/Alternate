@@ -150,7 +150,7 @@ export default function EditContactScreen() {
             style={{
               backgroundColor: avatarBackgroundColor,
               alignSelf: "center",
-              marginVertical: 20,
+              marginVertical: 16,
             }}
           />
           <View>
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   formContainer: {
     flex: 1,
     padding: 16,
-    paddingHorizontal: 40,
+    paddingHorizontal: 16,
     gap: 16,
   },
   buttonContainer: {

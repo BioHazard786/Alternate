@@ -15,7 +15,7 @@ export default function CustomNavigationBar({
   const title = getHeaderTitle(options, route.name);
 
   return (
-    <Appbar.Header mode="large" elevated={true}>
+    <Appbar.Header elevated={true}>
       {back ? <Appbar.BackAction onPress={navigation.goBack} /> : null}
       <Appbar.Content title={title} />
       {action ? (
