@@ -223,10 +223,16 @@ def getLLVMStrip() {
     def ndkVersion = android.ndkVersion
     if (!sdkDir || !ndkVersion) throw new GradleException("NDK path or version not found. Ensure android.sdkDirectory and android.ndkVersion are set.")
     def exe = Os.isFamily(Os.FAMILY_WINDOWS) ? 'llvm-strip.exe' : 'llvm-strip'
-    def hostTag = Os.isFamily(Os.FAMILY_WINDOWS) ? 'windows-x86_64' : 'linux-x86_64'
-    def ndkPath = Os.isFamily(Os.FAMILY_WINDOWS) ?
-            "ndk\\${ndkVersion}\\toolchains\\llvm\\prebuilt\\${hostTag}\\bin\\${exe}" :
-            "ndk/${ndkVersion}/toolchains/llvm/prebuilt/${hostTag}/bin/${exe}"
+    def hostTag
+    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        hostTag = 'windows-x86_64'
+    } else if (Os.isFamily(Os.FAMILY_MAC)) {
+        hostTag = 'darwin-x86_64'
+    } else {
+        hostTag = 'linux-x86_64'
+    }
+    def pathSeparator = Os.isFamily(Os.FAMILY_WINDOWS) ? '\\' : '/'
+    def ndkPath = "ndk${pathSeparator}${ndkVersion}${pathSeparator}toolchains${pathSeparator}llvm${pathSeparator}prebuilt${pathSeparator}${hostTag}${pathSeparator}bin${pathSeparator}${exe}"
     return new File(sdkDir, ndkPath).absolutePath
 }
 
