@@ -25,12 +25,12 @@ allprojects {
   repositories {
     maven {
       // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
-      url(reactNativeAndroidDir)
+      url = reactNativeAndroidDir
     }
 
     google()
     mavenCentral()
-    maven { url 'https://www.jitpack.io' }
+    maven { url = 'https://www.jitpack.io' }
 
     tasks.withType(Zip) {
         reproducibleFileOrder = true

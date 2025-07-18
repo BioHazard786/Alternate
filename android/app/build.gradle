@@ -91,17 +91,17 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    ndkVersion rootProject.ext.ndkVersion
+    ndkVersion = rootProject.ext.ndkVersion
 
-    buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk rootProject.ext.compileSdkVersion
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdk = rootProject.ext.compileSdkVersion
 
-    namespace 'com.lulu786.Alternate'
+    namespace = 'com.lulu786.Alternate'
     defaultConfig {
         applicationId 'com.lulu786.Alternate'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
+        versionCode 1
         versionName "1.1.1"
     }
 
@@ -124,17 +124,17 @@ android {
 
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
         }
         release {
             if (keystorePropertiesFile.exists()) {
-                signingConfig signingConfigs.release
+                signingConfig = signingConfigs.release
             }
             // shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             // minifyEnabled enableProguardInReleaseBuilds
-            shrinkResources true
-            minifyEnabled true
-            debuggable false
+            shrinkResources = true
+            minifyEnabled = true
+            debuggable = false
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             crunchPngs(findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
         }
@@ -143,20 +143,20 @@ android {
     splits {
         abi {
             reset()
-            enable true
-            universalApk false
+            enable = true
+            universalApk = false
             include "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
         }
     }
 
     packagingOptions {
         jniLibs {
-            useLegacyPackaging(findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
+            useLegacyPackaging = (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
         }
     }
 
     androidResources {
-        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
+        ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
 
     dependenciesInfo {
@@ -243,7 +243,7 @@ def createStripTaskForVariant(variantName, libDir) {
             def soFiles = fileTree(dir: libDir, include: '**/*.so')
             if (!soFiles.isEmpty()) {
                 soFiles.each { soFile ->
-                    project.exec {
+                    exec {
                         commandLine strip, '--remove-section=.note.gnu.build-id', soFile
                     }
                     println "Stripping NT_GNU_BUILD_ID from: ${soFile}"
@@ -258,7 +258,8 @@ def createStripTaskForVariant(variantName, libDir) {
 afterEvaluate {
     android.applicationVariants.all { variant ->
         def capName = variant.name.capitalize()
-        def libDir = "$buildDir\\intermediates\\merged_native_libs\\${variant.name}\\mergeReleaseNativeLibs\\out\\lib"
+        def pathSeparator = Os.isFamily(Os.FAMILY_WINDOWS) ? '\\' : '/'
+        def libDir = "${buildDir}${pathSeparator}intermediates${pathSeparator}merged_native_libs${pathSeparator}${variant.name}${pathSeparator}mergeReleaseNativeLibs${pathSeparator}out${pathSeparator}lib"
         createStripTaskForVariant(capName, libDir)
         def stripTask = tasks["stripSoFiles${capName}"]
         if (tasks.findByName("merge${capName}NativeLibs")) {
