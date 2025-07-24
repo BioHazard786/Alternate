@@ -7,16 +7,19 @@ import androidx.room.Query
 
 @Dao
 interface CallerDao {
-    @Query("SELECT * FROM caller_info WHERE phoneNumber = :phoneNumber")
+    @Query("SELECT * FROM caller_info WHERE fullPhoneNumber = :phoneNumber OR phoneNumber = :phoneNumber")
     suspend fun getCallerInfo(phoneNumber: String): CallerEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCallerInfo(callerInfo: CallerEntity)
 
-    @Query("DELETE FROM caller_info WHERE phoneNumber = :phoneNumber")
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMultipleCallerInfo(entities: List<CallerEntity>)
+
+    @Query("DELETE FROM caller_info WHERE fullPhoneNumber = :phoneNumber")
     suspend fun deleteCallerInfo(phoneNumber: String)
 
-    @Query("SELECT phoneNumber FROM caller_info")
+    @Query("SELECT fullPhoneNumber FROM caller_info")
     suspend fun getAllPhoneNumbers(): List<String>
 
     @Query("DELETE FROM caller_info")

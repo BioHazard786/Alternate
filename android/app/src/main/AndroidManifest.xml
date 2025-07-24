@@ -3,8 +3,8 @@
 
   <!-- Explicitly remove permissions added by expo-file-system -->
   <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+  <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" /> -->
 
   <queries>
     <intent>

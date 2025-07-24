@@ -2,33 +2,65 @@ import { Control, FieldPath, FieldValues } from "react-hook-form";
 import { TextInputProps } from "react-native-paper";
 
 export type CallerInfo = {
-  name: string;
+  fullPhoneNumber: string;
   phoneNumber: string;
   countryCode: string;
+  name: string;
   appointment: string;
-  city: string;
+  location: string;
   iosRow: string;
+  suffix: string;
+  prefix: string;
+  email: string;
+  notes: string;
+  website: string;
+  birthday: string;
+  labels: string;
+  nickname: string;
 };
 
 export type Contact = {
-  name: string;
+  fullPhoneNumber: string;
   phoneNumber: string;
   countryCode: string;
+  name: string;
   appointment: string;
-  city: string;
+  location: string;
   iosRow?: string;
+  suffix?: string;
+  prefix?: string;
+  email?: string;
+  notes?: string;
+  website?: string;
+  birthday?: string;
+  labels?: string;
+  nickname?: string;
 };
 
 export type ContactFormData = {
   name: string;
   phoneNumber: PhoneNumberData;
   appointment?: string;
-  city?: string;
+  location?: string;
+  suffix?: string;
+  prefix?: string;
+  email?: string;
+  notes?: string;
+  website?: string;
+  birthday?: Date;
+  labels?: string;
+  nickname?: string;
 };
 
 export type ListItem =
   | { type: "header"; letter: string }
-  | { type: "item"; contact: Contact; index: number };
+  | {
+      type: "item";
+      contact: Contact;
+      index: number;
+      isFirst: boolean;
+      isLast: boolean;
+    };
 
 export type Country = {
   name: string;
@@ -40,6 +72,7 @@ export type Country = {
 export type PhoneNumberData = {
   number: string;
   countryCode: string;
+  dialCode: string;
 };
 
 export interface PhoneNumberInputProps<

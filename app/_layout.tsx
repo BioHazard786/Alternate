@@ -63,11 +63,25 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name="new-contact"
-                options={{ title: "Add Contact" }}
+                options={{
+                  title: "Add Contact",
+                  header: (props) => (
+                    <CustomNavigationBar {...props} mode="small" />
+                  ),
+                }}
               />
               <Stack.Screen
                 name="edit-contact"
-                options={{ title: "Edit Contact" }}
+                options={{
+                  title: "Edit Contact",
+                  header: (props) => (
+                    <CustomNavigationBar
+                      {...props}
+                      mode="small"
+                      popToTop={true}
+                    />
+                  ),
+                }}
               />
               <Stack.Screen
                 name="settings"

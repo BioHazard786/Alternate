@@ -51,3 +51,6 @@ android/local.properties
 
 # Android release files
 android/app/release/
+
+# Test files
+test.ts

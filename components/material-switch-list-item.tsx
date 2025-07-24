@@ -309,6 +309,7 @@ export const MaterialSwitchListItem = ({
       onPress={() => {
         fluid ? onTap() : changeSwitch(true);
       }}
+      borderless={true}
       right={() => (
         <View style={{ justifyContent: "center" }}>
           <View pointerEvents="none" style={styles.stateOuter}>

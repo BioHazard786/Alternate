@@ -1,10 +1,11 @@
 import { MaterialSwitchListItem } from "@/components/material-switch-list-item";
-import { useTheme } from "@/hooks/useTheme";
 import CallerIdModule from "@/modules/caller-id";
+import useContactStore from "@/store/contactStore";
 import useThemeStore from "@/store/themeStore";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Alert, StyleSheet, View } from "react-native";
+import { Button, Card, Text, useTheme } from "react-native-paper";
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -14,6 +15,17 @@ export default function SettingsScreen() {
     CallerIdModule.getShowPopup()
   );
 
+  // VCF import/export functionality
+  const importContacts = useContactStore.use.importContacts();
+  const exportContacts = useContactStore.use.exportContacts();
+  const isImporting = useContactStore.use.isImporting();
+  const isExporting = useContactStore.use.isExporting();
+  const importError = useContactStore.use.importError();
+  const exportError = useContactStore.use.exportError();
+  const clearImportError = useContactStore.use.clearImportError();
+  const clearExportError = useContactStore.use.clearExportError();
+  const contacts = useContactStore.use.contacts();
+
   const handleShowPopupToggle = (value: boolean) => {
     const success = CallerIdModule.setShowPopup(value);
     if (!success) {
@@ -22,12 +34,51 @@ export default function SettingsScreen() {
     setPopupState(value);
   };
 
+  const handleImportContacts = async () => {
+    clearImportError();
+    const success = await importContacts();
+    if (success) {
+      Alert.alert(
+        "Import Successful",
+        `${success} Contacts have been imported successfully from the VCF file.`
+      );
+    } else if (importError) {
+      Alert.alert("Import Failed", importError);
+    }
+  };
+
+  const handleExportContacts = async () => {
+    clearExportError();
+    if (contacts.length === 0) {
+      Alert.alert("No Contacts", "You don't have any contacts to export.");
+      return;
+    }
+
+    const success = await exportContacts();
+    if (success) {
+      Alert.alert(
+        "Export Successful",
+        `${contacts.length} contacts have been exported to a VCF file.`
+      );
+    } else if (exportError) {
+      Alert.alert("Export Failed", exportError);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <MaterialSwitchListItem
         title={"Show Caller ID Popup"}
         titleStyle={{ fontSize: 18 }}
-        listStyle={styles.listItem}
+        listStyle={[
+          styles.listItem,
+          {
+            backgroundColor: theme.colors.elevation.level1,
+            marginBottom: 2,
+            borderBottomLeftRadius: 5,
+            borderBottomRightRadius: 5,
+          },
+        ]}
         switchOnIcon={"check"}
         selected={popupState}
         onPress={() => handleShowPopupToggle(!popupState)}
@@ -44,9 +95,65 @@ export default function SettingsScreen() {
         )}
         selected={theme.dark}
         onPress={() => setThemeMode(theme.dark ? "light" : "dark")}
-        listStyle={styles.listItem}
+        listStyle={[
+          styles.listItem,
+          {
+            backgroundColor: theme.colors.elevation.level1,
+            borderTopLeftRadius: 5,
+            borderTopRightRadius: 5,
+          },
+        ]}
         title={"Dark mode"}
       />
+
+      {/* VCF Import/Export Section */}
+      <Card
+        style={[
+          styles.vcfCard,
+          { backgroundColor: theme.colors.elevation.level1 },
+        ]}
+        mode="contained"
+      >
+        <Card.Content>
+          <Text style={[styles.vcfTitle, { color: theme.colors.onSurface }]}>
+            Contacts Backup
+          </Text>
+          <Text variant="bodyMedium" style={styles.vcfDescription}>
+            Import and export your contacts as VCF files
+          </Text>
+
+          <View style={styles.vcfButtonContainer}>
+            <Button
+              mode="outlined"
+              onPress={handleImportContacts}
+              loading={isImporting}
+              disabled={isImporting || isExporting}
+              icon="download"
+              style={styles.vcfButton}
+            >
+              Import VCF
+            </Button>
+
+            <Button
+              mode="contained"
+              onPress={handleExportContacts}
+              loading={isExporting}
+              disabled={isImporting || isExporting || contacts.length === 0}
+              icon="upload"
+              style={styles.vcfButton}
+            >
+              Export VCF
+            </Button>
+          </View>
+
+          {contacts.length > 0 && (
+            <Text variant="bodySmall" style={styles.contactCount}>
+              {contacts.length} contact{contacts.length !== 1 ? "s" : ""}{" "}
+              available
+            </Text>
+          )}
+        </Card.Content>
+      </Card>
     </View>
   );
 }
@@ -55,9 +162,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   listItem: {
     width: "100%",
     padding: 16,
+    borderRadius: 16,
+    paddingVertical: 15,
+  },
+  touchableContainer: {
+    marginTop: 24,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+  },
+  textContainer: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 10,
+  },
+  title: {
+    fontSize: 18,
+  },
+  vcfCard: {
+    marginTop: 24,
+    borderRadius: 16,
+  },
+  vcfTitle: {
+    marginBottom: 8,
+    fontWeight: "600",
+    fontSize: 18,
+  },
+  vcfDescription: {
+    marginBottom: 16,
+    opacity: 0.8,
+  },
+  vcfButtonContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginVertical: 12,
+  },
+  vcfButton: {
+    flex: 1,
+  },
+  contactCount: {
+    textAlign: "center",
+    opacity: 0.7,
   },
 });
