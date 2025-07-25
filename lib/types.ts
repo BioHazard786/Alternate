@@ -47,7 +47,7 @@ export type ContactFormData = {
   email?: string;
   notes?: string;
   website?: string;
-  birthday?: Date;
+  birthday?: string;
   labels?: string;
   nickname?: string;
 };

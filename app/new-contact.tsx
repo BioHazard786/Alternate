@@ -90,7 +90,7 @@ export default function NewContactScreen() {
       email: "",
       notes: "",
       website: "",
-      birthday: new Date(),
+      birthday: "",
       labels: "",
       nickname: "",
     },
@@ -148,7 +148,7 @@ export default function NewContactScreen() {
                   />
                 }
                 label={field.label}
-                value={value ? getFormattedDate(value as Date) : ""}
+                value={typeof value === "string" ? getFormattedDate(value) : ""}
                 mode="outlined"
                 disabled={isSubmitting}
                 editable={false}
@@ -169,7 +169,7 @@ export default function NewContactScreen() {
                 confirmText="OK"
                 onConfirm={(date) => {
                   setShowDatePicker(false);
-                  onChange(date);
+                  onChange(date.toISOString().split("T")[0]);
                   setSelectedDate(date);
                 }}
                 onCancel={() => {
@@ -237,7 +237,7 @@ export default function NewContactScreen() {
       email: data.email?.trim() || "",
       notes: data.notes?.trim() || "",
       website: data.website?.trim() || "",
-      birthday: data.birthday ? data.birthday.toISOString().split("T")[0] : "",
+      birthday: data.birthday || "",
       labels: data.labels?.trim() || "",
       nickname: data.nickname?.trim() || "",
     });

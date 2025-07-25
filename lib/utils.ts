@@ -46,8 +46,12 @@ export function getFormattedName(contact: Contact): string {
   return formattedName;
 }
 
-export function getFormattedDate(date: Date): string {
-  return date.toLocaleDateString("en-US", {
+export function getFormattedDate(date: string): string {
+  let parsedDate;
+  if (!date) parsedDate = new Date();
+  else parsedDate = new Date(date);
+
+  return parsedDate.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",

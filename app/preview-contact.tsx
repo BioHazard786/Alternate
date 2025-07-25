@@ -1,3 +1,4 @@
+import Material3Avatar from "@/components/material3-avatar";
 import CustomNavigationBar from "@/components/navigation-bar";
 import { getAvatarColor } from "@/lib/avatar-utils";
 import { Contact } from "@/lib/types";
@@ -7,14 +8,15 @@ import {
   getFormattedPhoneNumber,
 } from "@/lib/utils";
 import useContactStore from "@/store/contactStore";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, View } from "react-native";
 import {
-  Avatar,
   Button,
   Card,
   IconButton,
+  List,
   Portal,
   Snackbar,
   Text,
@@ -123,15 +125,11 @@ export default function PreviewContactScreen() {
       />
       {/* Header with Avatar and Name */}
       <View style={styles.headerContainer}>
-        <Avatar.Text
-          size={120}
-          label={letter}
-          labelStyle={{ color: avatarTextColor, fontSize: 60 }}
-          style={{
-            backgroundColor: avatarBackgroundColor,
-            alignSelf: "center",
-            marginVertical: 20,
-          }}
+        <Material3Avatar
+          letter={letter}
+          backgroundColor={avatarBackgroundColor}
+          textColor={avatarTextColor}
+          style={{ marginVertical: 20 }}
         />
 
         <Text
@@ -322,6 +320,105 @@ export default function PreviewContactScreen() {
         </Card>
       )} */}
 
+      {/* Social Media Section */}
+      <Card
+        mode="contained"
+        style={[
+          styles.infoCard,
+          { backgroundColor: theme.colors.elevation.level1 },
+        ]}
+      >
+        <Card.Content>
+          <Text
+            variant="titleMedium"
+            style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
+          >
+            Connected Apps
+          </Text>
+
+          <List.AccordionGroup>
+            <List.Accordion
+              title="WhatsApp"
+              id="1"
+              left={(props) => (
+                <FontAwesome6 name="whatsapp" size={26} {...props} />
+              )}
+              style={{ backgroundColor: theme.colors.elevation.level1 }}
+              titleStyle={{ fontSize: 18 }}
+            >
+              <List.Item
+                title={`Message  +${getFormattedPhoneNumber(contact)}`}
+                left={(props) => (
+                  <List.Icon {...props} icon="message-outline" />
+                )}
+                onPress={() =>
+                  Linking.openURL(
+                    `whatsapp://send?phone=${contact.fullPhoneNumber}`
+                  )
+                }
+              />
+              <List.Item
+                title={`Voice call  +${getFormattedPhoneNumber(contact)}`}
+                left={(props) => <List.Icon {...props} icon="phone-outline" />}
+                onPress={() =>
+                  Linking.openURL(
+                    `whatsapp://call?phone=${contact.fullPhoneNumber}`
+                  )
+                }
+              />
+              <List.Item
+                title={`Video call  +${getFormattedPhoneNumber(contact)}`}
+                left={(props) => <List.Icon {...props} icon="video-outline" />}
+                onPress={() =>
+                  Linking.openURL(
+                    `whatsapp://videocall?phone=${contact.fullPhoneNumber}`
+                  )
+                }
+              />
+            </List.Accordion>
+            <List.Accordion
+              title="Telegram"
+              id="2"
+              left={(props) => (
+                <FontAwesome6 name="telegram" size={26} {...props} />
+              )}
+              style={{ backgroundColor: theme.colors.elevation.level1 }}
+              titleStyle={{ fontSize: 18 }}
+            >
+              <List.Item
+                title={`Message  +${getFormattedPhoneNumber(contact)}`}
+                left={(props) => (
+                  <List.Icon {...props} icon="message-outline" />
+                )}
+                onPress={() =>
+                  Linking.openURL(
+                    `tg://resolve?phone=${contact.fullPhoneNumber}`
+                  )
+                }
+              />
+              <List.Item
+                title={`Voice call  +${getFormattedPhoneNumber(contact)}`}
+                left={(props) => <List.Icon {...props} icon="phone-outline" />}
+                onPress={() =>
+                  Linking.openURL(
+                    `tg://resolve?phone=${contact.fullPhoneNumber}&profile`
+                  )
+                }
+              />
+              <List.Item
+                title={`Video call  +${getFormattedPhoneNumber(contact)}`}
+                left={(props) => <List.Icon {...props} icon="video-outline" />}
+                onPress={() =>
+                  Linking.openURL(
+                    `tg://resolve?phone=${contact.fullPhoneNumber}&profile`
+                  )
+                }
+              />
+            </List.Accordion>
+          </List.AccordionGroup>
+        </Card.Content>
+      </Card>
+
       {/* Additional Info */}
       {(contact.website || contact.birthday || contact.notes) && (
         <Card
@@ -362,7 +459,7 @@ export default function PreviewContactScreen() {
                     variant="bodyLarge"
                     style={[styles.infoText, { color: theme.colors.onSurface }]}
                   >
-                    {getFormattedDate(new Date(contact.birthday))}
+                    {getFormattedDate(contact.birthday)}
                   </Text>
                   <Text
                     variant="bodySmall"
@@ -440,13 +537,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingHorizontal: 16,
     alignItems: "center",
-  },
-  headerActions: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    flexDirection: "row",
-    zIndex: 1,
   },
   name: {
     textAlign: "center",

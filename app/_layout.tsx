@@ -1,4 +1,5 @@
 import { CountrySelectorProvider } from "@/components/country-selector-provider";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import CustomNavigationBar from "@/components/navigation-bar";
 import { useTheme } from "@/hooks/useTheme";
 import useContactStore from "@/store/contactStore";
@@ -38,62 +39,64 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PaperProvider theme={paperTheme}>
-        <ThemeProvider value={paperTheme}>
-          <CountrySelectorProvider>
-            <Stack
-              screenOptions={{
-                header: (props) => <CustomNavigationBar {...props} />,
-              }}
-            >
-              <Stack.Screen
-                name="index"
-                options={{
-                  title: "Contacts",
-                  header: (props) => (
-                    <CustomNavigationBar
-                      action={{
-                        icon: "cog",
-                        onPress: () => router.push("/settings"),
-                      }}
-                      {...props}
-                    />
-                  ),
+      <ErrorBoundary>
+        <PaperProvider theme={paperTheme}>
+          <ThemeProvider value={paperTheme}>
+            <CountrySelectorProvider>
+              <Stack
+                screenOptions={{
+                  header: (props) => <CustomNavigationBar {...props} />,
                 }}
-              />
-              <Stack.Screen
-                name="new-contact"
-                options={{
-                  title: "Add Contact",
-                  header: (props) => (
-                    <CustomNavigationBar {...props} mode="small" />
-                  ),
-                }}
-              />
-              <Stack.Screen
-                name="edit-contact"
-                options={{
-                  title: "Edit Contact",
-                  header: (props) => (
-                    <CustomNavigationBar
-                      {...props}
-                      mode="small"
-                      popToTop={true}
-                    />
-                  ),
-                }}
-              />
-              <Stack.Screen
-                name="settings"
-                options={{
-                  title: "Settings",
-                }}
-              />
-            </Stack>
-          </CountrySelectorProvider>
-        </ThemeProvider>
-        <StatusBar style={paperTheme.dark ? "light" : "dark"} />
-      </PaperProvider>
+              >
+                <Stack.Screen
+                  name="index"
+                  options={{
+                    title: "Contacts",
+                    header: (props) => (
+                      <CustomNavigationBar
+                        action={{
+                          icon: "cog",
+                          onPress: () => router.push("/settings"),
+                        }}
+                        {...props}
+                      />
+                    ),
+                  }}
+                />
+                <Stack.Screen
+                  name="new-contact"
+                  options={{
+                    title: "Add Contact",
+                    header: (props) => (
+                      <CustomNavigationBar {...props} mode="small" />
+                    ),
+                  }}
+                />
+                <Stack.Screen
+                  name="edit-contact"
+                  options={{
+                    title: "Edit Contact",
+                    header: (props) => (
+                      <CustomNavigationBar
+                        {...props}
+                        mode="small"
+                        popToTop={true}
+                      />
+                    ),
+                  }}
+                />
+                <Stack.Screen
+                  name="settings"
+                  options={{
+                    title: "Settings",
+                  }}
+                />
+              </Stack>
+            </CountrySelectorProvider>
+          </ThemeProvider>
+          <StatusBar style={paperTheme.dark ? "light" : "dark"} />
+        </PaperProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

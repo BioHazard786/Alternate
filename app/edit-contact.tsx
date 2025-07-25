@@ -1,3 +1,4 @@
+import Material3Avatar from "@/components/material3-avatar";
 import PhoneNumberInput from "@/components/phone-number-input";
 import { getAvatarColor } from "@/lib/avatar-utils";
 import { getCountryByCode } from "@/lib/countries";
@@ -23,7 +24,6 @@ import {
 } from "react-native";
 import DatePicker from "react-native-date-picker";
 import {
-  Avatar,
   Button,
   HelperText,
   List,
@@ -43,7 +43,7 @@ export default function EditContactScreen() {
     ? JSON.parse(contactParam as string)
     : null;
 
-  const fullPhoneNumber = contact?.fullPhoneNumber;
+  const originalFullPhoneNumber = contact?.fullPhoneNumber;
   const letter = contact?.name?.charAt(0) || "?";
 
   const updateContact = useContactStore.use.updateContact();
@@ -54,8 +54,8 @@ export default function EditContactScreen() {
     getVisibleFields(contact)
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date(contact?.birthday || "")
+  const [selectedDate, setSelectedDate] = useState(() =>
+    contact?.birthday ? new Date(contact.birthday) : new Date()
   );
 
   // Bottom sheet ref and snap points
@@ -108,7 +108,7 @@ export default function EditContactScreen() {
       email: contact?.email || "",
       notes: contact?.notes || "",
       website: contact?.website || "",
-      birthday: new Date(contact?.birthday || ""),
+      birthday: contact?.birthday || "",
       labels: contact?.labels || "",
       nickname: contact?.nickname || "",
     },
@@ -166,7 +166,7 @@ export default function EditContactScreen() {
                   />
                 }
                 label={field.label}
-                value={value ? getFormattedDate(value as Date) : ""}
+                value={typeof value === "string" ? getFormattedDate(value) : ""}
                 mode="outlined"
                 disabled={isSubmitting}
                 editable={false}
@@ -187,7 +187,7 @@ export default function EditContactScreen() {
                 confirmText="OK"
                 onConfirm={(date) => {
                   setShowDatePicker(false);
-                  onChange(date);
+                  onChange(date.toISOString().split("T")[0]);
                   setSelectedDate(date);
                 }}
                 onCancel={() => {
@@ -233,7 +233,7 @@ export default function EditContactScreen() {
     const fullPhoneNumber =
       data.phoneNumber.dialCode + data.phoneNumber.number.trim();
 
-    const success = await updateContact(fullPhoneNumber!, {
+    const success = await updateContact(originalFullPhoneNumber!, {
       name: data.name.trim(),
       fullPhoneNumber: fullPhoneNumber,
       phoneNumber: data.phoneNumber.number.trim(),
@@ -246,7 +246,7 @@ export default function EditContactScreen() {
       email: data.email?.trim() || "",
       notes: data.notes?.trim() || "",
       website: data.website?.trim() || "",
-      birthday: data.birthday ? data.birthday.toISOString().split("T")[0] : "",
+      birthday: data.birthday || "",
       labels: data.labels?.trim() || "",
       nickname: data.nickname?.trim() || "",
     });
@@ -276,15 +276,11 @@ export default function EditContactScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.formContainer}>
-          <Avatar.Text
-            size={130}
-            label={letter}
-            labelStyle={{ color: avatarTextColor, fontSize: 80 }}
-            style={{
-              backgroundColor: avatarBackgroundColor,
-              alignSelf: "center",
-              marginVertical: 16,
-            }}
+          <Material3Avatar
+            letter={letter}
+            backgroundColor={avatarBackgroundColor}
+            textColor={avatarTextColor}
+            style={{ marginVertical: 20, alignSelf: "center" }}
           />
           <View>
             <Controller
