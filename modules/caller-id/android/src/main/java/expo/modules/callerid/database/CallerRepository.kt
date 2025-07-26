@@ -21,17 +21,8 @@ class CallerRepository(context: Context) {
         }
     }
 
-    suspend fun storeCallerInfo(
-        phoneNumber: String,
-        countryCode: String,
-        name: String,
-        appointment: String,
-        city: String,
-        iosRow: String
-    ): Boolean {
+    suspend fun storeCallerInfo(callerEntity: CallerEntity): Boolean {
         return try {
-            val callerEntity =
-                CallerEntity(phoneNumber, countryCode, name, appointment, city, iosRow)
             callerDao.insertCallerInfo(callerEntity)
             true
         } catch (e: Exception) {
@@ -39,9 +30,18 @@ class CallerRepository(context: Context) {
         }
     }
 
-    suspend fun removeCallerInfo(phoneNumber: String): Boolean {
+    suspend fun storeMultipleCallerInfo(callerEntities: List<CallerEntity>): Boolean {
         return try {
-            callerDao.deleteCallerInfo(phoneNumber)
+            callerDao.insertMultipleCallerInfo(callerEntities)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun removeCallerInfo(fullPhoneNumber: String): Boolean {
+        return try {
+            callerDao.deleteCallerInfo(fullPhoneNumber)
             true
         } catch (e: Exception) {
             false

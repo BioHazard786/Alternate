@@ -6,16 +6,10 @@ import { CallerIdModuleEvents } from "./CallerId.types";
 declare class CallerIdModule extends NativeModule<CallerIdModuleEvents> {
   hasOverlayPermission(): Promise<boolean>;
   requestOverlayPermission(): Promise<boolean>;
-  storeCallerInfo(
-    phoneNumber: string,
-    countryCode: string,
-    name: string,
-    appointment: string,
-    city: string,
-    iosRow: string
-  ): Promise<boolean>;
+  storeCallerInfo(callerData: CallerInfo): Promise<boolean>;
+  storeMultipleCallerInfo(callerData: CallerInfo[]): Promise<boolean>;
   getCallerInfo(phoneNumber: string): Promise<CallerInfo | null>;
-  removeCallerInfo(phoneNumber: string): Promise<boolean>;
+  removeCallerInfo(fullPhoneNumber: string): Promise<boolean>;
   getAllCallerInfo(): Promise<CallerInfo[]>;
   getAllStoredNumbers(): Promise<string[]>;
   clearAllCallerInfo(): Promise<boolean>;
@@ -23,6 +17,9 @@ declare class CallerIdModule extends NativeModule<CallerIdModuleEvents> {
   // Settings functions
   setShowPopup(showPopup: boolean): boolean;
   getShowPopup(): boolean;
+
+  // Get SIM card country code
+  getDialCountryCode(): string;
 }
 
 // This call loads the native module object from the JSI.

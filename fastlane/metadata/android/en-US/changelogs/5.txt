@@ -1,0 +1,4 @@
+v2.0.1 - Major bugfix release
+- Fixed critical bugs from v2.0.0 affecting stability and reliability
+- Improved error handling throughout the app
+- Enhanced overall performance and user experience

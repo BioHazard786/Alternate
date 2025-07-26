@@ -9,14 +9,25 @@ export default function CustomNavigationBar({
   options,
   back,
   action,
+  mode = "large",
+  popToTop = false,
 }: NativeStackHeaderProps & {
   action?: { icon: string; onPress: () => void };
+  mode?: "small" | "medium" | "large" | "center-aligned";
+  popToTop?: boolean;
 }) {
   const title = getHeaderTitle(options, route.name);
 
+  const handleGoBack = () => {
+    if (popToTop) {
+      navigation.popToTop();
+    } else {
+      navigation.goBack();
+    }
+  };
   return (
-    <Appbar.Header elevated={true}>
-      {back ? <Appbar.BackAction onPress={navigation.goBack} /> : null}
+    <Appbar.Header mode={mode}>
+      {back ? <Appbar.BackAction onPress={handleGoBack} /> : null}
       <Appbar.Content title={title} />
       {action ? (
         <Appbar.Action icon={action.icon} onPress={action.onPress} />

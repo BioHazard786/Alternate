@@ -1,0 +1,5 @@
+v2.0.0 - Major Release
+- Added new fields for contacts to enhance information management
+- Introduced Material Expressive Design for a modern look and feel
+- Added preview screen for contacts for quick viewing
+- Implemented import/export functionality for contacts

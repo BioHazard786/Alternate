@@ -1,5 +1,6 @@
 package expo.modules.callerid
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -18,14 +19,12 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import expo.modules.callerid.database.CallerRepository
-import kotlinx.coroutines.Runnable
 import java.lang.ref.WeakReference
 
 data class CallerInfo(
     val name: String = "",
     val appointment: String = "",
-    val city: String = "",
-    val iosRow: String = ""
+    val location: String = "",
 )
 
 interface GetCallerHandler {
@@ -37,20 +36,18 @@ class CallReceiver : BroadcastReceiver() {
         private var isShowingOverlay = false
         private var overlay: WeakReference<View>? = null
         var callServiceNumber: String? = null
-        private var autoDismissHandler: Handler? = null
-        private var autoDismissRunnable: Runnable? = null
-        private const val AUTO_DISMISS_DELAY = 5000L // 5 seconds
     }
-    
+
     override fun onReceive(context: Context, intent: Intent) {
         if (!Settings.canDrawOverlays(context)) {
             return
         }
 
         // Check if popup display is enabled in settings
-        val sharedPreferences = context.getSharedPreferences("caller_id_settings", Context.MODE_PRIVATE)
+        val sharedPreferences =
+            context.getSharedPreferences(context.packageName + ".settings", Context.MODE_PRIVATE)
         val showPopup = sharedPreferences.getBoolean("show_popup", true)
-        
+
         if (!showPopup) {
             return
         }
@@ -79,7 +76,7 @@ class CallReceiver : BroadcastReceiver() {
                                     context,
                                     callerInfo.name,
                                     callerInfo.appointment,
-                                    callerInfo.city
+                                    callerInfo.location
                                 )
                             }
                         }
@@ -91,7 +88,6 @@ class CallReceiver : BroadcastReceiver() {
                 if (isShowingOverlay) {
                     isShowingOverlay = false
                     callServiceNumber = null
-                    cancelAutoDismiss()
                     dismissCallerInfo(context)
                 }
             }
@@ -108,11 +104,12 @@ class CallReceiver : BroadcastReceiver() {
         }
     }
 
+    @SuppressLint("InflateParams")
     private fun showCallerInfo(
         context: Context,
         callerName: String,
         callerAppointment: String,
-        callerCity: String
+        callerLocation: String
     ) {
         val appName = getApplicationName(context)
 
@@ -153,13 +150,10 @@ class CallReceiver : BroadcastReceiver() {
             )
             overlay?.get()?.let { overlayView ->
                 // Fill layout with data first
-                fillLayout(context, appName, callerName, callerAppointment, callerCity)
+                fillLayout(context, appName, callerName, callerAppointment, callerLocation)
 
                 // Add view to window manager
                 windowManager.addView(overlayView, params)
-
-                // Setup auto-dismiss
-                setupAutoDismiss(context)
             }
         }, 1000)
     }
@@ -169,7 +163,7 @@ class CallReceiver : BroadcastReceiver() {
         appName: String,
         callerName: String,
         callerAppointment: String,
-        callerCity: String
+        callerLocation: String
     ) {
         overlay?.get()?.let { overlayView ->
             // Set close button listener
@@ -178,7 +172,6 @@ class CallReceiver : BroadcastReceiver() {
                 closeButton?.setOnClickListener {
                     Log.d("CallReceiver", "Close button clicked")
                     isShowingOverlay = false
-                    cancelAutoDismiss()
                     dismissCallerInfo(context)
                 }
             } catch (e: Exception) {
@@ -214,11 +207,11 @@ class CallReceiver : BroadcastReceiver() {
                 // Handle exception silently
             }
 
-            // Set caller city
+            // Set caller location
             try {
                 val textViewCallerCity = overlayView.findViewById<TextView>(R.id.callerCity)
-                if (callerCity.isNotEmpty()) {
-                    textViewCallerCity?.text = callerCity
+                if (callerLocation.isNotEmpty()) {
+                    textViewCallerCity?.text = callerLocation
                 } else {
                     textViewCallerCity?.visibility = View.GONE
                 }
@@ -257,31 +250,6 @@ class CallReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun setupAutoDismiss(context: Context) {
-        cancelAutoDismiss() // Cancel any existing auto-dismiss
-
-        Log.d("CallReceiver", "Setting up auto-dismiss for ${AUTO_DISMISS_DELAY}ms")
-
-        autoDismissHandler = Handler(Looper.getMainLooper())
-        autoDismissRunnable = Runnable {
-            Log.d("CallReceiver", "Auto-dismiss triggered, isShowingOverlay: $isShowingOverlay")
-            if (isShowingOverlay) {
-                isShowingOverlay = false
-                dismissCallerInfo(context)
-            }
-        }
-
-        autoDismissHandler?.postDelayed(autoDismissRunnable!!, AUTO_DISMISS_DELAY)
-    }
-
-    private fun cancelAutoDismiss() {
-        autoDismissRunnable?.let { runnable ->
-            autoDismissHandler?.removeCallbacks(runnable)
-        }
-        autoDismissHandler = null
-        autoDismissRunnable = null
-    }
-
     private fun getCallerName(
         context: Context,
         phoneNumberInString: String,
@@ -297,20 +265,14 @@ class CallReceiver : BroadcastReceiver() {
 
             // Use Room database to get caller information synchronously
             val callerRepository = CallerRepository(context)
-            var callerEntity = callerRepository.getCallerInfoSync(correctedPhoneNumber)
-
-            if (callerEntity == null) {
-                // Try with original phone number format
-                callerEntity = callerRepository.getCallerInfoSync(phoneNumberInString)
-            }
+            val callerEntity = callerRepository.getCallerInfoSync(correctedPhoneNumber)
 
             if (callerEntity != null) {
-                Log.d("CallReceiver", "Caller Number found: ${callerEntity.phoneNumber}")
+                Log.d("CallReceiver", "Caller Number found: ${callerEntity.fullPhoneNumber}")
                 val callerInfo = CallerInfo(
                     name = callerEntity.name,
                     appointment = callerEntity.appointment,
-                    city = callerEntity.city,
-                    iosRow = callerEntity.iosRow
+                    location = callerEntity.location
                 )
                 callback.onGetCaller(callerInfo)
             } else {

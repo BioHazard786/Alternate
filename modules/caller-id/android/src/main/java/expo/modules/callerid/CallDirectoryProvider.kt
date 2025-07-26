@@ -51,10 +51,10 @@ class CallDirectoryProvider : ContentProvider() {
         selectionArgs: Array<out String>?,
         sortOrder: String?
     ): Cursor? {
-        val callingPackage = callingPackage
-        Log.d("CallerIDProvider", "Query from: $callingPackage")
-        Log.d("CallerIDProvider", "Device: ${Build.MANUFACTURER} ${Build.MODEL}")
-        Log.d("CallerIDProvider", "Android: ${Build.VERSION.RELEASE}")
+        // val callingPackage = callingPackage
+        // Log.d("CallerIDProvider", "Query from: $callingPackage")
+        // Log.d("CallerIDProvider", "Device: ${Build.MANUFACTURER} ${Build.MODEL}")
+        // Log.d("CallerIDProvider", "Android: ${Build.VERSION.RELEASE}")
 
         val matchResult = uriMatcher.match(uri)
 
@@ -93,10 +93,7 @@ class CallDirectoryProvider : ContentProvider() {
                     val cursor = MatrixCursor(projection)
 
                     val callerEntity = runBlocking(Dispatchers.IO) {
-                        var result = repo.getCallerInfo(correctedPhoneNumber)
-                        if (result == null) {
-                            result = repo.getCallerInfo(phoneNumber)
-                        }
+                        val result = repo.getCallerInfo(correctedPhoneNumber)
                         result
                     }
 
@@ -106,9 +103,9 @@ class CallDirectoryProvider : ContentProvider() {
                                 PhoneLookup._ID -> -1
                                 PhoneLookup.DISPLAY_NAME -> entity.name
                                 PhoneLookup.LABEL -> when {
-                                    entity.appointment.isNotEmpty() && entity.city.isNotEmpty() -> "${entity.appointment}, ${entity.city}"
+                                    entity.appointment.isNotEmpty() && entity.location.isNotEmpty() -> "${entity.appointment}, ${entity.location}"
                                     entity.appointment.isNotEmpty() -> entity.appointment
-                                    entity.city.isNotEmpty() -> entity.city
+                                    entity.location.isNotEmpty() -> entity.location
                                     else -> "Mobile"
                                 }
 

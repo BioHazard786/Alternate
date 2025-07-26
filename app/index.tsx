@@ -42,6 +42,8 @@ export default function ContactsScreen() {
         type: "item" as const,
         contact,
         index: index,
+        isFirst: index === 0,
+        isLast: index === section.data.length - 1,
       })
     ),
   ]);
@@ -51,7 +53,14 @@ export default function ContactsScreen() {
     if (item.type === "header") {
       return <SectionHeader title={item.letter} />;
     } else {
-      return <ContactItem contact={item.contact} index={item.index} />;
+      return (
+        <ContactItem
+          contact={item.contact}
+          index={item.index}
+          isFirst={item.isFirst}
+          isLast={item.isLast}
+        />
+      );
     }
   };
 

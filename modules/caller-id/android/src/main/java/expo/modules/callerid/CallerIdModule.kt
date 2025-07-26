@@ -3,9 +3,14 @@ package expo.modules.callerid
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.util.Log
+import android.os.Build
 import android.provider.Settings
+import android.telephony.TelephonyManager
+import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.core.content.edit
 import androidx.core.net.toUri
+import expo.modules.callerid.database.CallerEntity
 import expo.modules.callerid.database.CallerRepository
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
@@ -13,17 +18,16 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import androidx.core.content.edit
 
 class CallerIdModule : Module() {
 
     // Repository for database operations
     private lateinit var callerRepository: CallerRepository
-    private lateinit var sharedPreferences: SharedPreferences
 
     // Each module class must implement the definition function. The definition consists of components
     // that describes the module's functionality and behavior.
     // See https://docs.expo.dev/modules/module-api for more details about available components.
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun definition() = ModuleDefinition {
         // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
         // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
@@ -35,8 +39,6 @@ class CallerIdModule : Module() {
             val context =
                 appContext.reactContext ?: throw IllegalStateException("React context is null")
             callerRepository = CallerRepository(context)
-            sharedPreferences =
-                context.getSharedPreferences("caller_id_settings", Context.MODE_PRIVATE)
         }
 
         AsyncFunction("hasOverlayPermission") { promise: Promise ->
@@ -85,18 +87,27 @@ class CallerIdModule : Module() {
         }
 
         // Store caller information in Room database
-        AsyncFunction("storeCallerInfo") { phoneNumber: String, countryCode: String, name: String, appointment: String, city: String, iosRow: String, promise: Promise ->
+        AsyncFunction("storeCallerInfo") { callerData: Map<String, Any?>, promise: Promise ->
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val result = callerRepository.storeCallerInfo(
-                        phoneNumber,
-                        countryCode,
-                        name,
-                        appointment,
-                        city,
-                        iosRow,
-
-                        )
+                    val callerEntity = CallerEntity(
+                        fullPhoneNumber = callerData["fullPhoneNumber"] as? String ?: "",
+                        phoneNumber = callerData["phoneNumber"] as? String ?: "",
+                        countryCode = callerData["countryCode"] as? String ?: "",
+                        name = callerData["name"] as? String ?: "",
+                        appointment = callerData["appointment"] as? String ?: "",
+                        location = callerData["location"] as? String ?: "",
+                        iosRow = callerData["iosRow"] as? String ?: "",
+                        suffix = callerData["suffix"] as? String ?: "",
+                        prefix = callerData["prefix"] as? String ?: "",
+                        email = callerData["email"] as? String ?: "",
+                        notes = callerData["notes"] as? String ?: "",
+                        website = callerData["website"] as? String ?: "",
+                        birthday = callerData["birthday"] as? String ?: "",
+                        labels = callerData["labels"] as? String ?: "",
+                        nickname = callerData["nickname"] as? String ?: ""
+                    )
+                    val result = callerRepository.storeCallerInfo(callerEntity)
                     promise.resolve(result)
                 } catch (e: Exception) {
                     Log.e(
@@ -109,20 +120,65 @@ class CallerIdModule : Module() {
             }
         }
 
-        // Get caller information from Room database
-        AsyncFunction("getCallerInfo") { phoneNumber: String, promise: Promise ->
+        // Store multiple caller information in Room database
+        AsyncFunction("storeMultipleCallerInfo") { callerDataList: List<Map<String, Any?>>, promise: Promise ->
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val callerEntity = callerRepository.getCallerInfo(phoneNumber)
+                    val callerEntities = callerDataList.map { data ->
+                        CallerEntity(
+                            fullPhoneNumber = data["fullPhoneNumber"] as? String ?: "",
+                            phoneNumber = data["phoneNumber"] as? String ?: "",
+                            countryCode = data["countryCode"] as? String ?: "",
+                            name = data["name"] as? String ?: "",
+                            appointment = data["appointment"] as? String ?: "",
+                            location = data["location"] as? String ?: "",
+                            iosRow = data["iosRow"] as? String ?: "",
+                            suffix = data["suffix"] as? String ?: "",
+                            prefix = data["prefix"] as? String ?: "",
+                            email = data["email"] as? String ?: "",
+                            notes = data["notes"] as? String ?: "",
+                            website = data["website"] as? String ?: "",
+                            birthday = data["birthday"] as? String ?: "",
+                            labels = data["labels"] as? String ?: "",
+                            nickname = data["nickname"] as? String ?: ""
+                        )
+                    }
+                    val result = callerRepository.storeMultipleCallerInfo(callerEntities)
+                    promise.resolve(result)
+                } catch (e: Exception) {
+                    Log.e(
+                        "CallerIdModule",
+                        "Error storing multiple caller info: ${e.message}",
+                        e
+                    )
+                    promise.resolve(false)
+                }
+            }
+        }
+
+        // Get caller information from Room database
+        AsyncFunction("getCallerInfo") { fullPhoneNumber: String, promise: Promise ->
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val callerEntity = callerRepository.getCallerInfo(fullPhoneNumber)
                     if (callerEntity != null) {
                         promise.resolve(
                             mapOf(
+                                "fullPhoneNumber" to callerEntity.fullPhoneNumber,
+                                "phoneNumber" to callerEntity.phoneNumber,
+                                "countryCode" to callerEntity.countryCode,
                                 "name" to callerEntity.name,
                                 "appointment" to callerEntity.appointment,
-                                "city" to callerEntity.city,
+                                "location" to callerEntity.location,
                                 "iosRow" to callerEntity.iosRow,
-                                "countryCode" to callerEntity.countryCode,
-                                "phoneNumber" to callerEntity.phoneNumber
+                                "suffix" to callerEntity.suffix,
+                                "prefix" to callerEntity.prefix,
+                                "email" to callerEntity.email,
+                                "notes" to callerEntity.notes,
+                                "website" to callerEntity.website,
+                                "birthday" to callerEntity.birthday,
+                                "labels" to callerEntity.labels,
+                                "nickname" to callerEntity.nickname
                             )
                         )
                     } else {
@@ -140,10 +196,10 @@ class CallerIdModule : Module() {
         }
 
         // Remove caller information from Room database
-        AsyncFunction("removeCallerInfo") { phoneNumber: String, promise: Promise ->
+        AsyncFunction("removeCallerInfo") { fullPhoneNumber: String, promise: Promise ->
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val result = callerRepository.removeCallerInfo(phoneNumber)
+                    val result = callerRepository.removeCallerInfo(fullPhoneNumber)
                     promise.resolve(result)
                 } catch (e: Exception) {
                     Log.e(
@@ -164,12 +220,21 @@ class CallerIdModule : Module() {
                     // Convert CallerEntity objects to JavaScript-friendly format
                     val result = callerEntities.map { entity ->
                         mapOf(
+                            "fullPhoneNumber" to entity.fullPhoneNumber,
                             "phoneNumber" to entity.phoneNumber,
                             "countryCode" to entity.countryCode,
                             "name" to entity.name,
                             "appointment" to entity.appointment,
-                            "city" to entity.city,
-                            "iosRow" to entity.iosRow
+                            "location" to entity.location,
+                            "iosRow" to entity.iosRow,
+                            "suffix" to entity.suffix,
+                            "prefix" to entity.prefix,
+                            "email" to entity.email,
+                            "notes" to entity.notes,
+                            "website" to entity.website,
+                            "birthday" to entity.birthday,
+                            "labels" to entity.labels,
+                            "nickname" to entity.nickname
                         )
                     }
                     promise.resolve(result)
@@ -238,13 +303,34 @@ class CallerIdModule : Module() {
                 true
             }
         }
+
+        // Get SIM card country code using TelephonyManager
+        Function("getDialCountryCode") {
+            try {
+                val telephonyManager =
+                    context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+                if (telephonyManager != null) {
+                    // Get SIM country ISO code (e.g., "US", "IN", "GB")
+                    val simCountryIso = telephonyManager.simCountryIso?.uppercase()
+
+                    // Return the country code, default to "IN" if null or empty
+                    return@Function if (!simCountryIso.isNullOrEmpty()) simCountryIso else "IN"
+                } else {
+                    Log.w("CallerIdModule", "TelephonyManager not available")
+                    return@Function "IN"
+                }
+            } catch (e: Exception) {
+                Log.e("CallerIdModule", "Error getting SIM country code: ${e.message}", e)
+                "IN"
+            }
+        }
     }
 
     // Helper property to get context safely
     private val context
         get() = requireNotNull(appContext.reactContext) { "React context is null" }
-    
+
     private fun getPreferences(): SharedPreferences {
-    return context.getSharedPreferences(context.packageName + ".settings", Context.MODE_PRIVATE)
-  }
+        return context.getSharedPreferences(context.packageName + ".settings", Context.MODE_PRIVATE)
+    }
 }

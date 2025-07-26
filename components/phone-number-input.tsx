@@ -37,6 +37,7 @@ const PhoneNumberInput = <
     const phoneData: PhoneNumberData = {
       number: phoneNumber,
       countryCode: selectedCountry.code,
+      dialCode: selectedCountry.dialCode,
     };
     onChange(phoneData);
   };
@@ -52,6 +53,7 @@ const PhoneNumberInput = <
     const phoneData: PhoneNumberData = {
       number: currentValue?.number || "",
       countryCode: country.code,
+      dialCode: country.dialCode,
     };
     onChange(phoneData);
   };

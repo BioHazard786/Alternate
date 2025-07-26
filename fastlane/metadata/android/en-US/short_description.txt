@@ -1,1 +1,1 @@
-Local Caller ID detector. Identify unknown callers without cluttering your contacts.
+Local Caller ID detector. Identify unknown callers without clutter.

@@ -1,32 +1,73 @@
 import PhoneNumberInput from "@/components/phone-number-input";
 import { getCountryByCode } from "@/lib/countries";
 import { ContactFormData } from "@/lib/types";
+import { getFormattedDate } from "@/lib/utils";
 import CallerIdModule from "@/modules/caller-id";
 import useContactStore from "@/store/contactStore";
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetScrollView,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  TextInput as RNTextInput,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
+import DatePicker from "react-native-date-picker";
 import {
   Button,
   HelperText,
+  List,
   Portal,
   Snackbar,
+  Text,
   TextInput,
+  useTheme,
 } from "react-native-paper";
 
 export default function NewContactScreen() {
+  const theme = useTheme();
   const addContact = useContactStore.use.addContact();
   const error = useContactStore.use.addContactError();
   const clearError = useContactStore.use.clearAddError();
+  const countryCode = CallerIdModule.getDialCountryCode();
 
   const [visible, setVisible] = React.useState(false);
+  const [visibleFields, setVisibleFields] = React.useState<Set<string>>(
+    new Set()
+  );
+  const [showDatePicker, setShowDatePicker] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState(new Date());
+
+  // Bottom sheet ref and snap points
+  const bottomSheetModalRef = React.useRef<BottomSheet>(null);
+
+  const additionalFields = [
+    { key: "prefix", label: "Prefix", icon: "account-arrow-left-outline" },
+    { key: "suffix", label: "Suffix", icon: "account-arrow-right-outline" },
+    { key: "email", label: "Email", icon: "email-outline" },
+    { key: "notes", label: "Notes", icon: "note-text-outline" },
+    { key: "website", label: "Website", icon: "link" },
+    { key: "birthday", label: "Birthday", icon: "cake-variant-outline" },
+    // { key: "labels", label: "Labels", icon: "tag" },
+    { key: "nickname", label: "Nickname", icon: "account-heart-outline" },
+  ];
+
+  const openBottomSheet = React.useCallback(() => {
+    bottomSheetModalRef.current?.expand();
+  }, []);
+
+  const closeBottomSheet = React.useCallback(() => {
+    bottomSheetModalRef.current?.close();
+  }, []);
 
   const {
     control,
@@ -37,13 +78,139 @@ export default function NewContactScreen() {
   } = useForm<ContactFormData>({
     defaultValues: {
       name: "",
-      phoneNumber: { number: "", countryCode: "IN" },
+      phoneNumber: {
+        number: "",
+        countryCode: countryCode,
+        dialCode: getCountryByCode(countryCode)?.dialCode,
+      },
       appointment: "",
-      city: "",
+      location: "",
+      suffix: "",
+      prefix: "",
+      email: "",
+      notes: "",
+      website: "",
+      birthday: "",
+      labels: "",
+      nickname: "",
     },
     mode: "onChange", // Validate on change for better UX
   });
+
   const onDismissSnackBar = () => setVisible(false);
+
+  const toggleField = (fieldKey: string) => {
+    const newVisibleFields = new Set(visibleFields);
+    if (newVisibleFields.has(fieldKey)) {
+      newVisibleFields.delete(fieldKey);
+    } else {
+      newVisibleFields.add(fieldKey);
+    }
+    setVisibleFields(newVisibleFields);
+    closeBottomSheet();
+  };
+
+  const removeFieldAndReset = (fieldKey: string) => {
+    const newVisibleFields = new Set(visibleFields);
+    newVisibleFields.delete(fieldKey);
+    setVisibleFields(newVisibleFields);
+
+    // Reset the field value in the form
+    reset({
+      ...control._formValues,
+      [fieldKey]: "",
+    });
+  };
+
+  const renderAdditionalField = (field: (typeof additionalFields)[0]) => {
+    if (!visibleFields.has(field.key)) return null;
+
+    // Special handling for birthday field
+    if (field.key === "birthday") {
+      return (
+        <Controller
+          key={field.key}
+          control={control}
+          name={field.key as keyof ContactFormData}
+          render={({ field: { onChange, onBlur, value } }) => (
+            <View style={{ position: "relative" }}>
+              <TextInput
+                left={
+                  <TextInput.Icon
+                    icon={field.icon}
+                    onPress={() => setShowDatePicker(true)}
+                  />
+                }
+                right={
+                  <TextInput.Icon
+                    icon="close"
+                    onPress={() => removeFieldAndReset(field.key)}
+                  />
+                }
+                label={field.label}
+                value={typeof value === "string" ? getFormattedDate(value) : ""}
+                mode="outlined"
+                disabled={isSubmitting}
+                editable={false}
+                render={(props) => (
+                  <Pressable onPress={() => setShowDatePicker(true)}>
+                    <RNTextInput {...props} />
+                  </Pressable>
+                )}
+              />
+              <DatePicker
+                modal
+                mode="date"
+                open={showDatePicker}
+                date={selectedDate}
+                theme={theme.dark ? "dark" : "light"}
+                buttonColor={theme.colors.onSecondaryContainer}
+                dividerColor={theme.colors.onSecondaryContainer}
+                confirmText="OK"
+                onConfirm={(date) => {
+                  setShowDatePicker(false);
+                  onChange(date.toISOString().split("T")[0]);
+                  setSelectedDate(date);
+                }}
+                onCancel={() => {
+                  setShowDatePicker(false);
+                }}
+              />
+            </View>
+          )}
+        />
+      );
+    }
+
+    return (
+      <Controller
+        key={field.key}
+        control={control}
+        name={field.key as keyof ContactFormData}
+        render={({ field: { onChange, onBlur, value } }) => (
+          <TextInput
+            left={<TextInput.Icon icon={field.icon} />}
+            right={
+              <TextInput.Icon
+                icon="close"
+                onPress={() => removeFieldAndReset(field.key)}
+              />
+            }
+            label={field.label}
+            value={typeof value === "string" ? value : ""}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            mode="outlined"
+            disabled={isSubmitting}
+            multiline={field.key === "notes"}
+            numberOfLines={field.key === "notes" ? 3 : 1}
+            keyboardType={field.key === "email" ? "email-address" : "default"}
+          />
+        )}
+      />
+    );
+  };
+
   const onSubmit = async (data: ContactFormData) => {
     // Check if phone number is already in the system
     const existingContact = await CallerIdModule.getCallerInfo(
@@ -55,16 +222,24 @@ export default function NewContactScreen() {
     }
 
     const fullPhoneNumber =
-      getCountryByCode(data.phoneNumber.countryCode.trim())?.dialCode +
-      data.phoneNumber.number.trim();
+      data.phoneNumber.dialCode + data.phoneNumber.number.trim();
 
     const success = await addContact({
       name: data.name.trim(),
-      phoneNumber: fullPhoneNumber,
+      fullPhoneNumber: fullPhoneNumber,
+      phoneNumber: data.phoneNumber.number.trim(),
       countryCode: data.phoneNumber.countryCode.trim(),
       appointment: data.appointment?.trim() || "",
-      city: data.city?.trim() || "",
-      iosRow: "", // This is for iOS-specific handling
+      location: data.location?.trim() || "",
+      iosRow: "",
+      suffix: data.suffix?.trim() || "",
+      prefix: data.prefix?.trim() || "",
+      email: data.email?.trim() || "",
+      notes: data.notes?.trim() || "",
+      website: data.website?.trim() || "",
+      birthday: data.birthday || "",
+      labels: data.labels?.trim() || "",
+      nickname: data.nickname?.trim() || "",
     });
 
     if (success) {
@@ -102,7 +277,7 @@ export default function NewContactScreen() {
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
-                  left={<TextInput.Icon icon="account" />}
+                  left={<TextInput.Icon icon="account-outline" />}
                   label="Name *"
                   value={value}
                   onChangeText={onChange}
@@ -134,8 +309,8 @@ export default function NewContactScreen() {
             name="appointment"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                left={<TextInput.Icon icon="briefcase" />}
-                label="Appointment (optional)"
+                left={<TextInput.Icon icon="briefcase-outline" />}
+                label="Appointment"
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
@@ -146,11 +321,11 @@ export default function NewContactScreen() {
           />
           <Controller
             control={control}
-            name="city"
+            name="location"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                left={<TextInput.Icon icon="map-marker" />}
-                label="City (optional)"
+                left={<TextInput.Icon icon="map-marker-outline" />}
+                label="Location"
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
@@ -159,18 +334,86 @@ export default function NewContactScreen() {
               />
             )}
           />
-          <Button
-            mode="contained"
-            onPress={handleSubmit(onSubmit)}
-            style={styles.saveButton}
-            labelStyle={{ fontSize: 16 }}
-            disabled={!isValid || isSubmitting}
-            loading={isSubmitting}
-          >
-            Save Contact
-          </Button>
+          {additionalFields.map(renderAdditionalField)}
+
+          <View style={styles.buttonContainer}>
+            <Button
+              mode="contained-tonal"
+              onPress={openBottomSheet}
+              style={styles.addFieldButton}
+              labelStyle={{ fontSize: 16 }}
+              disabled={
+                isSubmitting || visibleFields.size >= additionalFields.length
+              }
+            >
+              Add fields
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleSubmit(onSubmit)}
+              style={styles.saveButton}
+              labelStyle={{ fontSize: 16 }}
+              disabled={!isValid || isSubmitting}
+              loading={isSubmitting}
+            >
+              Save Contact
+            </Button>
+          </View>
         </View>
         <Portal>
+          {/* Add Fields Bottom Sheet */}
+          <BottomSheet
+            ref={bottomSheetModalRef}
+            enableDynamicSizing={false}
+            snapPoints={["60%"]}
+            index={-1}
+            enablePanDownToClose={true}
+            backdropComponent={(props) => (
+              <BottomSheetBackdrop
+                {...props}
+                appearsOnIndex={0}
+                disappearsOnIndex={-1}
+              />
+            )}
+            backgroundStyle={[
+              { backgroundColor: theme.colors.elevation.level2 },
+              styles.bottomSheetBackground,
+            ]}
+            handleIndicatorStyle={{
+              backgroundColor: theme.colors.onSurfaceVariant,
+            }}
+          >
+            <BottomSheetView
+              style={[
+                styles.header,
+                {
+                  borderBottomColor: theme.colors.outline,
+                  backgroundColor: theme.colors.elevation.level2,
+                },
+              ]}
+            >
+              <Text
+                variant="headlineSmall"
+                style={[styles.title, { color: theme.colors.onSurface }]}
+              >
+                Choose fields to add
+              </Text>
+            </BottomSheetView>
+            <BottomSheetScrollView style={styles.bottomSheetContent}>
+              {additionalFields
+                .filter((field) => !visibleFields.has(field.key))
+                .map((field, index) => (
+                  <List.Item
+                    key={field.key}
+                    title={field.label}
+                    left={() => <List.Icon icon={field.icon} />}
+                    onPress={() => toggleField(field.key)}
+                    style={styles.list}
+                  />
+                ))}
+            </BottomSheetScrollView>
+          </BottomSheet>
+
           <Snackbar
             visible={visible}
             onDismiss={onDismissSnackBar}
@@ -198,12 +441,54 @@ const styles = StyleSheet.create({
   formContainer: {
     flex: 1,
     padding: 16,
-    paddingHorizontal: 16,
     gap: 16,
   },
+  list: {
+    paddingHorizontal: 16,
+  },
+  addFieldButton: {
+    borderRadius: 50,
+    paddingVertical: 5,
+  },
   saveButton: {
-    marginTop: 20,
     paddingVertical: 5,
     borderRadius: 50,
+  },
+  buttonContainer: {
+    marginTop: 20,
+    gap: 12,
+  },
+  bottomSheetContent: {
+    flex: 1,
+    paddingVertical: 16,
+  },
+  bottomSheetBackground: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  title: {
+    fontWeight: "600",
+  },
+  datePickerContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+  },
+  datePickerButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingTop: 20,
+    gap: 16,
+  },
+  dateButton: {
+    flex: 1,
+    borderRadius: 25,
   },
 });
