@@ -2,15 +2,33 @@ import { MaterialSwitchListItem } from "@/components/material-switch-list-item";
 import CallerIdModule from "@/modules/caller-id";
 import useContactStore from "@/store/contactStore";
 import useThemeStore from "@/store/themeStore";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
-import { Alert, StyleSheet, View } from "react-native";
-import { Button, Card, Text, useTheme } from "react-native-paper";
+import { StyleSheet, View } from "react-native";
+import {
+  Button,
+  Card,
+  Dialog,
+  List,
+  Portal,
+  SegmentedButtons,
+  Text,
+  useTheme,
+} from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
+  const themeMode = useThemeStore.use.themeMode();
   const setThemeMode = useThemeStore.use.setThemeMode();
+  const [open, setOpen] = React.useState(false);
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [dialogState, setDialogState] = React.useState({
+    title: "",
+    content: "",
+  });
+
   const [popupState, setPopupState] = React.useState(
     CallerIdModule.getShowPopup()
   );
@@ -26,10 +44,21 @@ export default function SettingsScreen() {
   const clearExportError = useContactStore.use.clearExportError();
   const contacts = useContactStore.use.contacts();
 
+  const showDialog = (title: string, content: string) => {
+    setOpenDialog(true);
+    setDialogState({ title, content });
+  };
+
+  const hideDialog = () => {
+    setOpenDialog(false);
+    setDialogState({ title: "", content: "" });
+  };
+
   const handleShowPopupToggle = (value: boolean) => {
     const success = CallerIdModule.setShowPopup(value);
     if (!success) {
-      Alert.alert("Error", "Failed to update popup setting");
+      showDialog("Error", "Failed to update popup setting. Please try again");
+      // Alert.alert("Error", "Failed to update popup setting");
     }
     setPopupState(value);
   };
@@ -38,35 +67,46 @@ export default function SettingsScreen() {
     clearImportError();
     const success = await importContacts();
     if (success) {
-      Alert.alert(
+      showDialog(
         "Import Successful",
-        `${success} Contacts have been imported successfully from the VCF file.`
+        `${success} Contacts have been imported successfully from the VCF file`
       );
+      // Alert.alert(
+      //   "Import Successful",
+      //   `${success} Contacts have been imported successfully from the VCF file.`
+      // );
     } else if (importError) {
-      Alert.alert("Import Failed", importError);
+      // Alert.alert("Import Failed", importError);
+      showDialog("Import Failed", importError);
     }
   };
 
   const handleExportContacts = async () => {
     clearExportError();
     if (contacts.length === 0) {
-      Alert.alert("No Contacts", "You don't have any contacts to export.");
+      // Alert.alert("No Contacts", "You don't have any contacts to export.");
+      showDialog("No Contacts", "You don't have any contacts to export.");
       return;
     }
 
     const success = await exportContacts();
     if (success) {
-      Alert.alert(
+      // Alert.alert(
+      //   "Export Successful",
+      //   `${contacts.length} contacts have been exported to a VCF file.`
+      // );
+      showDialog(
         "Export Successful",
         `${contacts.length} contacts have been exported to a VCF file.`
       );
     } else if (exportError) {
-      Alert.alert("Export Failed", exportError);
+      // Alert.alert("Export Failed", exportError);
+      showDialog("Export Failed", exportError);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <MaterialSwitchListItem
         title={"Show Caller ID Popup"}
         titleStyle={{ fontSize: 18 }}
@@ -83,7 +123,7 @@ export default function SettingsScreen() {
         selected={popupState}
         onPress={() => handleShowPopupToggle(!popupState)}
       />
-      <MaterialSwitchListItem
+      {/* <MaterialSwitchListItem
         fluid={false}
         titleStyle={{ fontSize: 18 }}
         switchOnIcon={() => (
@@ -104,7 +144,54 @@ export default function SettingsScreen() {
           },
         ]}
         title={"Dark mode"}
-      />
+      /> */}
+      <View
+        style={[
+          styles.listItem,
+          {
+            backgroundColor: theme.colors.elevation.level1,
+            paddingVertical: 5,
+            borderTopLeftRadius: 5,
+            borderTopRightRadius: 5,
+          },
+        ]}
+      >
+        <List.Accordion
+          title="Theme"
+          titleStyle={{ fontSize: 18 }}
+          expanded={open}
+          onPress={() => setOpen((state) => !state)}
+          background={{ color: "transparent" }}
+          style={{
+            backgroundColor: theme.colors.elevation.level1,
+          }}
+        >
+          <View
+            style={[
+              styles.themeContainer,
+              { backgroundColor: theme.colors.elevation.level1 },
+            ]}
+          >
+            <SegmentedButtons
+              value={themeMode}
+              onValueChange={setThemeMode}
+              buttons={[
+                {
+                  value: "light",
+                  label: "Light",
+                  icon: "white-balance-sunny",
+                },
+                {
+                  value: "dark",
+                  label: "Dark",
+                  icon: "moon-waning-crescent",
+                },
+                { value: "system", label: "System", icon: "laptop" },
+              ]}
+            />
+          </View>
+        </List.Accordion>
+      </View>
 
       {/* VCF Import/Export Section */}
       <Card
@@ -154,6 +241,20 @@ export default function SettingsScreen() {
           )}
         </Card.Content>
       </Card>
+
+      {/* Alert Dialog */}
+      <Portal>
+        <Dialog visible={openDialog} onDismiss={hideDialog}>
+          <Dialog.Title>{dialogState.title}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">{dialogState.content}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={hideDialog}>Cancel</Button>
+            <Button onPress={hideDialog}>Ok</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }
@@ -209,5 +310,11 @@ const styles = StyleSheet.create({
   contactCount: {
     textAlign: "center",
     opacity: 0.7,
+  },
+  themeContainer: {
+    padding: 20,
+    borderRadius: 16,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
 });

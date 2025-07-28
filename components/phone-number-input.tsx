@@ -3,8 +3,8 @@ import { Country, PhoneNumberData, PhoneNumberInputProps } from "@/lib/types";
 import React, { useState } from "react";
 import { Controller, FieldPath, FieldValues } from "react-hook-form";
 
-import { useCountrySelector } from "@/components/country-selector-provider";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { SheetManager } from "react-native-actions-sheet";
 import { Text, TextInput, useTheme } from "react-native-paper";
 
 const PhoneNumberInput = <
@@ -17,7 +17,6 @@ const PhoneNumberInput = <
   ...props
 }: PhoneNumberInputProps<TFieldValues, TName>) => {
   const theme = useTheme();
-  const { openCountrySelector } = useCountrySelector();
 
   // Selecting default country based on control's default values
   const defaultCountry =
@@ -38,22 +37,6 @@ const PhoneNumberInput = <
       number: phoneNumber,
       countryCode: selectedCountry.code,
       dialCode: selectedCountry.dialCode,
-    };
-    onChange(phoneData);
-  };
-
-  const handleCountrySelect = (
-    country: Country,
-    onChange: (...event: any[]) => void,
-    currentValue: any
-  ) => {
-    setSelectedCountry(country);
-
-    // Update the form value with new country data
-    const phoneData: PhoneNumberData = {
-      number: currentValue?.number || "",
-      countryCode: country.code,
-      dialCode: country.dialCode,
     };
     onChange(phoneData);
   };
@@ -89,9 +72,14 @@ const PhoneNumberInput = <
                 },
               ]}
               onPress={() =>
-                openCountrySelector(selectedCountry, (country) =>
-                  handleCountrySelect(country, onChange, value)
-                )
+                SheetManager.show("country-selector-sheet", {
+                  payload: {
+                    selectedCountry,
+                    setSelectedCountry,
+                    onChange,
+                    currentValue: value,
+                  },
+                })
               }
               activeOpacity={0.7}
               accessibilityLabel={`Selected country: ${selectedCountry.name}, dial code +${selectedCountry.dialCode}`}
@@ -162,6 +150,32 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 8,
     opacity: 0.6,
+  },
+  sheetContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  bottomSheetBackground: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  listContainer: {
+    paddingBottom: 20,
+    flexGrow: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+  },
+  listFlagContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
   },
 });
 

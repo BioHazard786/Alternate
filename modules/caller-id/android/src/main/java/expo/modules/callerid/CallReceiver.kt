@@ -25,6 +25,8 @@ data class CallerInfo(
     val name: String = "",
     val appointment: String = "",
     val location: String = "",
+    val prefix: String = "",
+    val suffix: String = ""
 )
 
 interface GetCallerHandler {
@@ -64,6 +66,8 @@ class CallReceiver : BroadcastReceiver() {
                         phoneNumber = callServiceNumber
                     }
 
+                    Log.d("CallReceiver", "Incoming call detected: $phoneNumber")
+
                     if (phoneNumber == null) {
                         return
                     }
@@ -76,7 +80,9 @@ class CallReceiver : BroadcastReceiver() {
                                     context,
                                     callerInfo.name,
                                     callerInfo.appointment,
-                                    callerInfo.location
+                                    callerInfo.location,
+                                    callerInfo.prefix,
+                                    callerInfo.suffix
                                 )
                             }
                         }
@@ -109,7 +115,9 @@ class CallReceiver : BroadcastReceiver() {
         context: Context,
         callerName: String,
         callerAppointment: String,
-        callerLocation: String
+        callerLocation: String,
+        callerNamePrefix: String,
+        callerNameSuffix: String
     ) {
         val appName = getApplicationName(context)
 
@@ -150,7 +158,15 @@ class CallReceiver : BroadcastReceiver() {
             )
             overlay?.get()?.let { overlayView ->
                 // Fill layout with data first
-                fillLayout(context, appName, callerName, callerAppointment, callerLocation)
+                fillLayout(
+                    context,
+                    appName,
+                    callerName,
+                    callerAppointment,
+                    callerLocation,
+                    callerNamePrefix,
+                    callerNameSuffix
+                )
 
                 // Add view to window manager
                 windowManager.addView(overlayView, params)
@@ -163,7 +179,9 @@ class CallReceiver : BroadcastReceiver() {
         appName: String,
         callerName: String,
         callerAppointment: String,
-        callerLocation: String
+        callerLocation: String,
+        callerNamePrefix: String,
+        callerNameSuffix: String
     ) {
         overlay?.get()?.let { overlayView ->
             // Set close button listener
@@ -189,7 +207,18 @@ class CallReceiver : BroadcastReceiver() {
             // Set caller name
             try {
                 val textViewCallerName = overlayView.findViewById<TextView>(R.id.callerName)
-                textViewCallerName?.text = callerName
+                val formattedName = buildString {
+                    if (callerNamePrefix.isNotEmpty()) {
+                        append(callerNamePrefix)
+                        append(" ")
+                    }
+                    append(callerName)
+                    if (callerNameSuffix.isNotEmpty()) {
+                        append(", ")
+                        append(callerNameSuffix)
+                    }
+                }
+                textViewCallerName?.text = formattedName
             } catch (e: Exception) {
                 // Handle exception silently
             }
@@ -268,11 +297,13 @@ class CallReceiver : BroadcastReceiver() {
             val callerEntity = callerRepository.getCallerInfoSync(correctedPhoneNumber)
 
             if (callerEntity != null) {
-                Log.d("CallReceiver", "Caller Number found: ${callerEntity.fullPhoneNumber}")
+                Log.d("CallReceiver", "Caller Number found: $phoneNumberInString")
                 val callerInfo = CallerInfo(
                     name = callerEntity.name,
                     appointment = callerEntity.appointment,
-                    location = callerEntity.location
+                    location = callerEntity.location,
+                    prefix = callerEntity.prefix,
+                    suffix = callerEntity.suffix
                 )
                 callback.onGetCaller(callerInfo)
             } else {

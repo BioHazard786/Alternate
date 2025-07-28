@@ -7,14 +7,16 @@ import {
   getFormattedName,
   getFormattedPhoneNumber,
 } from "@/lib/utils";
+import { shareContact } from "@/lib/vcf-utils";
 import useContactStore from "@/store/contactStore";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Linking, ScrollView, StyleSheet, View } from "react-native";
+import { Linking, ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
   Card,
+  Dialog,
   IconButton,
   List,
   Portal,
@@ -22,14 +24,18 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PreviewContactScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
+
   const { contact: contactParam, index } = useLocalSearchParams();
   const deleteContact = useContactStore.use.deleteContact();
   const deleteError = useContactStore.use.deleteContactError();
   const clearDeleteError = useContactStore.use.clearDeleteError;
   const [visible, setVisible] = useState(false);
+  const [open, setOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Parse the contact from JSON string
@@ -70,38 +76,34 @@ export default function PreviewContactScreen() {
 
   const onDismissSnackBar = () => setVisible(false);
 
-  const handleDelete = () => {
-    Alert.alert(
-      "Delete Contact",
-      `Are you sure you want to delete ${contact?.name}?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setIsDeleting(true);
-            const success = await deleteContact(contact.fullPhoneNumber!);
-            setIsDeleting(false);
+  const showDialog = () => setOpen(true);
 
-            if (success) {
-              router.back();
-            } else {
-              setVisible(true);
-            }
-          },
-        },
-      ]
-    );
+  const hideDialog = () => setOpen(false);
+
+  const handleDelete = async () => {
+    hideDialog();
+    setIsDeleting(true);
+    const success = await deleteContact(contact.fullPhoneNumber!);
+    setIsDeleting(false);
+
+    if (success) {
+      router.back();
+    } else {
+      setVisible(true);
+    }
+  };
+
+  const handleShare = async () => {
+    await shareContact([contact]);
   };
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+      style={[styles.container, { paddingBottom: insets.bottom }]}
+      contentContainerStyle={[
+        styles.scrollContent,
+        { paddingBottom: insets.bottom },
+      ]}
     >
       <Stack.Screen
         name="preview-contact"
@@ -111,14 +113,16 @@ export default function PreviewContactScreen() {
             <CustomNavigationBar
               {...props}
               mode="small"
-              action={{
-                icon: "pencil-outline",
-                onPress: () =>
-                  router.push({
-                    pathname: "/edit-contact",
-                    params: { contact: contactParam, index: index },
-                  }),
-              }}
+              actions={[
+                {
+                  icon: "pencil-outline",
+                  onPress: () =>
+                    router.push({
+                      pathname: "/edit-contact",
+                      params: { contact: contactParam, index: index },
+                    }),
+                },
+              ]}
             />
           ),
         }}
@@ -339,6 +343,7 @@ export default function PreviewContactScreen() {
           <List.AccordionGroup>
             <List.Accordion
               title="WhatsApp"
+              background={{ color: "transparent" }}
               id="1"
               left={(props) => (
                 <FontAwesome6 name="whatsapp" size={26} {...props} />
@@ -352,32 +357,20 @@ export default function PreviewContactScreen() {
                   <List.Icon {...props} icon="message-outline" />
                 )}
                 onPress={() =>
-                  Linking.openURL(
-                    `whatsapp://send?phone=${contact.fullPhoneNumber}`
-                  )
+                  Linking.openURL(`https://wa.me/${contact.fullPhoneNumber}`)
                 }
               />
               <List.Item
                 title={`Voice call  +${getFormattedPhoneNumber(contact)}`}
                 left={(props) => <List.Icon {...props} icon="phone-outline" />}
                 onPress={() =>
-                  Linking.openURL(
-                    `whatsapp://call?phone=${contact.fullPhoneNumber}`
-                  )
-                }
-              />
-              <List.Item
-                title={`Video call  +${getFormattedPhoneNumber(contact)}`}
-                left={(props) => <List.Icon {...props} icon="video-outline" />}
-                onPress={() =>
-                  Linking.openURL(
-                    `whatsapp://videocall?phone=${contact.fullPhoneNumber}`
-                  )
+                  Linking.openURL(`https://wa.me/${contact.fullPhoneNumber}`)
                 }
               />
             </List.Accordion>
             <List.Accordion
               title="Telegram"
+              background={{ color: "transparent" }}
               id="2"
               left={(props) => (
                 <FontAwesome6 name="telegram" size={26} {...props} />
@@ -391,9 +384,7 @@ export default function PreviewContactScreen() {
                   <List.Icon {...props} icon="message-outline" />
                 )}
                 onPress={() =>
-                  Linking.openURL(
-                    `tg://resolve?phone=${contact.fullPhoneNumber}`
-                  )
+                  Linking.openURL(`https://t.me/+${contact.fullPhoneNumber}`)
                 }
               />
               <List.Item
@@ -401,16 +392,7 @@ export default function PreviewContactScreen() {
                 left={(props) => <List.Icon {...props} icon="phone-outline" />}
                 onPress={() =>
                   Linking.openURL(
-                    `tg://resolve?phone=${contact.fullPhoneNumber}&profile`
-                  )
-                }
-              />
-              <List.Item
-                title={`Video call  +${getFormattedPhoneNumber(contact)}`}
-                left={(props) => <List.Icon {...props} icon="video-outline" />}
-                onPress={() =>
-                  Linking.openURL(
-                    `tg://resolve?phone=${contact.fullPhoneNumber}&profile`
+                    `https://t.me/+${contact.fullPhoneNumber}&profile`
                   )
                 }
               />
@@ -492,18 +474,30 @@ export default function PreviewContactScreen() {
         </Card>
       )}
 
-      <Button
-        mode="contained"
-        onPress={handleDelete}
-        loading={isDeleting}
-        disabled={isDeleting}
-        style={styles.deleteButton}
-        buttonColor={theme.colors.error}
-        textColor={theme.colors.onError}
-        labelStyle={{ fontSize: 16 }}
-      >
-        Delete Contact
-      </Button>
+      <View style={styles.buttonContainer}>
+        <Button
+          mode="contained-tonal"
+          onPress={handleShare}
+          loading={isDeleting}
+          disabled={isDeleting}
+          style={styles.button}
+          labelStyle={{ fontSize: 16 }}
+        >
+          Share Contact
+        </Button>
+        <Button
+          mode="contained"
+          onPress={showDialog}
+          loading={isDeleting}
+          disabled={isDeleting}
+          style={styles.button}
+          buttonColor={theme.colors.error}
+          textColor={theme.colors.onError}
+          labelStyle={{ fontSize: 16 }}
+        >
+          Delete Contact
+        </Button>
+      </View>
 
       <Portal>
         <Snackbar
@@ -519,6 +513,20 @@ export default function PreviewContactScreen() {
         >
           {deleteError || "An error occurred"}
         </Snackbar>
+        <Dialog visible={open} onDismiss={hideDialog}>
+          <Dialog.Title>Delete contact?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              This contact will be permanently deleted from your device
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={hideDialog}>Cancel</Button>
+            <Button onPress={handleDelete} textColor={theme.colors.error}>
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
       </Portal>
     </ScrollView>
   );
@@ -530,7 +538,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 32,
   },
   headerContainer: {
     position: "relative",
@@ -583,10 +590,13 @@ const styles = StyleSheet.create({
   infoSubtitle: {
     fontSize: 14,
   },
-  deleteButton: {
+  button: {
     paddingVertical: 5,
     borderRadius: 50,
     marginHorizontal: 16,
-    marginTop: 16,
+  },
+  buttonContainer: {
+    marginTop: 20,
+    gap: 12,
   },
 });

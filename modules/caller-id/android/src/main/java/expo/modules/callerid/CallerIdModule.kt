@@ -212,6 +212,22 @@ class CallerIdModule : Module() {
             }
         }
 
+        AsyncFunction("removeMultipleCallerInfo") { fullPhoneNumbers: List<String>, promise: Promise ->
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val result = callerRepository.removeMultipleCallerInfo(fullPhoneNumbers)
+                    promise.resolve(result)
+                } catch (e: Exception) {
+                    Log.e(
+                        "CallerIdModule",
+                        "Error removing multiple caller info: ${e.message}",
+                        e
+                    )
+                    promise.resolve(false)
+                }
+            }
+        }
+
         // Get all caller info from Room database
         AsyncFunction("getAllCallerInfo") { promise: Promise ->
             CoroutineScope(Dispatchers.IO).launch {

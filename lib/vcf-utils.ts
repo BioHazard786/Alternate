@@ -1,4 +1,4 @@
-import { CallerInfo, Contact } from "@/lib/types";
+import { Contact } from "@/lib/types";
 import { getFormattedName } from "@/lib/utils";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
@@ -27,7 +27,7 @@ export function contactToVCF(contact: Contact): string {
   const vcfLines = [
     "BEGIN:VCARD",
     "VERSION:2.1",
-    `N:${name};;${escapeVCFValue(contact.prefix || "")};${escapeVCFValue(
+    `N:;${name};;${escapeVCFValue(contact.prefix || "")};${escapeVCFValue(
       contact.suffix || ""
     )}`,
     `FN:${escapeVCFValue(getFormattedName(contact))}`,
@@ -83,7 +83,7 @@ export function contactToVCF(contact: Contact): string {
 /**
  * Converts multiple contacts to a single VCF file content
  */
-export function contactsToVCF(contacts: CallerInfo[]): string {
+export function contactsToVCF(contacts: Contact[]): string {
   return contacts.map(contactToVCF).join("\r\n\r\n"); // Use CRLF for better compatibility
 }
 
@@ -121,8 +121,8 @@ function parsePhoneNumber(phoneStr: string): {
 /**
  * Parses VCF content and extracts contact information (Google Contacts compatible)
  */
-export function parseVCF(vcfContent: string): CallerInfo[] {
-  const contacts: CallerInfo[] = [];
+export function parseVCF(vcfContent: string): Contact[] {
+  const contacts: Contact[] = [];
 
   // Normalize and unfold content in one pass
   const processedContent = vcfContent
@@ -135,7 +135,7 @@ export function parseVCF(vcfContent: string): CallerInfo[] {
     if (!vcard.trim()) continue;
 
     const lines = vcard.split("\n").filter((line) => line.trim());
-    const contact: Partial<CallerInfo> = {
+    const contact: Partial<Contact> = {
       name: "",
       fullPhoneNumber: "",
       phoneNumber: "",
@@ -172,7 +172,9 @@ export function parseVCF(vcfContent: string): CallerInfo[] {
           contact.prefix = prefix;
           contact.suffix = suffix;
           if (firstName || lastName || middleName) {
-            contact.name = `${firstName} ${middleName} ${lastName}`.trim();
+            contact.name = [firstName, middleName, lastName]
+              .filter(Boolean)
+              .join(" ");
           }
           break;
 
@@ -218,7 +220,7 @@ export function parseVCF(vcfContent: string): CallerInfo[] {
     }
 
     if (contact.name && contact.fullPhoneNumber) {
-      contacts.push(contact as CallerInfo);
+      contacts.push(contact as Contact);
     }
   }
 
@@ -256,7 +258,7 @@ async function saveFile(uri: string, filename: string, mimetype: string) {
  * Exports contacts to a VCF file
  */
 export async function exportContactsToVCF(
-  contacts: CallerInfo[]
+  contacts: Contact[]
 ): Promise<boolean> {
   try {
     const vcfContent = contactsToVCF(contacts);
@@ -281,10 +283,31 @@ export async function exportContactsToVCF(
   }
 }
 
+export async function shareContact(contact: Contact[]): Promise<void> {
+  try {
+    const vcfContent = contactsToVCF(contact);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileName = `contacts_${timestamp}.vcf`;
+    const fileUri = FileSystem.cacheDirectory + fileName;
+
+    await FileSystem.writeAsStringAsync(fileUri, vcfContent, {
+      encoding: FileSystem.EncodingType.UTF8,
+    });
+
+    await shareAsync(fileUri);
+
+    await FileSystem.deleteAsync(fileUri, {
+      idempotent: true,
+    });
+  } catch (error) {
+    console.error("Error sharing contact:", error);
+  }
+}
+
 /**
  * Imports contacts from a VCF file
  */
-export async function importContactsFromVCF(): Promise<CallerInfo[] | null> {
+export async function importContactsFromVCF(): Promise<Contact[] | null> {
   try {
     const result = await DocumentPicker.getDocumentAsync({
       type: "text/*",

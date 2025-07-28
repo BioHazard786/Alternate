@@ -1,0 +1,6 @@
+v2.1.1 - Feature & Improvement Release
+- Introduced search functionality for contacts and country selector
+- Added multi-delete and selection-based contact sharing features
+- Improved overall app performance and responsiveness
+- Fixed various bugs for enhanced stability
+- Refined and modernized user interface for a better experience

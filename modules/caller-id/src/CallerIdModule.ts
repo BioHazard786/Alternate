@@ -1,16 +1,17 @@
 import { NativeModule, requireNativeModule } from "expo";
 
-import { CallerInfo } from "@/lib/types";
+import { Contact } from "@/lib/types";
 import { CallerIdModuleEvents } from "./CallerId.types";
 
 declare class CallerIdModule extends NativeModule<CallerIdModuleEvents> {
   hasOverlayPermission(): Promise<boolean>;
   requestOverlayPermission(): Promise<boolean>;
-  storeCallerInfo(callerData: CallerInfo): Promise<boolean>;
-  storeMultipleCallerInfo(callerData: CallerInfo[]): Promise<boolean>;
-  getCallerInfo(phoneNumber: string): Promise<CallerInfo | null>;
+  storeCallerInfo(callerData: Contact): Promise<boolean>;
+  storeMultipleCallerInfo(callerData: Contact[]): Promise<boolean>;
+  getCallerInfo(phoneNumber: string): Promise<Contact | null>;
   removeCallerInfo(fullPhoneNumber: string): Promise<boolean>;
-  getAllCallerInfo(): Promise<CallerInfo[]>;
+  removeMultipleCallerInfo(fullPhoneNumbers: string[]): Promise<boolean>;
+  getAllCallerInfo(): Promise<Contact[]>;
   getAllStoredNumbers(): Promise<string[]>;
   clearAllCallerInfo(): Promise<boolean>;
 

@@ -48,6 +48,15 @@ class CallerRepository(context: Context) {
         }
     }
 
+    suspend fun removeMultipleCallerInfo(fullPhoneNumbers: List<String>): Boolean {
+        return try {
+            callerDao.deleteMultipleCallerInfo(fullPhoneNumbers)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     suspend fun getAllStoredNumbers(): List<String> {
         return try {
             callerDao.getAllPhoneNumbers()

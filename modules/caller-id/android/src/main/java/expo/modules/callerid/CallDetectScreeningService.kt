@@ -3,6 +3,7 @@ package expo.modules.callerid
 import android.os.Build
 import android.telecom.Call
 import android.telecom.CallScreeningService
+import android.util.Log
 
 class CallDetectScreeningService : CallScreeningService() {
     override fun onScreenCall(details: Call.Details) {
@@ -15,6 +16,7 @@ class CallDetectScreeningService : CallScreeningService() {
                 response.setSkipCallLog(false)
                 response.setSkipNotification(false)
 
+                Log.d("CallDetectScreeningService", "Incoming call detected: ${details.handle.schemeSpecificPart}")
                 CallReceiver.callServiceNumber = details.handle.schemeSpecificPart
                 respondToCall(details, response.build())
             }

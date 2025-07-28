@@ -1,37 +1,48 @@
 import { getHeaderTitle } from "@react-navigation/elements";
 import { type NativeStackHeaderProps } from "@react-navigation/native-stack";
-import React from "react";
+import React, { memo, useCallback } from "react";
+import { Animated, StyleProp, ViewStyle } from "react-native";
 import { Appbar } from "react-native-paper";
 
-export default function CustomNavigationBar({
+type CustomNavigationBarProps = NativeStackHeaderProps & {
+  actions?: { icon: string; onPress: () => void; disabled?: boolean }[];
+  mode?: "small" | "medium" | "large" | "center-aligned";
+  popToTop?: boolean;
+  style?: Animated.WithAnimatedValue<StyleProp<ViewStyle>>;
+  elevated?: boolean;
+};
+
+const CustomNavigationBar: React.FC<CustomNavigationBarProps> = ({
   navigation,
   route,
   options,
   back,
-  action,
+  actions = [],
   mode = "large",
   popToTop = false,
-}: NativeStackHeaderProps & {
-  action?: { icon: string; onPress: () => void };
-  mode?: "small" | "medium" | "large" | "center-aligned";
-  popToTop?: boolean;
-}) {
+  style,
+  elevated = false,
+}) => {
   const title = getHeaderTitle(options, route.name);
 
-  const handleGoBack = () => {
-    if (popToTop) {
-      navigation.popToTop();
-    } else {
-      navigation.goBack();
-    }
-  };
+  const handleGoBack = useCallback(() => {
+    popToTop ? navigation.popToTop() : navigation.goBack();
+  }, [navigation, popToTop]);
+
   return (
-    <Appbar.Header mode={mode}>
-      {back ? <Appbar.BackAction onPress={handleGoBack} /> : null}
+    <Appbar.Header mode={mode} style={style} elevated={elevated}>
+      {back && <Appbar.BackAction onPress={handleGoBack} />}
       <Appbar.Content title={title} />
-      {action ? (
-        <Appbar.Action icon={action.icon} onPress={action.onPress} />
-      ) : null}
+      {actions.map((action, idx) => (
+        <Appbar.Action
+          key={idx}
+          icon={action.icon}
+          onPress={action.onPress}
+          disabled={action.disabled}
+        />
+      ))}
     </Appbar.Header>
   );
-}
+};
+
+export default memo(CustomNavigationBar);

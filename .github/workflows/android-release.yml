@@ -75,17 +75,44 @@ jobs:
         draft: false
         prerelease: false
         body: |
-          ## What's Changed
-          - Android release build for version ${{ steps.tag.outputs.tag }}
-          
-          ## APK Downloads
-          This release includes split APKs for different architectures:
-          - **arm64-v8a**: For modern 64-bit ARM devices (recommended for most users)
-          - **armeabi-v7a**: For older 32-bit ARM devices
-          - **x86_64**: For 64-bit x86 devices (emulators, some tablets)
-          - **x86**: For 32-bit x86 devices (older emulators)
-          
-          Download the appropriate APK for your device architecture.
+          # 🚀 Alternate ${{ steps.tag.outputs.tag }} – Feature & Improvement Release
+
+          ## ✨ What's New in ${{ steps.tag.outputs.tag }}
+
+          - **Search Functionality:**  
+            Added search for contacts and country selector for faster access.
+
+          - **Multi-Delete & Contact Sharing:**  
+            Added multi-delete and selection-based contact sharing features for easier contact management.
+
+          - **Performance Improvements:**  
+            Enhanced app speed and responsiveness.
+
+          - **Bug Fixes:**  
+            Fixed various issues for improved stability.
+
+          - **UI Enhancements:**  
+            Refined and modernized the user interface for a better experience.
+
+          ## 📦 Download Options
+
+          Choose the APK that matches your device architecture:
+
+          - **ARM64 (64-bit)** – Recommended for most modern devices  
+          - **ARM (32-bit)** – For older Android devices  
+          - **x86 (64-bit)** – For Intel-based Android devices/emulators  
+          - **x86 (32-bit)** – For older Intel-based devices  
+
+          ## 🔧 Installation
+
+          1. Download the appropriate APK for your device
+          2. Enable "Install from unknown sources" in your Android settings
+          3. Install the APK file
+
+          ## 📋 System Requirements
+
+          - Android 7.0 (API level 24) or higher
+          - Permissions: Contacts, Phone
 
     - name: Upload arm64-v8a APK
       uses: actions/upload-release-asset@v1

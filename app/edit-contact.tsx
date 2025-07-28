@@ -1,15 +1,11 @@
 import Material3Avatar from "@/components/material3-avatar";
 import PhoneNumberInput from "@/components/phone-number-input";
+import { additionalFields } from "@/constants/AdditionalFields";
 import { getAvatarColor } from "@/lib/avatar-utils";
 import { getCountryByCode } from "@/lib/countries";
 import { Contact, ContactFormData } from "@/lib/types";
 import { getFormattedDate, getVisibleFields, trimDialCode } from "@/lib/utils";
 import useContactStore from "@/store/contactStore";
-import BottomSheet, {
-  BottomSheetBackdrop,
-  BottomSheetScrollView,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -22,20 +18,22 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { SheetManager } from "react-native-actions-sheet";
 import DatePicker from "react-native-date-picker";
 import {
   Button,
   HelperText,
-  List,
   Portal,
   Snackbar,
   Text,
   TextInput,
   useTheme,
 } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function EditContactScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { contact: contactParam, index } = useLocalSearchParams();
 
   // Parse the contact from JSON string
@@ -57,27 +55,6 @@ export default function EditContactScreen() {
   const [selectedDate, setSelectedDate] = useState(() =>
     contact?.birthday ? new Date(contact.birthday) : new Date()
   );
-
-  // Bottom sheet ref and snap points
-  const bottomSheetModalRef = React.useRef<BottomSheet>(null);
-
-  const additionalFields = [
-    { key: "prefix", label: "Prefix", icon: "account-arrow-left-outline" },
-    { key: "suffix", label: "Suffix", icon: "account-arrow-right-outline" },
-    { key: "email", label: "Email", icon: "email-outline" },
-    { key: "notes", label: "Notes", icon: "note-text-outline" },
-    { key: "website", label: "Website", icon: "link" },
-    { key: "birthday", label: "Birthday", icon: "cake-variant-outline" },
-    { key: "nickname", label: "Nickname", icon: "account-heart-outline" },
-  ];
-
-  const openBottomSheet = React.useCallback(() => {
-    bottomSheetModalRef.current?.expand();
-  }, []);
-
-  const closeBottomSheet = React.useCallback(() => {
-    bottomSheetModalRef.current?.close();
-  }, []);
 
   const [avatarBackgroundColor, avatarTextColor] = getAvatarColor(
     letter,
@@ -116,17 +93,6 @@ export default function EditContactScreen() {
   });
 
   const onDismissSnackBar = () => setVisible(false);
-
-  const toggleField = (fieldKey: string) => {
-    const newVisibleFields = new Set(visibleFields);
-    if (newVisibleFields.has(fieldKey)) {
-      newVisibleFields.delete(fieldKey);
-    } else {
-      newVisibleFields.add(fieldKey);
-    }
-    setVisibleFields(newVisibleFields);
-    closeBottomSheet();
-  };
 
   const removeFieldAndReset = (fieldKey: string) => {
     const newVisibleFields = new Set(visibleFields);
@@ -252,7 +218,7 @@ export default function EditContactScreen() {
     });
 
     if (success) {
-      router.replace("/");
+      router.dismissAll();
     } else {
       setVisible(true);
     }
@@ -272,9 +238,14 @@ export default function EditContactScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      style={[styles.container, { paddingBottom: insets.bottom }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom },
+        ]}
+      >
         <View style={styles.formContainer}>
           <Material3Avatar
             letter={letter}
@@ -369,7 +340,11 @@ export default function EditContactScreen() {
           <View style={styles.buttonContainer}>
             <Button
               mode="contained-tonal"
-              onPress={openBottomSheet}
+              onPress={() =>
+                SheetManager.show("additional-field-sheet", {
+                  payload: { visibleFields, setVisibleFields },
+                })
+              }
               style={styles.addFieldButton}
               labelStyle={{ fontSize: 16 }}
               disabled={
@@ -393,59 +368,6 @@ export default function EditContactScreen() {
       </ScrollView>
 
       <Portal>
-        {/* Add Fields Bottom Sheet */}
-        <BottomSheet
-          ref={bottomSheetModalRef}
-          enableDynamicSizing={false}
-          snapPoints={["60%"]}
-          index={-1}
-          enablePanDownToClose={true}
-          backdropComponent={(props) => (
-            <BottomSheetBackdrop
-              {...props}
-              appearsOnIndex={0}
-              disappearsOnIndex={-1}
-            />
-          )}
-          backgroundStyle={[
-            { backgroundColor: theme.colors.elevation.level2 },
-            styles.bottomSheetBackground,
-          ]}
-          handleIndicatorStyle={{
-            backgroundColor: theme.colors.onSurfaceVariant,
-          }}
-        >
-          <BottomSheetView
-            style={[
-              styles.header,
-              {
-                borderBottomColor: theme.colors.outline,
-                backgroundColor: theme.colors.elevation.level2,
-              },
-            ]}
-          >
-            <Text
-              variant="headlineSmall"
-              style={[styles.title, { color: theme.colors.onSurface }]}
-            >
-              Choose fields to add
-            </Text>
-          </BottomSheetView>
-          <BottomSheetScrollView style={styles.bottomSheetContent}>
-            {additionalFields
-              .filter((field) => !visibleFields.has(field.key))
-              .map((field, index) => (
-                <List.Item
-                  key={field.key}
-                  title={field.label}
-                  left={() => <List.Icon icon={field.icon} />}
-                  onPress={() => toggleField(field.key)}
-                  style={styles.list}
-                />
-              ))}
-          </BottomSheetScrollView>
-        </BottomSheet>
-
         <Snackbar
           visible={visible}
           onDismiss={onDismissSnackBar}
@@ -459,13 +381,6 @@ export default function EditContactScreen() {
         >
           {updateError || "An error occurred"}
         </Snackbar>
-        {/* <Dialog visible={visible} onDismiss={hideDialog}>
-          <Dialog.Icon icon="alert" />
-          <Dialog.Title >This is a title</Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodyMedium">This is simple dialog</Text>
-          </Dialog.Content>
-        </Dialog> */}
       </Portal>
     </KeyboardAvoidingView>
   );
@@ -481,7 +396,6 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    padding: 16,
     paddingHorizontal: 16,
     gap: 16,
   },

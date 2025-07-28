@@ -1,24 +1,6 @@
 import { Control, FieldPath, FieldValues } from "react-hook-form";
 import { TextInputProps } from "react-native-paper";
 
-export type CallerInfo = {
-  fullPhoneNumber: string;
-  phoneNumber: string;
-  countryCode: string;
-  name: string;
-  appointment: string;
-  location: string;
-  iosRow: string;
-  suffix: string;
-  prefix: string;
-  email: string;
-  notes: string;
-  website: string;
-  birthday: string;
-  labels: string;
-  nickname: string;
-};
-
 export type Contact = {
   fullPhoneNumber: string;
   phoneNumber: string;
@@ -51,7 +33,6 @@ export type ContactFormData = {
   labels?: string;
   nickname?: string;
 };
-
 export type ListItem =
   | { type: "header"; letter: string }
   | {

@@ -2,11 +2,17 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 
-export const EmptyContactsList: React.FC = () => {
+interface EmptyContactsListProps {
+  description?: string;
+}
+
+export const EmptyContactsList: React.FC<EmptyContactsListProps> = ({
+  description,
+}) => {
   return (
     <View style={styles.emptyContainer}>
       <Text variant="headlineSmall">No contacts found</Text>
-      <Text variant="bodyLarge">Add your first contact</Text>
+      <Text variant="bodyLarge">{description || "Add your first contact"}</Text>
     </View>
   );
 };

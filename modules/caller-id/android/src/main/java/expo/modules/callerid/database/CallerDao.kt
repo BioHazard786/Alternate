@@ -19,6 +19,9 @@ interface CallerDao {
     @Query("DELETE FROM caller_info WHERE fullPhoneNumber = :phoneNumber")
     suspend fun deleteCallerInfo(phoneNumber: String)
 
+    @Query("DELETE FROM caller_info WHERE fullPhoneNumber IN (:phoneNumbers)")
+    suspend fun deleteMultipleCallerInfo(phoneNumbers: List<String>)
+
     @Query("SELECT fullPhoneNumber FROM caller_info")
     suspend fun getAllPhoneNumbers(): List<String>
 

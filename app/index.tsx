@@ -1,23 +1,70 @@
 import { ContactItem } from "@/components/contact-item";
 import { EmptyContactsList } from "@/components/empty-contactsList";
 import { ErrorState } from "@/components/error-state";
+import CustomNavigationBar from "@/components/navigation-bar";
 import { SectionHeader } from "@/components/section-header";
 import { getSectionedContacts } from "@/lib/avatar-utils";
 import { requestAndroidPermissions } from "@/lib/permissions";
 import { ListItem } from "@/lib/types";
+import { shareContact } from "@/lib/vcf-utils";
 import useContactStore from "@/store/contactStore";
+import useSelectedContactStore from "@/store/selectedContactStore";
 import { FlashList } from "@shopify/flash-list";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { FAB } from "react-native-paper";
+import { BackHandler, StyleSheet, View } from "react-native";
+import {
+  Button,
+  Dialog,
+  FAB,
+  Portal,
+  Snackbar,
+  Text,
+  useTheme,
+} from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ContactsScreen() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+
   const contacts = useContactStore.use.contacts();
   const isRefreshing = useContactStore.use.isLoading();
   const error = useContactStore.use.fetchContactError();
   const fetchContacts = useContactStore.use.fetchContacts();
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const selectionMode = useSelectedContactStore.use.selectionMode();
+  const toggleSelectionMode = useSelectedContactStore.use.toggleSelectionMode();
+  const selectedContacts = useSelectedContactStore.use.selectedContacts();
+  const clearSelection = useSelectedContactStore.use.clearSelection();
+  const deleteMultipleContacts = useContactStore.use.deleteMultipleContacts();
+  const clearDeleteMultipleContactsError =
+    useContactStore.use.clearDeleteMultipleError();
+  const deleteMultipleContactsError =
+    useContactStore.use.deleteMultipleContactsError();
+
+  // Cancel selection mode on Android back button
+  useEffect(() => {
+    if (!selectionMode) return;
+    const onBackPress = () => {
+      if (selectionMode) {
+        toggleSelectionMode(false);
+        clearSelection();
+        return true; // prevent default
+      }
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+    return () => {
+      backHandler.remove();
+    };
+  }, [selectionMode, toggleSelectionMode]);
 
   // Only show error state if there's an error
   if (error) {
@@ -31,8 +78,30 @@ export default function ContactsScreen() {
     );
   }
 
-  // Create sectioned data for LegendList
+  // Create sectioned data for FlashList
   const sectionedData = getSectionedContacts(contacts);
+
+  const onDismissSnackBar = () => setVisible(false);
+
+  const showDialog = () => setOpen(true);
+
+  const hideDialog = () => setOpen(false);
+
+  const handleDelete = async () => {
+    hideDialog();
+    setIsDeleting(true);
+    const success = await deleteMultipleContacts(
+      selectedContacts.map((c) => c.fullPhoneNumber)
+    );
+    setIsDeleting(false);
+
+    if (success) {
+      clearSelection();
+      toggleSelectionMode(false);
+    } else {
+      setVisible(true);
+    }
+  };
 
   // Flatten sectioned data into single array with headers and items
   const listData: ListItem[] = sectionedData.flatMap((section) => [
@@ -48,7 +117,7 @@ export default function ContactsScreen() {
     ),
   ]);
 
-  // Render function for LegendList
+  // Render function for FlashList
   const renderItem = ({ item }: { item: ListItem }) => {
     if (item.type === "header") {
       return <SectionHeader title={item.letter} />;
@@ -79,7 +148,52 @@ export default function ContactsScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      {selectionMode ? (
+        <Stack.Screen
+          name="index"
+          options={{
+            title: `${selectedContacts.length} selected`,
+            header: (props) => (
+              <CustomNavigationBar
+                {...props}
+                mode="small"
+                elevated={true}
+                actions={[
+                  {
+                    icon: "delete-outline",
+                    onPress: () => showDialog(),
+                    disabled: isDeleting,
+                  },
+                ]}
+              />
+            ),
+          }}
+        />
+      ) : (
+        <Stack.Screen
+          name="index"
+          options={{
+            title: "Contacts",
+            header: (props) => (
+              <CustomNavigationBar
+                actions={[
+                  {
+                    icon: "magnify",
+                    onPress: () => router.push("/search"),
+                  },
+                  {
+                    icon: "cog",
+                    onPress: () => router.push("/settings"),
+                  },
+                ]}
+                {...props}
+              />
+            ),
+          }}
+        />
+      )}
+
       <View style={styles.content}>
         <FlashList
           data={listData}
@@ -89,9 +203,10 @@ export default function ContactsScreen() {
             if (item.type === "header") {
               return `header-${item.letter}`;
             } else {
-              return `contact-${item.contact.phoneNumber}`;
+              return `contact-${item.contact.fullPhoneNumber}`;
             }
           }}
+          extraData={selectedContacts}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={<EmptyContactsList />}
           onRefresh={fetchContacts}
@@ -99,12 +214,57 @@ export default function ContactsScreen() {
         />
       </View>
 
-      <FAB
-        icon="plus"
-        customSize={60}
-        style={styles.fab}
-        onPress={() => router.push("/new-contact")}
-      />
+      {selectionMode ? (
+        <FAB
+          icon="share-variant-outline"
+          customSize={60}
+          style={[styles.fab, { bottom: insets.bottom + 16 }]}
+          label="Share"
+          mode="flat"
+          onPress={async () => {
+            await shareContact(selectedContacts);
+            clearSelection();
+            toggleSelectionMode(false);
+          }}
+        />
+      ) : (
+        <FAB
+          icon="plus"
+          customSize={60}
+          style={[styles.fab, { bottom: insets.bottom + 16 }]}
+          onPress={() => router.push("/new-contact")}
+          mode="flat"
+        />
+      )}
+      <Portal>
+        <Snackbar
+          visible={visible}
+          onDismiss={onDismissSnackBar}
+          action={{
+            label: "Dismiss",
+            onPress: () => {
+              clearDeleteMultipleContactsError();
+              onDismissSnackBar();
+            },
+          }}
+        >
+          {deleteMultipleContactsError || "An error occurred"}
+        </Snackbar>
+        <Dialog visible={open} onDismiss={hideDialog}>
+          <Dialog.Title>Delete contacts?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              These contacts will be permanently deleted from your device
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={hideDialog}>Cancel</Button>
+            <Button onPress={handleDelete} textColor={theme.colors.error}>
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }
@@ -122,6 +282,5 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 20,
-    bottom: 20,
   },
 });

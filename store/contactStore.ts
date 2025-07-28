@@ -1,15 +1,16 @@
-import { CallerInfo } from "@/lib/types";
+import { Contact } from "@/lib/types";
 import { exportContactsToVCF, importContactsFromVCF } from "@/lib/vcf-utils";
 import CallerIdModule from "@/modules/caller-id";
 import createSelectors from "@/store/selectors";
 import { create } from "zustand";
 
 type State = {
-  contacts: CallerInfo[];
+  contacts: Contact[];
   isLoading: boolean;
   fetchContactError: string | null;
   addContactError: string | null;
   deleteContactError: string | null;
+  deleteMultipleContactsError: string | null;
   updateContactError: string | null;
   importError: string | null;
   exportError: string | null;
@@ -19,11 +20,12 @@ type State = {
 
 type Action = {
   fetchContacts: () => Promise<void>;
-  addContact: (contact: CallerInfo) => Promise<boolean>;
+  addContact: (contact: Contact) => Promise<boolean>;
   deleteContact: (fullPhoneNumber: string) => Promise<boolean>;
+  deleteMultipleContacts: (fullPhoneNumbers: string[]) => Promise<boolean>;
   updateContact: (
     originalPhoneNumber: string,
-    updatedContact: CallerInfo
+    updatedContact: Contact
   ) => Promise<boolean>;
   importContacts: () => Promise<number | boolean>;
   exportContacts: () => Promise<boolean>;
@@ -31,6 +33,7 @@ type Action = {
   clearFetchError: () => void;
   clearAddError: () => void;
   clearDeleteError: () => void;
+  clearDeleteMultipleError: () => void;
   clearUpdateError: () => void;
   clearImportError: () => void;
   clearExportError: () => void;
@@ -42,6 +45,7 @@ const initialState: State = {
   fetchContactError: null,
   addContactError: null,
   deleteContactError: null,
+  deleteMultipleContactsError: null,
   updateContactError: null,
   importError: null,
   exportError: null,
@@ -102,6 +106,29 @@ const useContactStoreBase = create<State & Action>((set, get) => ({
     } catch (error) {
       console.error("Failed to delete contact:", error);
       set({ deleteContactError: "Failed to delete contact" });
+      return false;
+    }
+  },
+
+  deleteMultipleContacts: async (fullPhoneNumbers) => {
+    set({ deleteMultipleContactsError: null }); // Clear previous errors
+    try {
+      const success = await CallerIdModule.removeMultipleCallerInfo(
+        fullPhoneNumbers
+      );
+
+      if (success) {
+        // Remove from local state
+        const updatedContacts = get().contacts.filter(
+          (contact) => !fullPhoneNumbers.includes(contact.fullPhoneNumber)
+        );
+        set({ contacts: updatedContacts });
+      }
+
+      return success;
+    } catch (error) {
+      console.error("Failed to delete multiple contacts:", error);
+      set({ deleteMultipleContactsError: "Failed to delete contacts" });
       return false;
     }
   },
@@ -212,6 +239,7 @@ const useContactStoreBase = create<State & Action>((set, get) => ({
   clearFetchError: () => set({ fetchContactError: null }),
   clearAddError: () => set({ addContactError: null }),
   clearDeleteError: () => set({ deleteContactError: null }),
+  clearDeleteMultipleError: () => set({ deleteMultipleContactsError: null }),
   clearUpdateError: () => set({ updateContactError: null }),
   clearImportError: () => set({ importError: null }),
   clearExportError: () => set({ exportError: null }),

@@ -1,12 +1,13 @@
-import { CountrySelectorProvider } from "@/components/country-selector-provider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import CustomNavigationBar from "@/components/navigation-bar";
 import { useTheme } from "@/hooks/useTheme";
+import "@/services/sheets"; // Ensure sheets are registered
 import useContactStore from "@/store/contactStore";
 import { ThemeProvider } from "@react-navigation/native";
-import { router, SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { SheetProvider } from "react-native-actions-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PaperProvider } from "react-native-paper";
 
@@ -42,27 +43,12 @@ export default function RootLayout() {
       <ErrorBoundary>
         <PaperProvider theme={paperTheme}>
           <ThemeProvider value={paperTheme}>
-            <CountrySelectorProvider>
+            <SheetProvider context="global">
               <Stack
                 screenOptions={{
                   header: (props) => <CustomNavigationBar {...props} />,
                 }}
               >
-                <Stack.Screen
-                  name="index"
-                  options={{
-                    title: "Contacts",
-                    header: (props) => (
-                      <CustomNavigationBar
-                        action={{
-                          icon: "cog",
-                          onPress: () => router.push("/settings"),
-                        }}
-                        {...props}
-                      />
-                    ),
-                  }}
-                />
                 <Stack.Screen
                   name="new-contact"
                   options={{
@@ -92,7 +78,7 @@ export default function RootLayout() {
                   }}
                 />
               </Stack>
-            </CountrySelectorProvider>
+            </SheetProvider>
           </ThemeProvider>
           <StatusBar style={paperTheme.dark ? "light" : "dark"} />
         </PaperProvider>
