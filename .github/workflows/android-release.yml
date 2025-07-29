@@ -3,163 +3,154 @@ name: Android Release Build
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 env:
-  NODE_VERSION: '18'
-  JAVA_VERSION: '17'
-  KEYSTORE_FILE: 'release.jks'
+  NODE_VERSION: "18"
+  JAVA_VERSION: "17"
+  KEYSTORE_FILE: "release.jks"
 
 jobs:
   build:
     name: Build and Release Android APKs
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Setup Java JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: ${{ env.JAVA_VERSION }}
-        
-    - name: Install dependencies
-      run: npm ci
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
 
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
 
-    - name: Make gradlew executable
-      run: chmod +x android/gradlew
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Decode Keystore
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      run: |
-        echo $KEYSTORE_BASE64 | base64 -d > android/app/${{ env.KEYSTORE_FILE }}
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
 
-    - name: Generate keystore.properties
-      run: |
-        cat <<EOF > android/keystore.properties
-        storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-        keyPassword=${{ secrets.KEY_PASSWORD }}
-        keyAlias=${{ secrets.KEY_ALIAS }}
-        storeFile=${{ env.KEYSTORE_FILE }}
-        EOF
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
 
-    - name: Build Release APKs
-      run: |
-        cd android
-        ./gradlew assembleRelease
+      - name: Decode Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo $KEYSTORE_BASE64 | base64 -d > android/app/${{ env.KEYSTORE_FILE }}
 
-    - name: Get tag name
-      id: tag
-      run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      - name: Generate keystore.properties
+        run: |
+          cat <<EOF > android/keystore.properties
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=${{ env.KEYSTORE_FILE }}
+          EOF
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.tag }}
-        release_name: Release ${{ steps.tag.outputs.tag }}
-        draft: false
-        prerelease: false
-        body: |
-          # 🚀 Alternate ${{ steps.tag.outputs.tag }} – Feature & Improvement Release
+      - name: Build Release APKs
+        run: |
+          cd android
+          ./gradlew assembleRelease
 
-          ## ✨ What's New in ${{ steps.tag.outputs.tag }}
+      - name: Get tag name
+        id: tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-          - **Search Functionality:**  
-            Added search for contacts and country selector for faster access.
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          release_name: Release ${{ steps.tag.outputs.tag }}
+          draft: false
+          prerelease: false
+          body: |
+            # 🚀 Alternate ${{ steps.tag.outputs.tag }} – Feature & Improvement Release
 
-          - **Multi-Delete & Contact Sharing:**  
-            Added multi-delete and selection-based contact sharing features for easier contact management.
+            ## ✨ What's New in ${{ steps.tag.outputs.tag }}
 
-          - **Performance Improvements:**  
-            Enhanced app speed and responsiveness.
+            - **Long Press to Copy Contact Info:**  
+              You can now long press on a contact to quickly copy their information.
 
-          - **Bug Fixes:**  
-            Fixed various issues for improved stability.
+            - **Bug Fixes:**  
+              Minor bug fixes and stability improvements.
 
-          - **UI Enhancements:**  
-            Refined and modernized the user interface for a better experience.
+            ## 📦 Download Options
 
-          ## 📦 Download Options
+            Choose the APK that matches your device architecture:
 
-          Choose the APK that matches your device architecture:
+            - **ARM64 (64-bit)** – Recommended for most modern devices  
+            - **ARM (32-bit)** – For older Android devices  
+            - **x86 (64-bit)** – For Intel-based Android devices/emulators  
+            - **x86 (32-bit)** – For older Intel-based devices  
 
-          - **ARM64 (64-bit)** – Recommended for most modern devices  
-          - **ARM (32-bit)** – For older Android devices  
-          - **x86 (64-bit)** – For Intel-based Android devices/emulators  
-          - **x86 (32-bit)** – For older Intel-based devices  
+            ## 🔧 Installation
 
-          ## 🔧 Installation
+            1. Download the appropriate APK for your device
+            2. Enable "Install from unknown sources" in your Android settings
+            3. Install the APK file
 
-          1. Download the appropriate APK for your device
-          2. Enable "Install from unknown sources" in your Android settings
-          3. Install the APK file
+            ## 📋 System Requirements
 
-          ## 📋 System Requirements
+            - Android 7.0 (API level 24) or higher
+            - Permissions: Contacts, Phone
 
-          - Android 7.0 (API level 24) or higher
-          - Permissions: Contacts, Phone
+      - name: Upload arm64-v8a APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
+          asset_name: alternate-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+          asset_content_type: application/vnd.android.package-archive
 
-    - name: Upload arm64-v8a APK
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
-        asset_name: alternate-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
-        asset_content_type: application/vnd.android.package-archive
+      - name: Upload armeabi-v7a APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: android/app/build/outputs/apk/release/app-armeabi-v7a-release.apk
+          asset_name: alternate-armeabi-v7a-${{ steps.tag.outputs.tag }}.apk
+          asset_content_type: application/vnd.android.package-archive
 
-    - name: Upload armeabi-v7a APK
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: android/app/build/outputs/apk/release/app-armeabi-v7a-release.apk
-        asset_name: alternate-armeabi-v7a-${{ steps.tag.outputs.tag }}.apk
-        asset_content_type: application/vnd.android.package-archive
+      - name: Upload x86_64 APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: android/app/build/outputs/apk/release/app-x86_64-release.apk
+          asset_name: alternate-x86_64-${{ steps.tag.outputs.tag }}.apk
+          asset_content_type: application/vnd.android.package-archive
 
-    - name: Upload x86_64 APK
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: android/app/build/outputs/apk/release/app-x86_64-release.apk
-        asset_name: alternate-x86_64-${{ steps.tag.outputs.tag }}.apk
-        asset_content_type: application/vnd.android.package-archive
+      - name: Upload x86 APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: android/app/build/outputs/apk/release/app-x86-release.apk
+          asset_name: alternate-x86-${{ steps.tag.outputs.tag }}.apk
+          asset_content_type: application/vnd.android.package-archive
 
-    - name: Upload x86 APK
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: android/app/build/outputs/apk/release/app-x86-release.apk
-        asset_name: alternate-x86-${{ steps.tag.outputs.tag }}.apk
-        asset_content_type: application/vnd.android.package-archive
-
-    - name: Upload metadata
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: android/app/build/outputs/apk/release/output-metadata.json
-        asset_name: output-metadata.json
-        asset_content_type: application/json
+      - name: Upload metadata
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: android/app/build/outputs/apk/release/output-metadata.json
+          asset_name: output-metadata.json
+          asset_content_type: application/json
