@@ -1,3 +1,5 @@
+import telegramIcon from "@/assets/in-app-icon/telegram.png";
+import whatsappIcon from "@/assets/in-app-icon/whatsapp.png";
 import Material3Avatar from "@/components/material3-avatar";
 import CustomNavigationBar from "@/components/navigation-bar";
 import { getAvatarColor } from "@/lib/avatar-utils";
@@ -9,10 +11,18 @@ import {
 } from "@/lib/utils";
 import { shareContact } from "@/lib/vcf-utils";
 import useContactStore from "@/store/contactStore";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import * as Clipboard from "expo-clipboard";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { Linking, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  ToastAndroid,
+  View,
+} from "react-native";
 import {
   Button,
   Card,
@@ -61,16 +71,46 @@ export default function PreviewContactScreen() {
   }
 
   const handleCall = () => {
-    Linking.openURL(`tel:${contact.fullPhoneNumber}`);
+    Linking.openURL(`tel:+${contact.fullPhoneNumber}`);
   };
 
   const handleMessage = () => {
-    Linking.openURL(`sms:${contact.fullPhoneNumber}`);
+    Linking.openURL(`sms:+${contact.fullPhoneNumber}`);
   };
 
   const handleEmail = () => {
     if (contact.email) {
       Linking.openURL(`mailto:${contact.email}`);
+    }
+  };
+
+  const handleWhatsApp = async () => {
+    const supported = await Linking.canOpenURL(
+      `whatsapp://send?phone=${contact.fullPhoneNumber}`
+    );
+
+    if (supported) {
+      Linking.openURL(`whatsapp://send?phone=${contact.fullPhoneNumber}`);
+    } else {
+      Linking.openURL(`https://wa.me/${contact.fullPhoneNumber}`);
+    }
+  };
+
+  const handleTelegram = async (profile: boolean) => {
+    const supported = await Linking.canOpenURL(
+      `tg://resolve?phone=${contact.fullPhoneNumber}`
+    );
+
+    if (supported) {
+      Linking.openURL(
+        `tg://resolve?phone=${contact.fullPhoneNumber}${
+          profile ? "&profile" : ""
+        }`
+      );
+    } else {
+      Linking.openURL(
+        `https://t.me/+${contact.fullPhoneNumber}${profile ? "?profile" : ""}`
+      );
     }
   };
 
@@ -97,12 +137,17 @@ export default function PreviewContactScreen() {
     await shareContact([contact]);
   };
 
+  const handleCopyToClipboard = async (text: string) => {
+    await Clipboard.setStringAsync(text);
+    ToastAndroid.show("Copied to clipboard", ToastAndroid.SHORT);
+  };
+
   return (
     <ScrollView
-      style={[styles.container, { paddingBottom: insets.bottom }]}
+      style={[styles.container, { paddingBottom: insets.bottom + 16 }]}
       contentContainerStyle={[
         styles.scrollContent,
-        { paddingBottom: insets.bottom },
+        { paddingBottom: insets.bottom + 16 },
       ]}
     >
       <Stack.Screen
@@ -136,32 +181,45 @@ export default function PreviewContactScreen() {
           style={{ marginVertical: 20 }}
         />
 
-        <Text
-          variant="headlineMedium"
-          style={[styles.name, { color: theme.colors.onSurface }]}
-        >
-          {getFormattedName(contact)}
-        </Text>
+        <Pressable onLongPress={() => handleCopyToClipboard(contact.name)}>
+          <Text
+            variant="headlineMedium"
+            style={[styles.name, { color: theme.colors.onSurface }]}
+          >
+            {getFormattedName(contact)}
+          </Text>
+        </Pressable>
 
         {contact.nickname && (
-          <Text
-            variant="bodyLarge"
-            style={[
-              styles.subtitle,
-              { color: theme.colors.onSurfaceVariant, marginBottom: 6 },
-            ]}
+          <Pressable
+            onLongPress={() => handleCopyToClipboard(contact.nickname!)}
           >
-            {contact.nickname}
-          </Text>
+            <Text
+              variant="bodyLarge"
+              style={[
+                styles.subtitle,
+                { color: theme.colors.onSurfaceVariant, marginBottom: 6 },
+              ]}
+            >
+              {contact.nickname}
+            </Text>
+          </Pressable>
         )}
 
         {contact.appointment && (
-          <Text
-            variant="bodyLarge"
-            style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
+          <Pressable
+            onLongPress={() => handleCopyToClipboard(contact.appointment!)}
           >
-            {contact.appointment}
-          </Text>
+            <Text
+              variant="bodyLarge"
+              style={[
+                styles.subtitle,
+                { color: theme.colors.onSurfaceVariant },
+              ]}
+            >
+              {contact.appointment}
+            </Text>
+          </Pressable>
         )}
       </View>
 
@@ -245,55 +303,67 @@ export default function PreviewContactScreen() {
           >
             Contact info
           </Text>
-
           {/* Phone */}
-          <View style={styles.infoRow}>
-            <IconButton icon="phone-outline" size={27} />
-            <View style={styles.infoTextContainer}>
-              <Text
-                variant="bodyLarge"
-                style={[styles.infoText, { color: theme.colors.onSurface }]}
-              >
-                +{getFormattedPhoneNumber(contact)}
-              </Text>
-              <Text
-                variant="bodySmall"
-                style={[
-                  styles.infoSubtitle,
-                  { color: theme.colors.onSurfaceVariant },
-                ]}
-              >
-                Mobile
-              </Text>
-            </View>
-          </View>
-
-          {contact.email && (
+          <Pressable
+            onLongPress={() =>
+              handleCopyToClipboard("+" + contact.fullPhoneNumber)
+            }
+          >
             <View style={styles.infoRow}>
-              <IconButton icon="email-outline" size={27} />
+              <IconButton icon="phone-outline" size={25} />
               <View style={styles.infoTextContainer}>
                 <Text
                   variant="bodyLarge"
                   style={[styles.infoText, { color: theme.colors.onSurface }]}
                 >
-                  {contact.email}
+                  +{getFormattedPhoneNumber(contact)}
+                </Text>
+                <Text
+                  variant="bodySmall"
+                  style={[
+                    styles.infoSubtitle,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  Mobile
                 </Text>
               </View>
             </View>
+          </Pressable>
+          {contact.email && (
+            <Pressable
+              onLongPress={() => handleCopyToClipboard(contact.email!)}
+            >
+              <View style={styles.infoRow}>
+                <IconButton icon="email-outline" size={25} />
+                <View style={styles.infoTextContainer}>
+                  <Text
+                    variant="bodyLarge"
+                    style={[styles.infoText, { color: theme.colors.onSurface }]}
+                  >
+                    {contact.email}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
           )}
 
           {contact.location && (
-            <View style={styles.infoRow}>
-              <IconButton icon="map-marker-outline" size={27} />
-              <View style={styles.infoTextContainer}>
-                <Text
-                  variant="bodyLarge"
-                  style={[styles.infoText, { color: theme.colors.onSurface }]}
-                >
-                  {contact.location}
-                </Text>
+            <Pressable
+              onLongPress={() => handleCopyToClipboard(contact.location!)}
+            >
+              <View style={styles.infoRow}>
+                <IconButton icon="map-marker-outline" size={25} />
+                <View style={styles.infoTextContainer}>
+                  <Text
+                    variant="bodyLarge"
+                    style={[styles.infoText, { color: theme.colors.onSurface }]}
+                  >
+                    {contact.location}
+                  </Text>
+                </View>
               </View>
-            </View>
+            </Pressable>
           )}
         </Card.Content>
       </Card>
@@ -340,64 +410,66 @@ export default function PreviewContactScreen() {
             Connected Apps
           </Text>
 
-          <List.AccordionGroup>
-            <List.Accordion
-              title="WhatsApp"
-              background={{ color: "transparent" }}
-              id="1"
-              left={(props) => (
-                <FontAwesome6 name="whatsapp" size={26} {...props} />
-              )}
-              style={{ backgroundColor: theme.colors.elevation.level1 }}
-              titleStyle={{ fontSize: 18 }}
-            >
-              <List.Item
-                title={`Message  +${getFormattedPhoneNumber(contact)}`}
-                left={(props) => (
-                  <List.Icon {...props} icon="message-outline" />
-                )}
-                onPress={() =>
-                  Linking.openURL(`https://wa.me/${contact.fullPhoneNumber}`)
-                }
+          <List.Accordion
+            title="WhatsApp"
+            background={{ color: "transparent" }}
+            id="1"
+            left={(props) => (
+              <Image
+                source={whatsappIcon}
+                style={{ width: 25, height: 25, ...props.style }}
               />
-              <List.Item
-                title={`Voice call  +${getFormattedPhoneNumber(contact)}`}
-                left={(props) => <List.Icon {...props} icon="phone-outline" />}
-                onPress={() =>
-                  Linking.openURL(`https://wa.me/${contact.fullPhoneNumber}`)
-                }
+            )}
+            style={{
+              backgroundColor: theme.colors.elevation.level1,
+            }}
+            titleStyle={{ fontSize: 18 }}
+          >
+            <List.Item
+              title={`Message  +${getFormattedPhoneNumber(contact)}`}
+              left={(props) => <List.Icon {...props} icon="message-outline" />}
+              onPress={handleWhatsApp}
+              style={styles.listStyle}
+              borderless
+            />
+            <List.Item
+              title={`Voice call  +${getFormattedPhoneNumber(contact)}`}
+              left={(props) => <List.Icon {...props} icon="phone-outline" />}
+              onPress={handleWhatsApp}
+              style={styles.listStyle}
+              borderless
+            />
+          </List.Accordion>
+          <List.Accordion
+            title="Telegram"
+            background={{ color: "transparent" }}
+            id="2"
+            left={(props) => (
+              <Image
+                source={telegramIcon}
+                style={{ width: 25, height: 25, ...props.style }}
               />
-            </List.Accordion>
-            <List.Accordion
-              title="Telegram"
-              background={{ color: "transparent" }}
-              id="2"
-              left={(props) => (
-                <FontAwesome6 name="telegram" size={26} {...props} />
-              )}
-              style={{ backgroundColor: theme.colors.elevation.level1 }}
-              titleStyle={{ fontSize: 18 }}
-            >
-              <List.Item
-                title={`Message  +${getFormattedPhoneNumber(contact)}`}
-                left={(props) => (
-                  <List.Icon {...props} icon="message-outline" />
-                )}
-                onPress={() =>
-                  Linking.openURL(`https://t.me/+${contact.fullPhoneNumber}`)
-                }
-              />
-              <List.Item
-                title={`Voice call  +${getFormattedPhoneNumber(contact)}`}
-                left={(props) => <List.Icon {...props} icon="phone-outline" />}
-                onPress={() =>
-                  Linking.openURL(
-                    `https://t.me/+${contact.fullPhoneNumber}&profile`
-                  )
-                }
-              />
-            </List.Accordion>
-          </List.AccordionGroup>
+            )}
+            style={{
+              backgroundColor: theme.colors.elevation.level1,
+            }}
+            titleStyle={{ fontSize: 18 }}
+          >
+            <List.Item
+              title={`Message  +${getFormattedPhoneNumber(contact)}`}
+              left={(props) => <List.Icon {...props} icon="message-outline" />}
+              onPress={() => handleTelegram(false)}
+              style={styles.listStyle}
+              borderless
+            />
+            <List.Item
+              title={`Voice call  +${getFormattedPhoneNumber(contact)}`}
+              left={(props) => <List.Icon {...props} icon="phone-outline" />}
+              onPress={() => handleTelegram(true)}
+              style={styles.listStyle}
+              borderless
+            />
+          </List.Accordion>
         </Card.Content>
       </Card>
 
@@ -419,56 +491,73 @@ export default function PreviewContactScreen() {
             </Text>
 
             {contact.website && (
-              <View style={styles.infoRow}>
-                <IconButton icon="link" size={27} />
-                <Text
-                  variant="bodyLarge"
-                  style={[styles.infoText, { color: theme.colors.primary }]}
-                  onPress={() => {
-                    Linking.openURL(contact.website!);
-                  }}
-                >
-                  {contact.website}
-                </Text>
-              </View>
+              <Pressable
+                onLongPress={() => handleCopyToClipboard(contact.website!)}
+              >
+                <View style={styles.infoRow}>
+                  <IconButton icon="link" size={25} />
+                  <Text
+                    variant="bodyLarge"
+                    style={[styles.infoText, { color: theme.colors.primary }]}
+                    onPress={() => {
+                      Linking.openURL(contact.website!);
+                    }}
+                  >
+                    {contact.website}
+                  </Text>
+                </View>
+              </Pressable>
             )}
 
             {contact.birthday && (
-              <View style={styles.infoRow}>
-                <IconButton icon="cake-variant-outline" size={27} />
-                <View style={styles.infoTextContainer}>
-                  <Text
-                    variant="bodyLarge"
-                    style={[styles.infoText, { color: theme.colors.onSurface }]}
-                  >
-                    {getFormattedDate(contact.birthday)}
-                  </Text>
-                  <Text
-                    variant="bodySmall"
-                    style={[
-                      styles.infoSubtitle,
-                      { color: theme.colors.onSurfaceVariant },
-                    ]}
-                  >
-                    Birthday
-                  </Text>
+              <Pressable
+                onLongPress={() =>
+                  handleCopyToClipboard(getFormattedDate(contact.birthday!))
+                }
+              >
+                <View style={styles.infoRow}>
+                  <IconButton icon="cake-variant-outline" size={25} />
+                  <View style={styles.infoTextContainer}>
+                    <Text
+                      variant="bodyLarge"
+                      style={[
+                        styles.infoText,
+                        { color: theme.colors.onSurface },
+                      ]}
+                    >
+                      {getFormattedDate(contact.birthday)}
+                    </Text>
+                    <Text
+                      variant="bodySmall"
+                      style={[
+                        styles.infoSubtitle,
+                        { color: theme.colors.onSurfaceVariant },
+                      ]}
+                    >
+                      Birthday
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              </Pressable>
             )}
 
             {contact.notes && (
-              <View style={styles.infoRow}>
-                <IconButton icon="note-text-outline" size={27} />
-                <Text
-                  variant="bodyLarge"
-                  style={[
-                    styles.infoText,
-                    { color: theme.colors.onSurface, flex: 1 },
-                  ]}
-                >
-                  {contact.notes}
-                </Text>
-              </View>
+              <Pressable
+                onLongPress={() => handleCopyToClipboard(contact.notes!)}
+              >
+                <View style={styles.infoRow}>
+                  <IconButton icon="note-text-outline" size={25} />
+                  <Text
+                    variant="bodyLarge"
+                    style={[
+                      styles.infoText,
+                      { color: theme.colors.onSurface, flex: 1 },
+                    ]}
+                  >
+                    {contact.notes}
+                  </Text>
+                </View>
+              </Pressable>
             )}
           </Card.Content>
         </Card>
@@ -574,6 +663,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 18,
   },
+  pressableStyle: {
+    paddingTop: 12,
+  },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -598,5 +690,8 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 20,
     gap: 12,
+  },
+  listStyle: {
+    borderRadius: 16,
   },
 });

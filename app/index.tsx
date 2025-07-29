@@ -10,9 +10,10 @@ import { shareContact } from "@/lib/vcf-utils";
 import useContactStore from "@/store/contactStore";
 import useSelectedContactStore from "@/store/selectedContactStore";
 import { FlashList } from "@shopify/flash-list";
+import * as Clipboard from "expo-clipboard";
 import { router, Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { BackHandler, StyleSheet, View } from "react-native";
+import { BackHandler, StyleSheet, ToastAndroid, View } from "react-native";
 import {
   Button,
   Dialog,
@@ -86,6 +87,49 @@ export default function ContactsScreen() {
   const showDialog = () => setOpen(true);
 
   const hideDialog = () => setOpen(false);
+
+  const copyContactsToClipboard = async () => {
+    const contactStrings = selectedContacts
+      .map((contact) => {
+        const fullName = [contact.prefix, contact.name, contact.suffix]
+          .filter(Boolean)
+          .join(" ");
+        const fields = [
+          { label: "name", value: fullName },
+          {
+            label: "number",
+            value: contact.fullPhoneNumber
+              ? `+${contact.fullPhoneNumber}`
+              : undefined,
+          },
+          { label: "email", value: contact.email },
+          { label: "appointment", value: contact.appointment },
+          { label: "location", value: contact.location },
+          { label: "notes", value: contact.notes },
+          { label: "nickname", value: contact.nickname },
+          { label: "website", value: contact.website },
+          { label: "birthday", value: contact.birthday },
+          { label: "labels", value: contact.labels },
+          { label: "prefix", value: contact.prefix },
+          { label: "suffix", value: contact.suffix },
+        ];
+        return fields
+          .filter((f) => f.value && String(f.value).trim() !== "")
+          .map((f) => `${f.label} - ${f.value}`)
+          .join("\n");
+      })
+      .join("\n\n");
+
+    await Clipboard.setStringAsync(contactStrings);
+    ToastAndroid.show(
+      `${selectedContacts.length} contact${
+        selectedContacts.length === 1 ? "" : "s"
+      } copied to clipboard`,
+      ToastAndroid.SHORT
+    );
+    clearSelection();
+    toggleSelectionMode(false);
+  };
 
   const handleDelete = async () => {
     hideDialog();
@@ -161,8 +205,13 @@ export default function ContactsScreen() {
                 elevated={true}
                 actions={[
                   {
+                    icon: "content-copy",
+                    onPress: copyContactsToClipboard,
+                    disabled: isDeleting,
+                  },
+                  {
                     icon: "delete-outline",
-                    onPress: () => showDialog(),
+                    onPress: showDialog,
                     disabled: isDeleting,
                   },
                 ]}
@@ -250,6 +299,7 @@ export default function ContactsScreen() {
         >
           {deleteMultipleContactsError || "An error occurred"}
         </Snackbar>
+
         <Dialog visible={open} onDismiss={hideDialog}>
           <Dialog.Title>Delete contacts?</Dialog.Title>
           <Dialog.Content>
