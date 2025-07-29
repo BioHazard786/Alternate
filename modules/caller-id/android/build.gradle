@@ -33,7 +33,7 @@ if (useManagedAndroidSdkVersions) {
 }
 
 android {
-  namespace "expo.modules.callerid"
+  namespace = "expo.modules.callerid"
   
   defaultConfig {
     versionCode 1
@@ -41,7 +41,7 @@ android {
   }
   
   lintOptions {
-    abortOnError false
+    abortOnError = false
   }
 }
 
