@@ -7,14 +7,18 @@ import android.content.res.AssetFileDescriptor
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
-import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.provider.ContactsContract.Directory
 import android.provider.ContactsContract.PhoneLookup
+import android.util.Base64
 import android.util.Log
 import androidx.core.net.toUri
 import expo.modules.callerid.database.CallerRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 class CallDirectoryProvider : ContentProvider() {
 
@@ -27,6 +31,13 @@ class CallDirectoryProvider : ContentProvider() {
         private const val PHONE_LOOKUP = 2
         private const val PRIMARY_PHOTO = 3
         private const val PRIMARY_PHOTO_URI = "photo/primary_photo"
+
+        // Store photo data temporarily for the current lookup
+        @Volatile
+        private var currentPhotoData: String = ""
+
+        // Cache for temporary photo files to avoid recreating the same image
+        private val photoFileCache = mutableMapOf<String, File>()
     }
 
     override fun onCreate(): Boolean {
@@ -42,6 +53,29 @@ class CallDirectoryProvider : ContentProvider() {
             }
         }
         return true
+    }
+
+    private fun getStoredPhotoForCurrentLookup(): String {
+        return currentPhotoData
+    }
+
+    private fun cleanupOldTempFiles() {
+        try {
+            context?.cacheDir?.listFiles { file ->
+                file.name.startsWith("temp_photo_") &&
+                        (System.currentTimeMillis() - file.lastModified()) > 30000 // 30 seconds old
+            }?.forEach {
+                it.delete()
+                // Remove from cache if exists
+                photoFileCache.values.removeAll { cachedFile -> cachedFile.absolutePath == it.absolutePath }
+            }
+        } catch (e: Exception) {
+            Log.e("CallDirectoryProvider", "Error cleaning temp files", e)
+        }
+    }
+
+    private fun getPhotoHash(photoData: String): String {
+        return photoData.hashCode().toString()
     }
 
     override fun query(
@@ -98,10 +132,20 @@ class CallDirectoryProvider : ContentProvider() {
                     }
 
                     callerEntity?.let { entity ->
+                        // Store photo data for later use in openAssetFile
+                        currentPhotoData = entity.photo
+
                         projection?.map { column ->
                             when (column) {
                                 PhoneLookup._ID -> -1
-                                PhoneLookup.DISPLAY_NAME -> entity.name
+                                PhoneLookup.DISPLAY_NAME -> buildString {
+                                    entity.prefix.takeIf { it.isNotBlank() }
+                                        ?.let { append(it).append(" ") }
+                                    append(entity.name)
+                                    entity.suffix.takeIf { it.isNotBlank() }
+                                        ?.let { append(", ").append(it) }
+                                }
+
                                 PhoneLookup.LABEL -> when {
                                     entity.appointment.isNotEmpty() && entity.location.isNotEmpty() -> "${entity.appointment}, ${entity.location}"
                                     entity.appointment.isNotEmpty() -> entity.appointment
@@ -109,11 +153,15 @@ class CallDirectoryProvider : ContentProvider() {
                                     else -> "Mobile"
                                 }
 
-                                PhoneLookup.NUMBER -> entity.phoneNumber
+                                PhoneLookup.NUMBER -> entity.fullPhoneNumber
                                 PhoneLookup.NORMALIZED_NUMBER -> entity.phoneNumber
                                 PhoneLookup.PHOTO_THUMBNAIL_URI,
                                 PhoneLookup.PHOTO_URI -> {
-                                    Uri.withAppendedPath(authorityUri, PRIMARY_PHOTO_URI)
+                                    if (entity.photo.isNotEmpty()) {
+                                        Uri.withAppendedPath(authorityUri, PRIMARY_PHOTO_URI)
+                                    } else {
+                                        null
+                                    }
                                 }
 
                                 else -> null
@@ -121,6 +169,9 @@ class CallDirectoryProvider : ContentProvider() {
                         }?.let {
                             cursor.addRow(it)
                         }
+                    } ?: run {
+                        // Clear photo data if no caller found
+                        currentPhotoData = ""
                     }
                     return cursor
                 } ?: return null
@@ -130,8 +181,90 @@ class CallDirectoryProvider : ContentProvider() {
     }
 
     override fun openAssetFile(uri: Uri, mode: String): AssetFileDescriptor? {
+
         return when (uriMatcher.match(uri)) {
-            PRIMARY_PHOTO -> null
+            PRIMARY_PHOTO -> {
+                try {
+                    val photoData = getStoredPhotoForCurrentLookup()
+
+                    if (photoData.isNotEmpty()) {
+                        // Create a hash for caching
+                        val photoHash = getPhotoHash(photoData)
+
+                        // Check if we already have this photo cached
+                        val cachedFile = photoFileCache[photoHash]
+                        if (cachedFile != null && cachedFile.exists()) {
+                            val pfd = ParcelFileDescriptor.open(
+                                cachedFile,
+                                ParcelFileDescriptor.MODE_READ_ONLY
+                            )
+                            return AssetFileDescriptor(pfd, 0, AssetFileDescriptor.UNKNOWN_LENGTH)
+                        }
+
+                        val (mimeType, base64String) = if (photoData.startsWith("data:")) {
+                            val commaIndex = photoData.indexOf(",")
+                            val headerPart =
+                                photoData.substring(5, commaIndex) // Remove "data:" prefix
+                            val mimeType =
+                                headerPart.split(";")[0] // Get MIME type before semicolon
+                            val base64Part = photoData.substring(commaIndex + 1)
+                            Pair(mimeType, base64Part)
+                        } else {
+                            Pair("image/jpeg", photoData) // Default to JPEG if no data URI
+                        }
+
+                        // Determine file extension from MIME type
+                        val fileExtension = when (mimeType.lowercase()) {
+                            "image/png" -> "png"
+                            "image/gif" -> "gif"
+                            "image/webp" -> "webp"
+                            else -> "jpg" // Default to JPG
+                        }
+
+                        val imageBytes = try {
+                            Base64.decode(base64String, Base64.DEFAULT)
+                        } catch (e: IllegalArgumentException) {
+                            Log.e("CallDirectoryProvider", "Invalid base64 data", e)
+                            return null
+                        }
+
+                        // Create temporary file with hash-based name for better caching
+                        val tempFile =
+                            File(
+                                context?.cacheDir,
+                                "temp_photo_${photoHash}.$fileExtension"
+                            )
+
+                        // Clean up old temp files
+                        cleanupOldTempFiles()
+
+                        try {
+                            FileOutputStream(tempFile).use { fos ->
+                                fos.write(imageBytes)
+                            }
+
+                            // Cache the file
+                            photoFileCache[photoHash] = tempFile
+
+                            // Return AssetFileDescriptor for the temporary file
+                            val pfd = ParcelFileDescriptor.open(
+                                tempFile,
+                                ParcelFileDescriptor.MODE_READ_ONLY
+                            )
+                            return AssetFileDescriptor(pfd, 0, AssetFileDescriptor.UNKNOWN_LENGTH)
+
+                        } catch (e: IOException) {
+                            Log.e("CallDirectoryProvider", "Error creating temp file", e)
+                            tempFile.delete()
+                            photoFileCache.remove(photoHash)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("CallDirectoryProvider", "Error serving photo", e)
+                }
+                null
+            }
+
             else -> null
         }
     }

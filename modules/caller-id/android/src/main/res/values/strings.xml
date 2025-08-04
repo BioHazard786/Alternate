@@ -6,4 +6,5 @@
     <string name="close_button_icon">✕</string>
     <string name="app_name">Alternate</string>
     <string name="callerid_authority">expo.modules.callerid.directory</string>
+    <string name="caller_photo_description">Caller Photo</string>
 </resources>

@@ -1,4 +1,5 @@
 import PhoneNumberInput from "@/components/phone-number-input";
+import PhotoPicker from "@/components/photo-picker";
 import { additionalFields } from "@/constants/AdditionalFields";
 import { getCountryByCode } from "@/lib/countries";
 import { ContactFormData } from "@/lib/types";
@@ -51,6 +52,8 @@ export default function NewContactScreen() {
     formState: { errors, isSubmitting, isValid },
     setError,
     reset,
+    setValue,
+    watch,
   } = useForm<ContactFormData>({
     defaultValues: {
       name: "",
@@ -69,11 +72,14 @@ export default function NewContactScreen() {
       birthday: "",
       labels: "",
       nickname: "",
+      photo: undefined,
     },
     mode: "onChange", // Validate on change for better UX
   });
 
   const onDismissSnackBar = () => setVisible(false);
+
+  const photoUri = watch("photo");
 
   const removeFieldAndReset = (fieldKey: string) => {
     const newVisibleFields = new Set(visibleFields);
@@ -205,6 +211,7 @@ export default function NewContactScreen() {
       birthday: data.birthday || "",
       labels: data.labels?.trim() || "",
       nickname: data.nickname?.trim() || "",
+      photo: data.photo || "",
     });
 
     if (success) {
@@ -218,15 +225,20 @@ export default function NewContactScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { paddingBottom: insets.bottom }]}
+      style={styles.container}
     >
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom },
+          { paddingBottom: insets.bottom + 16 },
         ]}
       >
         <View style={styles.formContainer}>
+          <PhotoPicker
+            photo={photoUri}
+            onPhotoChange={(uri) => setValue("photo", uri)}
+            disabled={isSubmitting}
+          />
           <View>
             <Controller
               control={control}
@@ -316,6 +328,7 @@ export default function NewContactScreen() {
               }
               style={styles.addFieldButton}
               labelStyle={{ fontSize: 16 }}
+              contentStyle={{ marginVertical: 5 }}
               disabled={
                 isSubmitting || visibleFields.size >= additionalFields.length
               }
@@ -327,6 +340,7 @@ export default function NewContactScreen() {
               onPress={handleSubmit(onSubmit)}
               style={styles.saveButton}
               labelStyle={{ fontSize: 16 }}
+              contentStyle={{ marginVertical: 5 }}
               disabled={!isValid || isSubmitting}
               loading={isSubmitting}
             >
@@ -361,7 +375,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
     gap: 16,
   },
   list: {
@@ -369,47 +383,12 @@ const styles = StyleSheet.create({
   },
   addFieldButton: {
     borderRadius: 50,
-    paddingVertical: 5,
   },
   saveButton: {
-    paddingVertical: 5,
     borderRadius: 50,
   },
   buttonContainer: {
     marginTop: 20,
     gap: 12,
-  },
-  bottomSheetContent: {
-    flex: 1,
-    paddingVertical: 16,
-  },
-  bottomSheetBackground: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontWeight: "600",
-  },
-  datePickerContainer: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-  },
-  datePickerButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingTop: 20,
-    gap: 16,
-  },
-  dateButton: {
-    flex: 1,
-    borderRadius: 25,
   },
 });

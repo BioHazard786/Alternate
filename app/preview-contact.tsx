@@ -179,6 +179,7 @@ export default function PreviewContactScreen() {
           backgroundColor={avatarBackgroundColor}
           textColor={avatarTextColor}
           style={{ marginVertical: 20 }}
+          photo={contact.photo}
         />
 
         <Pressable onLongPress={() => handleCopyToClipboard(contact.name)}>
@@ -571,6 +572,7 @@ export default function PreviewContactScreen() {
           disabled={isDeleting}
           style={styles.button}
           labelStyle={{ fontSize: 16 }}
+          contentStyle={{ marginVertical: 5 }}
         >
           Share Contact
         </Button>
@@ -583,6 +585,7 @@ export default function PreviewContactScreen() {
           buttonColor={theme.colors.error}
           textColor={theme.colors.onError}
           labelStyle={{ fontSize: 16 }}
+          contentStyle={{ marginVertical: 5 }}
         >
           Delete Contact
         </Button>
@@ -683,7 +686,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   button: {
-    paddingVertical: 5,
     borderRadius: 50,
     marginHorizontal: 16,
   },

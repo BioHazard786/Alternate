@@ -25,6 +25,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
@@ -36,9 +44,32 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
+        with:
+          cache-read-only: false
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
+
+      - name: Cache Android build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            android/app/build
+            android/build
+          key: ${{ runner.os }}-android-build-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-android-build-
 
       - name: Decode Keystore
         env:
@@ -79,11 +110,9 @@ jobs:
 
             ## ✨ What's New in ${{ steps.tag.outputs.tag }}
 
-            - **Long Press to Copy Contact Info:**  
-              You can now long press on a contact to quickly copy their information.
-
-            - **Bug Fixes:**  
-              Minor bug fixes and stability improvements.
+            - Added support for adding contact photos
+            - Caller ID popup now appears on lock screen
+            - Minor bug fixes and stability improvements
 
             ## 📦 Download Options
 

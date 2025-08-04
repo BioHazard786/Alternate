@@ -75,6 +75,23 @@ export function contactToVCF(contact: Contact): string {
     vcfLines.push(`BDAY:${escapeVCFValue(contact.birthday)}`);
   }
 
+  // Add photo if exists (base64 encoded)
+  if (contact.photo) {
+    // Extract base64 data from data URI if present
+    const base64Data = contact.photo.startsWith("data:image/")
+      ? contact.photo.split(",")[1]
+      : contact.photo;
+
+    // Get MIME type from data URI or default to JPEG
+    const mimeType = contact.photo.startsWith("data:image/")
+      ? contact.photo.split(";")[0].replace("data:", "")
+      : "image/jpeg";
+
+    vcfLines.push(
+      `PHOTO;ENCODING=BASE64;TYPE=${mimeType.toUpperCase()}:${base64Data}`
+    );
+  }
+
   vcfLines.push("END:VCARD");
 
   return vcfLines.join("\r\n"); // Use CRLF for better compatibility
@@ -151,6 +168,7 @@ export function parseVCF(vcfContent: string): Contact[] {
       labels: "",
       birthday: "",
       nickname: "",
+      photo: "",
     };
 
     for (const line of lines) {
@@ -178,9 +196,7 @@ export function parseVCF(vcfContent: string): Contact[] {
           }
           break;
 
-        case field.startsWith("TEL") &&
-          !contact.fullPhoneNumber &&
-          field.includes("PREF"):
+        case field.startsWith("TEL") && !contact.fullPhoneNumber:
           const phone = parsePhoneNumber(value);
           Object.assign(contact, phone);
           break;
@@ -215,6 +231,21 @@ export function parseVCF(vcfContent: string): Contact[] {
         case field === "X-ANDROID-CUSTOM" &&
           value.startsWith("vnd.android.cursor.item/nickname;"):
           contact.nickname = value.split(";")[1] || "";
+          break;
+
+        case field.startsWith("PHOTO"):
+          // Handle photo field with base64 encoding
+          if (field.includes("ENCODING=BASE64") || field.includes("BASE64")) {
+            // Extract MIME type from field parameters
+            const typeMatch = field.match(/TYPE=([^;:]+)/i);
+            const mimeType = typeMatch ? typeMatch[1].toLowerCase() : "jpeg";
+
+            // Clean the base64 data (remove any whitespace/newlines)
+            const cleanBase64 = value.replace(/\s/g, "");
+
+            // Create data URI
+            contact.photo = `data:image/${mimeType};base64,${cleanBase64}`;
+          }
           break;
       }
     }

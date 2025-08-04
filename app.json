@@ -2,7 +2,7 @@
   "expo": {
     "name": "Alternate",
     "slug": "Alternate",
-    "version": "2.1.2",
+    "version": "2.2.2",
     "orientation": "portrait",
     "scheme": "alternate",
     "userInterfaceStyle": "automatic",
@@ -17,6 +17,7 @@
       }
     },
     "android": {
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/adaptive-icon.png",
         "monochromeImage": "./assets/icon/adaptive-icon.png",
@@ -33,6 +34,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you select contact profile pictures.",
+          "cameraPermission": "The app accesses your camera to let you take contact profile pictures."
+        }
+      ],
       [
         "expo-splash-screen",
         {

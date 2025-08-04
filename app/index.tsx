@@ -232,7 +232,7 @@ export default function ContactsScreen() {
                     onPress: () => router.push("/search"),
                   },
                   {
-                    icon: "cog",
+                    icon: "cog-outline",
                     onPress: () => router.push("/settings"),
                   },
                 ]}

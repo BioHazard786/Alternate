@@ -20,5 +20,6 @@ data class CallerEntity(
     val website: String = "",
     val birthday: String = "",
     val labels: String = "",
-    val nickname: String = ""
+    val nickname: String = "",
+    val photo: String = ""
 )

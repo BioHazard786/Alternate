@@ -1,0 +1,4 @@
+v2.2.2 - Feature Update
+ - Added support for adding contact photos
+ - Caller ID popup now appears on lock screen
+ - Minor bug fixes and stability improvements

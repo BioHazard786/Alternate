@@ -3,7 +3,7 @@ import { getFormattedName, getFormattedPhoneNumber } from "@/lib/utils";
 import useSelectedContactStore from "@/store/selectedContactStore";
 import { router } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { Avatar, Icon, TouchableRipple, useTheme } from "react-native-paper";
 import { getAvatarColor } from "../lib/avatar-utils";
 
@@ -94,6 +94,8 @@ export const ContactItem: React.FC<ContactItemProps> = ({
               color={theme.colors.onPrimaryContainer}
             />
           </View>
+        ) : contact.photo ? (
+          <Image source={{ uri: contact.photo }} style={styles.avatarImage} />
         ) : (
           <Avatar.Text
             size={45}
@@ -154,5 +156,10 @@ const styles = StyleSheet.create({
     height: 45,
     justifyContent: "center",
     alignItems: "center",
+  },
+  avatarImage: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
   },
 });

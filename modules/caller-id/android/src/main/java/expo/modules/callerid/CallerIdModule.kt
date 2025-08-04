@@ -105,7 +105,8 @@ class CallerIdModule : Module() {
                         website = callerData["website"] as? String ?: "",
                         birthday = callerData["birthday"] as? String ?: "",
                         labels = callerData["labels"] as? String ?: "",
-                        nickname = callerData["nickname"] as? String ?: ""
+                        nickname = callerData["nickname"] as? String ?: "",
+                        photo = callerData["photo"] as? String ?: ""
                     )
                     val result = callerRepository.storeCallerInfo(callerEntity)
                     promise.resolve(result)
@@ -140,7 +141,8 @@ class CallerIdModule : Module() {
                             website = data["website"] as? String ?: "",
                             birthday = data["birthday"] as? String ?: "",
                             labels = data["labels"] as? String ?: "",
-                            nickname = data["nickname"] as? String ?: ""
+                            nickname = data["nickname"] as? String ?: "",
+                            photo = data["photo"] as? String ?: ""
                         )
                     }
                     val result = callerRepository.storeMultipleCallerInfo(callerEntities)
@@ -178,7 +180,8 @@ class CallerIdModule : Module() {
                                 "website" to callerEntity.website,
                                 "birthday" to callerEntity.birthday,
                                 "labels" to callerEntity.labels,
-                                "nickname" to callerEntity.nickname
+                                "nickname" to callerEntity.nickname,
+                                "photo" to callerEntity.photo
                             )
                         )
                     } else {
@@ -250,7 +253,8 @@ class CallerIdModule : Module() {
                             "website" to entity.website,
                             "birthday" to entity.birthday,
                             "labels" to entity.labels,
-                            "nickname" to entity.nickname
+                            "nickname" to entity.nickname,
+                            "photo" to entity.photo
                         )
                     }
                     promise.resolve(result)

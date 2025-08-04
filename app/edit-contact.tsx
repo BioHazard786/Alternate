@@ -1,5 +1,5 @@
-import Material3Avatar from "@/components/material3-avatar";
 import PhoneNumberInput from "@/components/phone-number-input";
+import PhotoPicker from "@/components/photo-picker";
 import { additionalFields } from "@/constants/AdditionalFields";
 import { getAvatarColor } from "@/lib/avatar-utils";
 import { getCountryByCode } from "@/lib/countries";
@@ -67,6 +67,8 @@ export default function EditContactScreen() {
     handleSubmit,
     formState: { errors, isSubmitting, isValid },
     reset,
+    setValue,
+    watch,
   } = useForm<ContactFormData>({
     defaultValues: {
       name: contact?.name || "",
@@ -88,11 +90,14 @@ export default function EditContactScreen() {
       birthday: contact?.birthday || "",
       labels: contact?.labels || "",
       nickname: contact?.nickname || "",
+      photo: contact?.photo || "",
     },
     mode: "onChange",
   });
 
   const onDismissSnackBar = () => setVisible(false);
+
+  const photoUri = watch("photo");
 
   const removeFieldAndReset = (fieldKey: string) => {
     const newVisibleFields = new Set(visibleFields);
@@ -215,6 +220,7 @@ export default function EditContactScreen() {
       birthday: data.birthday || "",
       labels: data.labels?.trim() || "",
       nickname: data.nickname?.trim() || "",
+      photo: data.photo || "",
     });
 
     if (success) {
@@ -238,20 +244,19 @@ export default function EditContactScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { paddingBottom: insets.bottom }]}
+      style={styles.container}
     >
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom },
+          { paddingBottom: insets.bottom + 16 },
         ]}
       >
         <View style={styles.formContainer}>
-          <Material3Avatar
-            letter={letter}
-            backgroundColor={avatarBackgroundColor}
-            textColor={avatarTextColor}
-            style={{ marginVertical: 20, alignSelf: "center" }}
+          <PhotoPicker
+            photo={photoUri}
+            onPhotoChange={(uri) => setValue("photo", uri)}
+            disabled={isSubmitting}
           />
           <View>
             <Controller
@@ -347,6 +352,7 @@ export default function EditContactScreen() {
               }
               style={styles.addFieldButton}
               labelStyle={{ fontSize: 16 }}
+              contentStyle={{ marginVertical: 5 }}
               disabled={
                 isSubmitting || visibleFields.size >= additionalFields.length
               }
@@ -360,6 +366,7 @@ export default function EditContactScreen() {
               disabled={!isValid || isSubmitting}
               style={styles.saveButton}
               labelStyle={{ fontSize: 16 }}
+              contentStyle={{ marginVertical: 5 }}
             >
               Save Changes
             </Button>
@@ -405,31 +412,8 @@ const styles = StyleSheet.create({
   },
   addFieldButton: {
     borderRadius: 50,
-    paddingVertical: 5,
   },
   saveButton: {
-    paddingVertical: 5,
     borderRadius: 50,
-  },
-  bottomSheetContent: {
-    flex: 1,
-    paddingVertical: 16,
-  },
-  bottomSheetBackground: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontWeight: "600",
-  },
-  list: {
-    paddingHorizontal: 16,
   },
 });

@@ -60,6 +60,7 @@ const useContactStoreBase = create<State & Action>((set, get) => ({
     set({ fetchContactError: null, isLoading: true });
     try {
       const contacts = await CallerIdModule.getAllCallerInfo();
+      contacts.sort((a, b) => a.name.localeCompare(b.name));
       set({ contacts });
     } catch (error) {
       console.error("Failed to fetch contacts:", error);

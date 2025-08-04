@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [CallerEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class CallerDatabase : RoomDatabase() {
@@ -141,6 +141,13 @@ abstract class CallerDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add photo column to existing table
+                db.execSQL("ALTER TABLE caller_info ADD COLUMN photo TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getDatabase(context: Context): CallerDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -148,7 +155,7 @@ abstract class CallerDatabase : RoomDatabase() {
                     CallerDatabase::class.java,
                     "caller_database"
                 )
-                    .addMigrations(MIGRATION_2_3)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration(false)
                     .build()
                 INSTANCE = instance

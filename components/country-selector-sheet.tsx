@@ -95,7 +95,7 @@ function CountrySelectorSheet(props: SheetProps<"country-selector-sheet">) {
         ...styles.container,
         backgroundColor: theme.colors.elevation.level2,
       }}
-      snapPoints={[80]}
+      snapPoints={[90]}
       indicatorStyle={{
         backgroundColor: theme.colors.onSurfaceVariant,
         width: 30,
@@ -130,6 +130,7 @@ function CountrySelectorSheet(props: SheetProps<"country-selector-sheet">) {
           estimatedItemSize={48}
           keyExtractor={(item) => item.code}
           ListEmptyComponent={<EmptyCountryList />}
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       </View>
     </ActionSheet>

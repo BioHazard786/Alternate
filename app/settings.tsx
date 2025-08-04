@@ -180,13 +180,55 @@ export default function SettingsScreen() {
                   value: "light",
                   label: "Light",
                   icon: "white-balance-sunny",
+                  showSelectedCheck: true,
+                  style: {
+                    borderStyle: undefined,
+                    borderWidth: 0,
+                    backgroundColor:
+                      themeMode === "light"
+                        ? theme.colors.secondaryContainer
+                        : theme.colors.surfaceVariant,
+                    borderTopRightRadius: 5,
+                    borderBottomRightRadius: 5,
+                    borderRadius: 50,
+                    paddingVertical: 3,
+                  },
                 },
                 {
                   value: "dark",
                   label: "Dark",
                   icon: "moon-waning-crescent",
+                  showSelectedCheck: true,
+                  style: {
+                    borderStyle: undefined,
+                    borderWidth: 0,
+                    backgroundColor:
+                      themeMode === "dark"
+                        ? theme.colors.secondaryContainer
+                        : theme.colors.surfaceVariant,
+                    marginHorizontal: 3,
+                    borderRadius: 5,
+                    paddingVertical: 3,
+                  },
                 },
-                { value: "system", label: "System", icon: "laptop" },
+                {
+                  value: "system",
+                  label: "System",
+                  icon: "laptop",
+                  showSelectedCheck: true,
+                  style: {
+                    borderStyle: undefined,
+                    borderWidth: 0,
+                    backgroundColor:
+                      themeMode === "system"
+                        ? theme.colors.secondaryContainer
+                        : theme.colors.surfaceVariant,
+                    borderTopLeftRadius: 5,
+                    borderBottomLeftRadius: 5,
+                    borderRadius: 50,
+                    paddingVertical: 3,
+                  },
+                },
               ]}
             />
           </View>

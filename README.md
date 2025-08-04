@@ -71,6 +71,7 @@ When you receive calls from unknown numbers but don't want to save them to your 
 [<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" width="170">](https://apt.izzysoft.de/packages/com.lulu786.Alternate)
 [<img src="get-it-on-github.png" width="170">](https://github.com/BioHazard786/Alternate/releases)
 [<img src="https://www.openapk.net/images/openapk-badge.png" width="170">](https://www.openapk.net/alternate/com.lulu786.Alternate/)
+[<img src="get-it-on-obtainium.png" width="170">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/BioHazard786/Alternate/)
 
 ## Installation
 

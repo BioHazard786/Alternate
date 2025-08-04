@@ -28,6 +28,6 @@ interface CallerDao {
     @Query("DELETE FROM caller_info")
     suspend fun clearAllCallerInfo()
 
-    @Query("SELECT * FROM caller_info ORDER BY name ASC")
+    @Query("SELECT * FROM caller_info")
     suspend fun getAllCallerInfo(): List<CallerEntity>
 }

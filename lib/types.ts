@@ -17,6 +17,7 @@ export type Contact = {
   birthday?: string;
   labels?: string;
   nickname?: string;
+  photo?: string; // Base64 encoded image string (data:image/jpeg;base64,...)
 };
 
 export type ContactFormData = {
@@ -32,6 +33,7 @@ export type ContactFormData = {
   birthday?: string;
   labels?: string;
   nickname?: string;
+  photo?: string; // Base64 encoded image string (data:image/jpeg;base64,...)
 };
 export type ListItem =
   | { type: "header"; letter: string }
