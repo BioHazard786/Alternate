@@ -48,7 +48,7 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     } else {
       router.push({
         pathname: "/preview-contact",
-        params: { contact: JSON.stringify(contact), index },
+        params: { fullPhoneNumber: contact.fullPhoneNumber, index },
       });
     }
   };

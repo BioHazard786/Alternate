@@ -2,7 +2,7 @@
   "expo": {
     "name": "Alternate",
     "slug": "Alternate",
-    "version": "2.2.2",
+    "version": "2.2.3",
     "orientation": "portrait",
     "scheme": "alternate",
     "userInterfaceStyle": "automatic",
@@ -17,7 +17,7 @@
       }
     },
     "android": {
-      "versionCode": 8,
+      "versionCode": 9,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/adaptive-icon.png",
         "monochromeImage": "./assets/icon/adaptive-icon.png",

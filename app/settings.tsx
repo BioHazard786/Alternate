@@ -181,53 +181,48 @@ export default function SettingsScreen() {
                   label: "Light",
                   icon: "white-balance-sunny",
                   showSelectedCheck: true,
-                  style: {
-                    borderStyle: undefined,
-                    borderWidth: 0,
-                    backgroundColor:
-                      themeMode === "light"
-                        ? theme.colors.secondaryContainer
-                        : theme.colors.surfaceVariant,
-                    borderTopRightRadius: 5,
-                    borderBottomRightRadius: 5,
-                    borderRadius: 50,
-                    paddingVertical: 3,
-                  },
+                  style: [
+                    styles.segmentedButton,
+                    styles.segmentedButtonLeft,
+                    {
+                      backgroundColor:
+                        themeMode === "light"
+                          ? theme.colors.secondaryContainer
+                          : theme.colors.surfaceVariant,
+                    },
+                  ],
                 },
                 {
                   value: "dark",
                   label: "Dark",
                   icon: "moon-waning-crescent",
                   showSelectedCheck: true,
-                  style: {
-                    borderStyle: undefined,
-                    borderWidth: 0,
-                    backgroundColor:
-                      themeMode === "dark"
-                        ? theme.colors.secondaryContainer
-                        : theme.colors.surfaceVariant,
-                    marginHorizontal: 3,
-                    borderRadius: 5,
-                    paddingVertical: 3,
-                  },
+                  style: [
+                    styles.segmentedButton,
+                    styles.segmentedButtonMiddle,
+                    {
+                      backgroundColor:
+                        themeMode === "dark"
+                          ? theme.colors.secondaryContainer
+                          : theme.colors.surfaceVariant,
+                    },
+                  ],
                 },
                 {
                   value: "system",
                   label: "System",
                   icon: "laptop",
                   showSelectedCheck: true,
-                  style: {
-                    borderStyle: undefined,
-                    borderWidth: 0,
-                    backgroundColor:
-                      themeMode === "system"
-                        ? theme.colors.secondaryContainer
-                        : theme.colors.surfaceVariant,
-                    borderTopLeftRadius: 5,
-                    borderBottomLeftRadius: 5,
-                    borderRadius: 50,
-                    paddingVertical: 3,
-                  },
+                  style: [
+                    styles.segmentedButton,
+                    styles.segmentedButtonRight,
+                    {
+                      backgroundColor:
+                        themeMode === "system"
+                          ? theme.colors.secondaryContainer
+                          : theme.colors.surfaceVariant,
+                    },
+                  ],
                 },
               ]}
             />
@@ -358,5 +353,23 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
+  },
+  segmentedButton: {
+    borderStyle: undefined,
+    borderWidth: 0,
+  },
+  segmentedButtonLeft: {
+    borderTopRightRadius: 3,
+    borderBottomRightRadius: 3,
+    borderRadius: 50,
+  },
+  segmentedButtonMiddle: {
+    marginHorizontal: 2,
+    borderRadius: 3,
+  },
+  segmentedButtonRight: {
+    borderTopLeftRadius: 3,
+    borderBottomLeftRadius: 3,
+    borderRadius: 50,
   },
 });

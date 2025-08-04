@@ -1,9 +1,8 @@
 import PhoneNumberInput from "@/components/phone-number-input";
 import PhotoPicker from "@/components/photo-picker";
 import { additionalFields } from "@/constants/AdditionalFields";
-import { getAvatarColor } from "@/lib/avatar-utils";
 import { getCountryByCode } from "@/lib/countries";
-import { Contact, ContactFormData } from "@/lib/types";
+import { ContactFormData } from "@/lib/types";
 import { getFormattedDate, getVisibleFields, trimDialCode } from "@/lib/utils";
 import useContactStore from "@/store/contactStore";
 import { router, useLocalSearchParams } from "expo-router";
@@ -34,32 +33,25 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function EditContactScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { contact: contactParam, index } = useLocalSearchParams();
+  const { fullPhoneNumber: originalFullPhoneNumber, index } =
+    useLocalSearchParams();
+  const contacts = useContactStore.use.contacts();
 
-  // Parse the contact from JSON string
-  const contact: Contact | null = contactParam
-    ? JSON.parse(contactParam as string)
-    : null;
-
-  const originalFullPhoneNumber = contact?.fullPhoneNumber;
-  const letter = contact?.name?.charAt(0) || "?";
+  // Find the contact by fullPhoneNumber
+  const contact = contacts.find(
+    (c) => c.fullPhoneNumber === originalFullPhoneNumber
+  );
 
   const updateContact = useContactStore.use.updateContact();
   const updateError = useContactStore.use.updateContactError();
   const clearUpdateError = useContactStore.use.clearUpdateError();
   const [visible, setVisible] = useState(false);
   const [visibleFields, setVisibleFields] = useState<Set<string>>(() =>
-    getVisibleFields(contact)
+    getVisibleFields(contact!)
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() =>
     contact?.birthday ? new Date(contact.birthday) : new Date()
-  );
-
-  const [avatarBackgroundColor, avatarTextColor] = getAvatarColor(
-    letter,
-    theme.dark,
-    Number(index)
   );
 
   const {
@@ -204,7 +196,7 @@ export default function EditContactScreen() {
     const fullPhoneNumber =
       data.phoneNumber.dialCode + data.phoneNumber.number.trim();
 
-    const success = await updateContact(originalFullPhoneNumber!, {
+    const success = await updateContact(originalFullPhoneNumber as string, {
       name: data.name.trim(),
       fullPhoneNumber: fullPhoneNumber,
       phoneNumber: data.phoneNumber.number.trim(),

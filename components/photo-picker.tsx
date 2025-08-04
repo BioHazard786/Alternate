@@ -4,7 +4,7 @@ import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { Button, Dialog, Portal, Text } from "react-native-paper";
+import { Button, Dialog, Portal, Text, useTheme } from "react-native-paper";
 
 interface PhotoPickerProps {
   photo?: string; // Base64 encoded image string (data:image/jpeg;base64,...)
@@ -19,6 +19,8 @@ export default function PhotoPicker({
   size = 200,
   disabled = false,
 }: PhotoPickerProps) {
+  const theme = useTheme();
+
   const [permissionDialogVisible, setPermissionDialogVisible] = useState(false);
   const [cameraPermissionDialogVisible, setCameraPermissionDialogVisible] =
     useState(false);
@@ -194,9 +196,9 @@ export default function PhotoPicker({
                   setPhotoOptionsDialogVisible(false);
                   onPhotoChange(undefined);
                 }}
-                textColor="red"
+                textColor={theme.colors.error}
               >
-                Remove Photo
+                Remove
               </Button>
             )}
             <Button onPress={() => setPhotoOptionsDialogVisible(false)}>

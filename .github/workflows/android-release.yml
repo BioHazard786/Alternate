@@ -106,12 +106,13 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            # 🚀 Alternate ${{ steps.tag.outputs.tag }} – Feature & Improvement Release
+            # 🚀 Alternate ${{ steps.tag.outputs.tag }} – Performance & UI Update
 
             ## ✨ What's New in ${{ steps.tag.outputs.tag }}
 
-            - Added support for adding contact photos
-            - Caller ID popup now appears on lock screen
+            - Optimized avatar image loading performance for faster rendering
+            - Improved theme selection UI with streamlined button styling
+            - Enhanced base64 image handling for better memory efficiency
             - Minor bug fixes and stability improvements
 
             ## 📦 Download Options

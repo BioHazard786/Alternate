@@ -3,7 +3,6 @@ import whatsappIcon from "@/assets/in-app-icon/whatsapp.png";
 import Material3Avatar from "@/components/material3-avatar";
 import CustomNavigationBar from "@/components/navigation-bar";
 import { getAvatarColor } from "@/lib/avatar-utils";
-import { Contact } from "@/lib/types";
 import {
   getFormattedDate,
   getFormattedName,
@@ -40,7 +39,8 @@ export default function PreviewContactScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  const { contact: contactParam, index } = useLocalSearchParams();
+  const { fullPhoneNumber, index } = useLocalSearchParams();
+  const contacts = useContactStore.use.contacts();
   const deleteContact = useContactStore.use.deleteContact();
   const deleteError = useContactStore.use.deleteContactError();
   const clearDeleteError = useContactStore.use.clearDeleteError;
@@ -48,10 +48,8 @@ export default function PreviewContactScreen() {
   const [open, setOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Parse the contact from JSON string
-  const contact: Contact | null = contactParam
-    ? JSON.parse(contactParam as string)
-    : null;
+  // Find the contact by fullPhoneNumber
+  const contact = contacts.find((c) => c.fullPhoneNumber === fullPhoneNumber);
 
   const letter = contact?.name?.charAt(0).toUpperCase() || "?";
   const [avatarBackgroundColor, avatarTextColor] = getAvatarColor(
@@ -164,7 +162,10 @@ export default function PreviewContactScreen() {
                   onPress: () =>
                     router.push({
                       pathname: "/edit-contact",
-                      params: { contact: contactParam, index: index },
+                      params: {
+                        fullPhoneNumber: fullPhoneNumber,
+                        index: index,
+                      },
                     }),
                 },
               ]}

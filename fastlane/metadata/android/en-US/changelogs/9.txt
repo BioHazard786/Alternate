@@ -1,0 +1,5 @@
+v2.2.3 - Performance & UI Update
+ - Optimized avatar image loading performance for faster rendering
+ - Improved theme selection UI with streamlined button styling
+ - Enhanced base64 image handling for better memory efficiency
+ - Minor bug fixes and stability improvements

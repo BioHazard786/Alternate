@@ -1,6 +1,6 @@
 // import { Image } from "expo-image";
 import React from "react";
-import { StyleProp, View, ViewStyle } from "react-native";
+import { StyleProp, ViewStyle } from "react-native";
 import { useTheme } from "react-native-paper";
 import Svg, { ClipPath, Defs, Image, Path, Text } from "react-native-svg";
 
@@ -29,34 +29,32 @@ const Material3Avatar = ({
 
   if (photo) {
     return (
-      <View>
-        <Svg
-          height={size}
-          width={size}
-          viewBox={`0 0 ${size} ${size}`}
-          style={style}
-        >
-          {/* 1. Define the clipping path */}
-          <Defs>
-            <ClipPath id="myClipPath">
-              {/* This path creates a rectangle with a diagonal slice at the top right */}
-              <Path
-                d={pathData}
-                fill={backgroundColor || theme.colors.surfaceVariant}
-              />
-            </ClipPath>
-          </Defs>
+      <Svg
+        height={size}
+        width={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={style}
+      >
+        {/* 1. Define the clipping path */}
+        <Defs>
+          <ClipPath id="myClipPath">
+            {/* This path creates a rectangle with a diagonal slice at the top right */}
+            <Path
+              d={pathData}
+              fill={backgroundColor || theme.colors.surfaceVariant}
+            />
+          </ClipPath>
+        </Defs>
 
-          {/* 2. Apply the clipping path to the image */}
-          <Image
-            href={{ uri: photo }}
-            width="100%"
-            height="100%"
-            preserveAspectRatio="xMidYMid slice"
-            clipPath="url(#myClipPath)"
-          />
-        </Svg>
-      </View>
+        {/* 2. Apply the clipping path to the image */}
+        <Image
+          href={{ uri: photo }}
+          width="100%"
+          height="100%"
+          preserveAspectRatio="xMidYMid slice"
+          clipPath="url(#myClipPath)"
+        />
+      </Svg>
     );
   }
 
