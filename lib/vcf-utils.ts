@@ -67,6 +67,11 @@ export function contactToVCF(contact: Contact): string {
 		vcfLines.push(`URL:${escapeVCFValue(contact.website)}`);
 	}
 
+	// Add groups/labels as CATEGORIES if exists (round-trips with import)
+	if (contact.labels) {
+		vcfLines.push(`CATEGORIES:${escapeVCFValue(contact.labels)}`);
+	}
+
 	// Add notes if exists
 	if (contact.notes) {
 		vcfLines.push(`NOTE:${escapeVCFValue(contact.notes)}`);
@@ -187,6 +192,10 @@ export function parseVCF(vcfContent: string): Contact[] {
 			photo: "",
 		};
 
+		// ORG (company/department) is captured here and only folded into the
+		// `appointment` field after the loop, so an explicit TITLE always wins.
+		let org = "";
+
 		for (const line of lines) {
 			const colonIndex = line.indexOf(":");
 			if (colonIndex === -1) continue;
@@ -220,10 +229,12 @@ export function parseVCF(vcfContent: string): Contact[] {
 					break;
 				}
 
-				case field.startsWith("EMAIL") &&
-					!contact.email &&
-					field.includes("PREF"):
-					contact.email = value;
+				case field.startsWith("EMAIL"):
+					// Accept any email, not just those marked PREF. Keep the first
+					// one found, but let a PREF-marked address take precedence.
+					if (!contact.email || field.includes("PREF")) {
+						contact.email = value;
+					}
 					break;
 
 				case field.startsWith("ADR") && field.includes("PREF"): {
@@ -239,6 +250,21 @@ export function parseVCF(vcfContent: string): Contact[] {
 				case field === "URL":
 					contact.website = value;
 					break;
+
+				case field === "CATEGORIES":
+					// Contact groups/labels, e.g. "Family,Work". Stored verbatim.
+					contact.labels = value;
+					break;
+
+				case field.startsWith("ORG"): {
+					// ORG is "Company;Department;...". Join the non-empty parts.
+					org = value
+						.split(";")
+						.map((part) => part.trim())
+						.filter(Boolean)
+						.join(", ");
+					break;
+				}
 
 				case field === "NOTE":
 					contact.notes = value;
@@ -264,8 +290,13 @@ export function parseVCF(vcfContent: string): Contact[] {
 					break;
 
 				case field.startsWith("PHOTO"):
-					// Handle photo field with base64 encoding
-					if (field.includes("ENCODING=BASE64") || field.includes("BASE64")) {
+					// Handle photo field with base64 encoding. Accept the vCard 3.0
+					// short form (ENCODING=b) as well as ENCODING=BASE64, and match
+					// case-insensitively (some exporters use lowercase).
+					if (
+						/ENCODING=(?:BASE64|B)\b/i.test(field) ||
+						/\bBASE64\b/i.test(field)
+					) {
 						// Extract MIME type from field parameters
 						const typeMatch = field.match(/TYPE=([^;:]+)/i);
 						const mimeType = typeMatch ? typeMatch[1].toLowerCase() : "jpeg";
@@ -278,6 +309,13 @@ export function parseVCF(vcfContent: string): Contact[] {
 					}
 					break;
 			}
+		}
+
+		// If there was no explicit TITLE, use the organisation as the appointment
+		// so ORG data isn't lost. (A dedicated organisation field would need
+		// native DB support; see the multiple-numbers work.)
+		if (org && !contact.appointment) {
+			contact.appointment = org;
 		}
 
 		if (contact.name && contact.fullPhoneNumber) {
