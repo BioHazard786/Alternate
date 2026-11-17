@@ -55,7 +55,7 @@ Alternate ("we," "our," or "us") is committed to protecting your privacy. This P
 - **READ_CALL_LOG:** required by Android so the App can receive the number of an incoming call. The call log itself is not read
 - **SYSTEM_ALERT_WINDOW (Display over other apps):** to show the caller popup on top of your phone app
 - **WAKE_LOCK** and **DISABLE_KEYGUARD:** to show the popup when the screen is off or locked
-- **USE_BIOMETRIC:** for the optional fingerprint unlock
+- **USE_BIOMETRIC** and **USE_FINGERPRINT:** for the optional fingerprint unlock (the second is added by Android's biometric library for older Android versions)
 
 ### Optional system role
 

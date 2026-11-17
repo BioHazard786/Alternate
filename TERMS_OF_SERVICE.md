@@ -130,7 +130,7 @@ The App requires certain Android permissions to function:
 - **READ_CALL_LOG:** Required by Android for the App to receive the number of an incoming call. The call log is not read
 - **SYSTEM_ALERT_WINDOW (Display over other apps):** To display caller information during calls
 - **WAKE_LOCK** and **DISABLE_KEYGUARD:** To show caller information when the screen is off or locked
-- **USE_BIOMETRIC:** For the optional fingerprint unlock of the app lock
+- **USE_BIOMETRIC** and **USE_FINGERPRINT:** For the optional fingerprint unlock of the app lock (the second is added by Android's biometric library for older Android versions)
 
 ### Optional Role
 
