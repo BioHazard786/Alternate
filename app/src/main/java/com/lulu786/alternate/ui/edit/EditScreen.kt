@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.edit
 
+import com.lulu786.alternate.ui.Sym
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -27,16 +28,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -187,7 +178,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
         .background(MaterialTheme.colorScheme.surface)) {
         TopAppBar(
             title = { Text(if (id == 0L) "Create contact" else "Edit contact") },
-            navigationIcon = { IconButton(::requestClose) { Icon(Icons.Filled.Close, "Close") } },
+            navigationIcon = { IconButton(::requestClose) { Icon(Sym.Close, "Close") } },
             actions = { Button(::save, enabled = valid && loaded, modifier = Modifier.padding(end = 8.dp)) { Text("Save") } },
         )
         if (!loaded) return@Column
@@ -196,9 +187,9 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                 ContactAvatar(seed, name, photo, 96.dp, expressive = true)
                 TextButton({ photoSheet = true }) { Text(if (photo.isEmpty()) "Add picture" else "Change picture") }
             }
-            FieldRow(Icons.Filled.Person) { OutlinedTextField(name, { name = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Name") }, singleLine = true) }
-            FieldRow(Icons.Filled.Business) { OutlinedTextField(appointment, { appointment = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Appointment") }, singleLine = true) }
-            FieldRow(Icons.Filled.LocationOn) { OutlinedTextField(location, { location = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Location") }, singleLine = true) }
+            FieldRow(Sym.Person) { OutlinedTextField(name, { name = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Name") }, singleLine = true) }
+            FieldRow(Sym.Work) { OutlinedTextField(appointment, { appointment = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Appointment") }, singleLine = true) }
+            FieldRow(Sym.LocationOn) { OutlinedTextField(location, { location = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Location") }, singleLine = true) }
 
             phones.forEachIndexed { i, p -> androidx.compose.runtime.key(p.key) {
                 PhoneRow(
@@ -210,16 +201,16 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                 )
             } }
             TextButton({ phones += PhoneForm(System.nanoTime(), sim, label = if (phones.size == 1) "Work" else "Other"); dirty = true }, Modifier.padding(start = 56.dp)) {
-                Icon(Icons.Filled.Add, null); Spacer(Modifier.width(8.dp)); Text("Add phone")
+                Icon(Sym.Add, null); Spacer(Modifier.width(8.dp)); Text("Add phone")
             }
 
             val groups by vm.groups.collectAsStateWithLifecycle()
-            FieldRow(Icons.Filled.Label) {
+            FieldRow(Sym.Label) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     groups.orEmpty().filter { it.id in groupIds }.forEach { g ->
-                        InputChip(true, { groupIds = groupIds - g.id; dirty = true }, { Text(g.name) }, trailingIcon = { Icon(Icons.Filled.Close, "Remove ${g.name}", Modifier.size(18.dp)) })
+                        InputChip(true, { groupIds = groupIds - g.id; dirty = true }, { Text(g.name) }, trailingIcon = { Icon(Sym.Close, "Remove ${g.name}", Modifier.size(18.dp)) })
                     }
-                    AssistChip({ groupSheet = true }, { Text("Add to group") }, leadingIcon = { Icon(Icons.Filled.Add, null, Modifier.size(18.dp)) })
+                    AssistChip({ groupSheet = true }, { Text("Add to group") }, leadingIcon = { Icon(Sym.Add, null, Modifier.size(18.dp)) })
                 }
             }
 
@@ -229,7 +220,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                         if (key == "Birthday") {
                             OutlinedTextField(
                                 extras[key].orEmpty(), {}, Modifier.fillMaxWidth().clickable { datePicker = true }, readOnly = true, enabled = false,
-                                label = { Text("Birthday") }, trailingIcon = { IconButton({ datePicker = true }) { Icon(Icons.Filled.ArrowDropDown, "Pick date") } },
+                                label = { Text("Birthday") }, trailingIcon = { IconButton({ datePicker = true }) { Icon(Sym.ArrowDropDown, "Pick date") } },
                                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                                     disabledTextColor = MaterialTheme.colorScheme.onSurface, disabledBorderColor = MaterialTheme.colorScheme.outline,
                                     disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant, disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant),
@@ -242,7 +233,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                     }
                 }
             }
-            TextButton({ fieldSheet = true }, Modifier.padding(start = 56.dp)) { Icon(Icons.Filled.Add, null); Spacer(Modifier.width(8.dp)); Text("Add more fields") }
+            TextButton({ fieldSheet = true }, Modifier.padding(start = 56.dp)) { Icon(Sym.Add, null); Spacer(Modifier.width(8.dp)); Text("Add more fields") }
         }
     }
 
@@ -308,12 +299,12 @@ private fun PhoneRow(
     var labelMenu by remember { mutableStateOf(false) }
     var custom by remember { mutableStateOf(p.label !in builtInLabels) }
     val country = Countries.byCode(p.country)
-    FieldRow(if (first) Icons.Filled.Phone else null) {
+    FieldRow(if (first) Sym.Call else null) {
         Row(verticalAlignment = Alignment.Top) {
-            OutlinedButton({ picker = true }, Modifier.height(56.dp)) { Text("${country?.flag.orEmpty()} +${country?.dialCode.orEmpty()}"); Icon(Icons.Filled.ArrowDropDown, null) }
-            Spacer(Modifier.width(8.dp))
             OutlinedTextField(
                 p.number, { p.number = it.filter { c -> c.isDigit() || c == ' ' || c == '-' }; onChange() }, Modifier.weight(1f), label = { Text("Phone") }, singleLine = true,
+                // The country sits inside the field so both share one baseline and border.
+                leadingIcon = { TextButton({ picker = true }) { Text("${country?.flag.orEmpty()} +${country?.dialCode.orEmpty()}"); Icon(Sym.ArrowDropDown, null) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), isError = error != null || duplicateInForm,
                 supportingText = {
                     when {
@@ -322,11 +313,11 @@ private fun PhoneRow(
                     }
                 },
             )
-            if (canRemove) IconButton(onRemove, Modifier.padding(top = 4.dp)) { Icon(Icons.Filled.Close, "Remove number") }
+            if (canRemove) IconButton(onRemove, Modifier.padding(top = 4.dp)) { Icon(Sym.Close, "Remove number") }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.foundation.layout.Box {
-                TextButton({ labelMenu = true }) { Text(if (custom) "Custom" else p.label); Icon(Icons.Filled.ArrowDropDown, null) }
+                TextButton({ labelMenu = true }) { Text(if (custom) "Custom" else p.label); Icon(Sym.ArrowDropDown, null) }
                 DropdownMenu(labelMenu, { labelMenu = false }) {
                     builtInLabels.forEach { l -> DropdownMenuItem({ Text(l) }, { p.label = l; custom = false; labelMenu = false; onChange() }) }
                     DropdownMenuItem({ Text("Custom…") }, { custom = true; labelMenu = false; if (p.label in builtInLabels) p.label = "" })

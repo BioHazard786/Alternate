@@ -16,7 +16,7 @@ import java.util.UUID
 
 private val Context.store by preferencesDataStore("settings")
 
-enum class ThemeMode { System, Light, Dark }
+enum class ThemeMode(val label: String) { System("System"), Light("Light"), Dark("Dark"), Amoled("AMOLED black") }
 
 enum class AutoLock(val label: String, val millis: Long) {
     Disabled("Never", 0), Immediately("Immediately", 0), M1("After 1 minute", 60_000L),

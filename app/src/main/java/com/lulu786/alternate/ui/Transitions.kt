@@ -14,5 +14,5 @@ val LocalAnimScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
 fun Modifier.sharedKey(key: String): Modifier {
     val shared = LocalSharedScope.current ?: return this
     val anim = LocalAnimScope.current ?: return this
-    return with(shared) { this@sharedKey.sharedBounds(rememberSharedContentState(key), anim) }
+    return with(shared) { this@sharedKey.sharedBounds(rememberSharedContentState(key), anim, resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()) }
 }

@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.setup
 
+import com.lulu786.alternate.ui.Sym
 import android.Manifest
 import android.content.Intent
 import android.app.role.RoleManager
@@ -22,8 +23,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -122,7 +121,7 @@ private fun PermissionCard(title: String, body: String, granted: Boolean, action
                 Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.width(12.dp))
-            if (granted) Icon(Icons.Filled.CheckCircle, "Allowed", tint = MaterialTheme.colorScheme.primary)
+            if (granted) Icon(Sym.CheckCircleFilled, "Allowed", tint = MaterialTheme.colorScheme.primary)
             else OutlinedButton(onClick) { Text(action) }
         }
     }

@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.groups
 
+import com.lulu786.alternate.ui.Sym
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,13 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Label
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -71,14 +65,14 @@ fun GroupsScreen(vm: AppViewModel, onOpen: (Long) -> Unit) {
     Scaffold(
         Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = { LargeTopAppBar(title = { Text("Groups") }, scrollBehavior = scroll) },
-        floatingActionButton = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Create group") }) },
+        floatingActionButton = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Sym.Add, null) }, text = { Text("Create group") }) },
         containerColor = MaterialTheme.colorScheme.surface,
     ) { pad ->
         val list = groups
         when {
             list == null -> Unit
             list.isEmpty() -> Box(Modifier.padding(pad)) {
-                EmptyState(Icons.Filled.Label, "Organise contacts into groups like Family or Work") { Button({ creating = true }) { Text("Create group") } }
+                EmptyState(Sym.Label, "Organise contacts into groups like Family or Work") { Button({ creating = true }) { Text("Create group") } }
             }
             else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = pad, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 items(list.size, key = { list[it].id }) { i ->
@@ -89,7 +83,7 @@ fun GroupsScreen(vm: AppViewModel, onOpen: (Long) -> Unit) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape), Alignment.Center) {
-                            Icon(Icons.Filled.Label, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Icon(Sym.Label, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
@@ -97,7 +91,7 @@ fun GroupsScreen(vm: AppViewModel, onOpen: (Long) -> Unit) {
                             Text("${g.count} ${if (g.count == 1) "contact" else "contacts"}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Box {
-                            IconButton({ menu = true }) { Icon(Icons.Filled.MoreVert, "More options for ${g.name}") }
+                            IconButton({ menu = true }) { Icon(Sym.MoreVert, "More options for ${g.name}") }
                             DropdownMenu(menu, { menu = false }) {
                                 DropdownMenuItem({ Text("Rename") }, { menu = false; renaming = g })
                                 DropdownMenuItem({ Text("Share group as VCF") }, { menu = false; vm.shareGroup(context, g.id) })
@@ -128,15 +122,15 @@ fun GroupDetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onOpen: (L
         topBar = {
             if (vm.selecting) TopAppBar(
                 title = { Text("${vm.selected.size} selected") },
-                navigationIcon = { IconButton(vm::clearSelection) { Icon(Icons.Filled.Close, "Cancel selection") } },
+                navigationIcon = { IconButton(vm::clearSelection) { Icon(Sym.Close, "Cancel selection") } },
                 actions = { TextButton({ val ids = vm.selected.toList(); scope.launch { vm.repo.removeFromGroup(id, ids); vm.clearSelection() } }) { Text("Remove from group") } },
-            ) else LargeTopAppBar(title = { Text(name) }, navigationIcon = { IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }, scrollBehavior = scroll)
+            ) else LargeTopAppBar(title = { Text(name) }, navigationIcon = { IconButton(onBack) { Icon(Sym.ArrowBack, "Back") } }, scrollBehavior = scroll)
         },
-        floatingActionButton = { if (!vm.selecting) ExtendedFloatingActionButton(onClick = onAddPeople, icon = { Icon(Icons.Filled.PersonAdd, null) }, text = { Text("Add people") }) },
+        floatingActionButton = { if (!vm.selecting) ExtendedFloatingActionButton(onClick = onAddPeople, icon = { Icon(Sym.PersonAdd, null) }, text = { Text("Add people") }) },
         containerColor = MaterialTheme.colorScheme.surface,
     ) { pad ->
         val list = rows
-        if (list != null && list.isEmpty()) Box(Modifier.padding(pad)) { EmptyState(Icons.Filled.PersonAdd, "No one in this group yet") { Button(onAddPeople) { Text("Add people") } } }
+        if (list != null && list.isEmpty()) Box(Modifier.padding(pad)) { EmptyState(Sym.PersonAdd, "No one in this group yet") { Button(onAddPeople) { Text("Add people") } } }
         else LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = pad.calculateTopPadding(), bottom = 112.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             items(list.orEmpty().size, key = { list!![it].id }) { i ->
                 val r = list!![i]
@@ -158,7 +152,7 @@ fun MemberPickerScreen(vm: AppViewModel, groupId: Long, onDone: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text("Add people") },
-                navigationIcon = { IconButton(onDone) { Icon(Icons.Filled.Close, "Close") } },
+                navigationIcon = { IconButton(onDone) { Icon(Sym.Close, "Close") } },
                 actions = { Button({ scope.launch { vm.repo.setMembers(groupId, current.orEmpty()); onDone() } }, Modifier.padding(end = 8.dp), enabled = current != null) { Text("Save") } },
             )
         },

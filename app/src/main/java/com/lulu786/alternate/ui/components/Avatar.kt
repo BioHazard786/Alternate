@@ -1,13 +1,12 @@
 package com.lulu786.alternate.ui.components
 
+import com.lulu786.alternate.ui.Sym
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -88,7 +88,7 @@ fun ContactAvatar(
     ) {
         if (showCheck) {
             Icon(
-                Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.onPrimary,
+                Sym.Check, null, tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(size * 0.5f).graphicsLayer { rotationY = 180f },
             )
         } else if (photoPath.isNotEmpty()) {
@@ -111,36 +111,40 @@ fun ContactAvatar(
     }
 }
 
-/** 0 soft gradient, 1 rings, 2 stripes, 3 dots. Paths are built once per size in drawWithCache; no bitmaps. */
-private fun Modifier.avatarBackground(pattern: Int, container: Color, onContainer: Color, next: Color): Modifier =
+/**
+ * 0 soft gradient with a light glow (Samsung style), 1 fine ripples (OnePlus style), 2 fine stripes, 3 fine dots.
+ * Everything scales with the avatar and stays subtle, so the letter reads first. No bitmaps.
+ */
+private fun Modifier.avatarBackground(pattern: Int, container: Color, onContainer: Color, @Suppress("UNUSED_PARAMETER") next: Color): Modifier =
     drawWithCache {
         val s = size.minDimension
-        val brush = Brush.linearGradient(listOf(container, next), Offset.Zero, Offset(s, s))
+        val light = lerp(container, Color.White, 0.22f)
+        val deep = lerp(container, onContainer, 0.16f)
+        val gradient = Brush.linearGradient(listOf(light, deep), Offset.Zero, Offset(s, s))
+        val glow = Brush.radialGradient(listOf(Color.White.copy(alpha = 0.28f), Color.Transparent), Offset(s * 0.3f, s * 0.25f), s * 0.75f)
+        val ink = onContainer.copy(alpha = 0.13f)
         onDrawBehind {
-            if (pattern == 0) {
-                drawRect(brush)
-                return@onDrawBehind
-            }
-            drawRect(container)
-            val stroke = s * 0.045f
             when (pattern) {
-                1 -> for (r in listOf(0.35f, 0.6f, 0.85f, 1.1f))
-                    drawCircle(onContainer.copy(alpha = 0.10f), s * r, Offset(s, s), style = Stroke(stroke))
+                0 -> { drawRect(gradient); drawRect(glow) }
+                1 -> {
+                    drawRect(container)
+                    val step = s * 0.075f
+                    var r = step
+                    while (r < s * 1.3f) { drawCircle(ink, r, Offset(s * 0.7f, s * 0.3f), style = Stroke(s * 0.02f)); r += step }
+                }
                 2 -> {
-                    val gap = s * 0.2f
+                    drawRect(container)
                     var x = -s
-                    while (x < s * 2) {
-                        drawLine(onContainer.copy(alpha = 0.10f), Offset(x, s), Offset(x + s, 0f), stroke)
-                        x += gap
-                    }
+                    while (x < s * 2) { drawLine(ink, Offset(x, s), Offset(x + s, 0f), s * 0.02f); x += s * 0.085f }
                 }
                 else -> {
-                    val gap = s * 0.2f
+                    drawRect(container)
+                    val gap = s * 0.13f
                     var row = 0; var y = gap / 2
                     while (y < s) {
                         var x = if (row % 2 == 0) gap / 2 else gap
-                        while (x < s) { drawCircle(onContainer.copy(alpha = 0.12f), s * 0.03f, Offset(x, y)); x += gap }
-                        y += gap * 0.8f; row++
+                        while (x < s) { drawCircle(ink.copy(alpha = 0.18f), s * 0.02f, Offset(x, y)); x += gap }
+                        y += gap * 0.87f; row++
                     }
                 }
             }

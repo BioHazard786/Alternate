@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.lock
 
+import com.lulu786.alternate.ui.Sym
 import androidx.activity.compose.BackHandler
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
@@ -24,12 +25,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Backspace
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.toShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -132,6 +131,7 @@ private fun PinEntry(
     onFingerprint: (() -> Unit)?, onComplete: (String) -> Unit, onEdit: () -> Unit,
 ) {
     var pin by remember { mutableStateOf("") }
+    val pinShapes = listOf(MaterialShapes.Cookie9Sided, MaterialShapes.Flower, MaterialShapes.Clover4Leaf, MaterialShapes.Sunny).map { it.toShape() }
     val offset = remember { Animatable(0f) }
     LaunchedEffect(shake) {
         if (shake > 0) {
@@ -149,7 +149,7 @@ private fun PinEntry(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).statusBarsPadding().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
-        Icon(Icons.Filled.Lock, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+        Icon(Sym.Lock, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.headlineSmall)
         Text(subtitle.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.height(24.dp))
@@ -157,9 +157,11 @@ private fun PinEntry(
         Row(Modifier.offset(x = offset.value.dp).semantics { contentDescription = "${pin.length} of $PIN_LENGTH digits entered" }, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             repeat(PIN_LENGTH) { i ->
                 val filled = i < pin.length
-                val scale by animateFloatAsState(if (filled) 1f else 0.7f, spring(dampingRatio = 0.35f, stiffness = 500f), label = "dot")
-                Box(Modifier.size(16.dp).graphicsLayer { scaleX = scale; scaleY = scale }
-                    .background(if (error) MaterialTheme.colorScheme.error else if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape))
+                // Like the newest Android lock screen: each digit pops in as a Material shape.
+                val scale by animateFloatAsState(if (filled) 1f else 0.4f, spring(dampingRatio = 0.35f, stiffness = 420f), label = "dot")
+                val turn by animateFloatAsState(if (filled) 0f else -60f, spring(dampingRatio = 0.5f, stiffness = 300f), label = "turn")
+                Box(Modifier.size(28.dp).graphicsLayer { scaleX = scale; scaleY = scale; rotationZ = turn }
+                    .background(if (error) MaterialTheme.colorScheme.error else if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, if (filled) pinShapes[i % pinShapes.size] else CircleShape))
             }
         }
         Spacer(Modifier.height(32.dp))
@@ -167,9 +169,9 @@ private fun PinEntry(
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(vertical = 8.dp)) { r.forEach { Key(it) { press(it) } } }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-            if (onFingerprint != null) Key(null, Icons.Filled.Fingerprint, "Use fingerprint", onFingerprint) else Spacer(Modifier.size(72.dp))
+            if (onFingerprint != null) Key(null, Sym.Fingerprint, "Use fingerprint", onFingerprint) else Spacer(Modifier.size(72.dp))
             Key("0") { press("0") }
-            Key(null, Icons.AutoMirrored.Filled.Backspace, "Delete") { if (pin.isNotEmpty()) { pin = pin.dropLast(1); onEdit() } }
+            Key(null, Sym.Backspace, "Delete") { if (pin.isNotEmpty()) { pin = pin.dropLast(1); onEdit() } }
         }
     }
 }

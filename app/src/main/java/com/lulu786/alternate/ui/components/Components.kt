@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.components
 
+import com.lulu786.alternate.ui.Sym
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -25,8 +26,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -206,7 +205,7 @@ fun CountryPickerSheet(selectedCode: String, simCode: String?, onPick: (Country)
     ModalBottomSheet(onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         OutlinedTextField(
             query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            placeholder = { Text("Search country or code") }, leadingIcon = { Icon(Icons.Filled.Search, null) }, singleLine = true,
+            placeholder = { Text("Search country or code") }, leadingIcon = { Icon(Sym.Search, null) }, singleLine = true,
         )
         LazyColumn(Modifier.padding(top = 8.dp)) {
             items(list, key = { it.code }) { c ->

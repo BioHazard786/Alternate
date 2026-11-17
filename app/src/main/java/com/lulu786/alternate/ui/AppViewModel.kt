@@ -49,7 +49,8 @@ data class ContactListModel(
 private fun buildModel(rows: List<ContactRow>): ContactListModel {
     val favorites = rows.filter { it.starred }
     val sections = rows.groupBy { sectionOf(it.sortKey) }.toSortedMap(compareBy { if (it == '#') '￿' else it }).map { it.key to it.value }
-    var index = if (favorites.isEmpty()) 0 else 1 + favorites.size
+    // count line, then (favorites header + favorites grid) when there are favorites
+    var index = if (favorites.isEmpty()) 1 else 3
     val starts = sections.map { (letter, list) -> (letter to index).also { index += 1 + list.size } }
     return ContactListModel(favorites, sections, rows.size, starts)
 }

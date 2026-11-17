@@ -1,10 +1,17 @@
 package com.lulu786.alternate.ui.contacts
 
+import com.lulu786.alternate.ui.Sym
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.items
@@ -21,23 +28,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SelectAll
-import androidx.compose.material.icons.outlined.People
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.SearchBar
@@ -81,7 +78,6 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onCreate: (String?)
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/x-vcard")) { it?.let { u -> vm.exportTo(context, u) } }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let { u -> vm.importFrom(context, u, context.simCountry()) } }
 
-    val expandedFab = state.isScrollingUp()
     Box(Modifier.fillMaxSize()) {
         val m = model
         when {
@@ -96,35 +92,22 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onCreate: (String?)
             }
         }
         if (!vm.selecting) {
-            MediumExtendedFloatingActionButton(
-                onClick = { onCreate(null) }, expanded = expandedFab,
-                icon = { Icon(Icons.Filled.Edit, null) }, text = { Text("Create contact") },
+            FloatingActionButton(
+                onClick = { onCreate(null) },
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).sharedKey("create"),
-            )
+            ) { Icon(Sym.Add, "Create contact") }
         }
     }
 }
 
 @Composable
 private fun EmptyContacts(onCreate: (String?) -> Unit, import: () -> Unit) {
-    EmptyState(Icons.Outlined.People, "No contacts yet", "Contacts you save here show up when they call.") {
+    EmptyState(Sym.Person, "No contacts yet", "Contacts you save here show up when they call.") {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button({ onCreate(null) }) { Text("Create contact") }
             OutlinedButton(import) { Text("Import from file") }
         }
     }
-}
-
-/** True at rest and while scrolling toward the top, so the FAB expands; false while scrolling down. */
-@Composable
-private fun LazyListState.isScrollingUp(): Boolean {
-    var prevIndex by remember(this) { mutableIntStateOf(firstVisibleItemIndex) }
-    var prevOffset by remember(this) { mutableIntStateOf(firstVisibleItemScrollOffset) }
-    return remember(this) {
-        derivedStateOf {
-            if (prevIndex != firstVisibleItemIndex) prevIndex > firstVisibleItemIndex else prevOffset >= firstVisibleItemScrollOffset
-        }.also { prevIndex = firstVisibleItemIndex; prevOffset = firstVisibleItemScrollOffset }
-    }.value
 }
 
 @Composable
@@ -134,9 +117,9 @@ private fun TopBar(
 ) {
     if (vm.selecting) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(vm::clearSelection) { Icon(Icons.Filled.Close, "Cancel selection") }
+            IconButton(vm::clearSelection) { Icon(Sym.Close, "Cancel selection") }
             Text("${vm.selected.size} selected", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            IconButton(vm::selectAll) { Icon(Icons.Filled.SelectAll, "Select all") }
+            IconButton(vm::selectAll) { Icon(Sym.SelectAll, "Select all") }
         }
         return
     }
@@ -153,16 +136,16 @@ private fun TopBar(
             placeholder = { Text("Search contacts") },
             leadingIcon = {
                 if (searchState.targetValue == androidx.compose.material3.SearchBarValue.Expanded)
-                    IconButton({ scope.launch { searchState.animateToCollapsed() } }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Close search") }
-                else Icon(Icons.Filled.Search, null)
+                    IconButton({ scope.launch { searchState.animateToCollapsed() } }) { Icon(Sym.ArrowBack, "Close search") }
+                else Icon(Sym.Search, null)
             },
             trailingIcon = {
                 if (searchState.targetValue == androidx.compose.material3.SearchBarValue.Expanded) {
-                    if (text.text.isNotEmpty()) IconButton({ text.edit { replace(0, length, "") } }) { Icon(Icons.Filled.Close, "Clear") }
+                    if (text.text.isNotEmpty()) IconButton({ text.edit { replace(0, length, "") } }) { Icon(Sym.Close, "Clear") }
                 } else Row {
-                    if (lockOn) IconButton(vm::lockNow) { Icon(Icons.Filled.Lock, "Lock app now") }
+                    if (lockOn) IconButton(vm::lockNow) { Icon(Sym.Lock, "Lock app now") }
                     Box {
-                        IconButton({ menu = true }) { Icon(Icons.Filled.MoreVert, "More options") }
+                        IconButton({ menu = true }) { Icon(Sym.MoreVert, "More options") }
                         DropdownMenu(menu, { menu = false }) {
                             DropdownMenuItem({ Text("Select") }, { menu = false; vm.rows.value?.firstOrNull()?.let { vm.toggle(it.id) } })
                             DropdownMenuItem({ Text("Import from file") }, { menu = false; import() })
@@ -179,6 +162,7 @@ private fun TopBar(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ContactList(vm: AppViewModel, m: com.lulu786.alternate.ui.ContactListModel, state: LazyListState, onOpen: (Long) -> Unit) {
     val selected = vm.selected
@@ -191,8 +175,12 @@ private fun ContactList(vm: AppViewModel, m: com.lulu786.alternate.ui.ContactLis
             Text("${m.total} contacts", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         }
         if (m.favorites.isNotEmpty()) {
-            item(key = "fav", contentType = "header") { SectionLabel("★ Favorites") }
-            rows(m.favorites, "fav", vm, selected, onOpen)
+            item(key = "fav", contentType = "header") { SectionLabel("Favorites") }
+            item(key = "favgrid", contentType = "favorites") {
+                FlowRow(Modifier.fillMaxWidth(), maxItemsInEachRow = 4, horizontalArrangement = Arrangement.SpaceBetween) {
+                    m.favorites.forEach { r -> FavoriteTile(r, r.id in selected, { if (vm.selecting) vm.toggle(r.id) else onOpen(r.id) }, { vm.toggle(r.id) }) }
+                }
+            }
         }
         m.sections.forEach { (letter, list) ->
             stickyHeader(key = "h$letter", contentType = "header") { SectionLabel(letter.toString(), sticky = true) }
@@ -215,6 +203,19 @@ private fun androidx.compose.foundation.lazy.LazyListScope.rows(
     }
 }
 
+/** Avatar (in the contact's own shape) with the first name under it; the Favorites section shows nothing else. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FavoriteTile(row: ContactRow, selected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+    Column(
+        Modifier.width(80.dp).clip(RoundedCornerShape(16.dp)).combinedClickable(onClick = onClick, onLongClick = onLongClick).padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        ContactAvatar(row.avatarSeed, row.name, row.photoPath, 64.dp, expressive = true, selected = selected)
+        Text(row.name.substringBefore(' '), Modifier.padding(top = 6.dp), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
 @Composable
 private fun SectionLabel(text: String, sticky: Boolean = false) {
     Text(
@@ -232,8 +233,8 @@ private fun SearchResults(vm: AppViewModel, query: String, onOpen: (Long) -> Uni
     val byId = remember(rows) { rows.orEmpty().associateBy { it.id } }
     if (query.isBlank()) return
     if (results.isEmpty()) {
-        EmptyState(Icons.Filled.Search, "No results for “$query”") {
-            Button({ onCreate(query) }) { Icon(Icons.Filled.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text("Create contact “$query”") }
+        EmptyState(Sym.Search, "No results for “$query”") {
+            Button({ onCreate(query) }) { Icon(Sym.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text("Create contact “$query”") }
         }
         return
     }

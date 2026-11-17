@@ -1,21 +1,13 @@
 package com.lulu786.alternate.ui
 
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.GroupAdd
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.People
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -69,12 +61,12 @@ import kotlinx.serialization.Serializable
 @Serializable data object Setup
 @Serializable data object PinSetup
 
-private class Tab(val route: Any, val label: String, val on: ImageVector, val off: ImageVector)
+private class Tab(val route: Any, val label: String, val icon: @Composable (selected: Boolean) -> ImageVector)
 
 private val tabs = listOf(
-    Tab(Contacts, "Contacts", Icons.Filled.People, Icons.Outlined.People),
-    Tab(Groups, "Groups", Icons.Filled.Group, Icons.Outlined.Group),
-    Tab(Settings, "Settings", Icons.Filled.Settings, Icons.Outlined.Settings),
+    Tab(Contacts, "Contacts") { if (it) Sym.PersonFilled else Sym.Person },
+    Tab(Groups, "Groups") { if (it) Sym.GroupFilled else Sym.Group },
+    Tab(Settings, "Settings") { if (it) Sym.SettingsFilled else Sym.Settings },
 )
 
 @Composable
@@ -100,16 +92,16 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                     when {
                         onTab && vm.selecting && dest?.hasRoute<Contacts>() == true -> {
                             val ids = vm.selected
-                            HorizontalFloatingToolbar(expanded = true, modifier = Modifier.padding(bottom = 8.dp), content = {
-                                IconButton({ vm.share(context, ids) }) { Icon(Icons.Filled.Share, "Share selected") }
+                            Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp), Alignment.Center) { HorizontalFloatingToolbar(expanded = true, content = {
+                                IconButton({ vm.share(context, ids) }) { Icon(Sym.Share, "Share selected") }
                                 IconButton({
                                     context.copyToClipboard("Contacts", vm.rows.value.orEmpty().filter { it.id in ids }.joinToString("\n") { "${it.name} ${it.fullPhoneNumber?.let { n -> "+$n" }.orEmpty()}" })
                                     vm.clearSelection(); vm.say("Copied")
-                                }) { Icon(Icons.Filled.ContentCopy, "Copy selected") }
-                                IconButton({ groupSheet = true }) { Icon(Icons.Filled.GroupAdd, "Add selected to group") }
-                                IconButton({ vm.star(ids, true) }) { Icon(Icons.Filled.Star, "Star selected") }
-                                IconButton({ confirmDelete = true }) { Icon(Icons.Filled.Delete, "Delete selected") }
-                            })
+                                }) { Icon(Sym.ContentCopy, "Copy selected") }
+                                IconButton({ groupSheet = true }) { Icon(Sym.GroupAdd, "Add selected to group") }
+                                IconButton({ vm.star(ids, true) }) { Icon(Sym.Star, "Star selected") }
+                                IconButton({ confirmDelete = true }) { Icon(Sym.Delete, "Delete selected") }
+                            }) }
                         }
                         onTab -> ShortNavigationBar {
                             tabs.forEach { t ->
@@ -117,7 +109,7 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                                 ShortNavigationBarItem(
                                     selected = selected,
                                     onClick = { nav.navigate(t.route) { popUpTo(Contacts) { saveState = true }; launchSingleTop = true; restoreState = true } },
-                                    icon = { Icon(if (selected) t.on else t.off, null) },
+                                    icon = { Icon(t.icon(selected), null) },
                                     label = { Text(t.label) },
                                 )
                             }
@@ -127,7 +119,7 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
             ) { pad ->
                 NavHost(
                     nav, startDestination = start, modifier = Modifier.padding(bottom = pad.calculateBottomPadding()),
-                    enterTransition = { fadeIn() }, exitTransition = { fadeOut() }, popEnterTransition = { fadeIn() }, popExitTransition = { fadeOut() },
+                    enterTransition = { fadeIn(tween(200)) }, exitTransition = { fadeOut(tween(120)) }, popEnterTransition = { fadeIn(tween(200)) }, popExitTransition = { fadeOut(tween(120)) },
                 ) {
                     composable<Contacts> { Anim { ContactsScreen(vm, { nav.navigate(Detail(it)) }, { nav.navigate(Edit(0, it)) }, { nav.navigate(Setup) }) } }
                     composable<Groups> { Anim { GroupsScreen(vm) { nav.navigate(GroupDetail(it)) } } }

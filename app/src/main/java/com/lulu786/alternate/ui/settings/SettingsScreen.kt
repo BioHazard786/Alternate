@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.settings
 
+import com.lulu786.alternate.ui.Sym
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -20,23 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Brightness6
-import androidx.compose.material.icons.filled.CallReceived
-import androidx.compose.material.icons.filled.CallMade
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PrivacyTip
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.Upload
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
@@ -100,47 +84,47 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
     Scaffold(Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = { LargeTopAppBar(title = { Text("Settings") }, scrollBehavior = scroll) }, containerColor = MaterialTheme.colorScheme.surface) { pad ->
         LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp, pad.calculateTopPadding(), 16.dp, 32.dp)) {
             if (settings.lockResetNotice) item {
-                Group("Action needed", listOf(Row0(Icons.Filled.Lock, "Re-set your app lock", "We couldn’t carry your PIN over from the old version.", onClick = { vm.dismissLockNotice(); onSetPin() })))
+                Group("Action needed", listOf(Row0(Sym.Lock, "Re-set your app lock", "We couldn’t carry your PIN over from the old version.", onClick = { vm.dismissLockNotice(); onSetPin() })))
             }
             item {
                 Group("Caller ID", listOf(
-                    Row0(Icons.Filled.CallReceived, "Incoming call popup", null, trailing = { Switch(incoming, null) }, onClick = { incoming = !incoming; popups.edit { putBoolean("show_incoming_popup", incoming) } }),
-                    Row0(Icons.Filled.CallMade, "Outgoing call popup", null, trailing = { Switch(outgoing, null) }, onClick = { outgoing = !outgoing; popups.edit { putBoolean("show_outgoing_popup", outgoing) } }),
-                    Row0(Icons.Filled.Layers, "Display over other apps", if (overlay) "Allowed ✓" else "Not allowed — tap to fix", onClick = {
+                    Row0(Sym.CallReceived, "Incoming call popup", null, trailing = { Switch(incoming, null) }, onClick = { incoming = !incoming; popups.edit { putBoolean("show_incoming_popup", incoming) } }),
+                    Row0(Sym.CallMade, "Outgoing call popup", null, trailing = { Switch(outgoing, null) }, onClick = { outgoing = !outgoing; popups.edit { putBoolean("show_outgoing_popup", outgoing) } }),
+                    Row0(Sym.Layers, "Display over other apps", if (overlay) "Allowed ✓" else "Not allowed — tap to fix", onClick = {
                         context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri()))
                     }),
-                    Row0(Icons.Filled.Build, "Caller ID setup", "Permissions for the popup", onClick = onSetup),
+                    Row0(Sym.Build, "Caller ID setup", "Permissions for the popup", onClick = onSetup),
                 ))
             }
             item {
                 val bio = remember(refresh) { biometricAvailable(context) }
                 Group("Security", listOfNotNull(
-                    Row0(Icons.Filled.Lock, "App lock", if (settings.lock.enabled) "On" else "Off", trailing = { Switch(settings.lock.enabled, null) },
+                    Row0(Sym.Lock, "App lock", if (settings.lock.enabled) "On" else "Off", trailing = { Switch(settings.lock.enabled, null) },
                         onClick = { if (settings.lock.enabled) dialog = "removeLock" else onSetPin() }),
-                    if (settings.lock.enabled && bio) Row0(Icons.Filled.Fingerprint, "Fingerprint unlock", null, trailing = { Switch(settings.lock.biometric, null) },
+                    if (settings.lock.enabled && bio) Row0(Sym.Fingerprint, "Fingerprint unlock", null, trailing = { Switch(settings.lock.biometric, null) },
                         onClick = { scope.launch { vm.prefs.setBiometric(!settings.lock.biometric) } }) else null,
-                    if (settings.lock.enabled) Row0(Icons.Filled.Timer, "Auto-lock after", settings.lock.autoLock.label, onClick = { dialog = "autoLock" }) else null,
+                    if (settings.lock.enabled) Row0(Sym.Timer, "Auto-lock after", settings.lock.autoLock.label, onClick = { dialog = "autoLock" }) else null,
                 ))
             }
             item {
                 Group("Appearance", listOfNotNull(
-                    Row0(Icons.Filled.Brightness6, "Theme", settings.theme.name, onClick = { dialog = "theme" }),
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Row0(Icons.Filled.Palette, "Dynamic color", "Use your wallpaper colors", trailing = { Switch(settings.dynamicColor, null) },
+                    Row0(Sym.Brightness6, "Theme", settings.theme.label, onClick = { dialog = "theme" }),
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Row0(Sym.Palette, "Dynamic color", "Use your wallpaper colors", trailing = { Switch(settings.dynamicColor, null) },
                         onClick = { scope.launch { vm.prefs.setDynamicColor(!settings.dynamicColor) } }) else null,
                 ))
             }
             item {
                 Group("Data", listOf(
-                    Row0(Icons.Filled.Download, "Import from VCF file", null, onClick = { importLauncher.launch(arrayOf("text/*", "application/octet-stream")) }),
-                    Row0(Icons.Filled.Upload, "Export all contacts", null, onClick = { exportLauncher.launch("contacts.vcf") }),
+                    Row0(Sym.Download, "Import from VCF file", null, onClick = { importLauncher.launch(arrayOf("text/*", "application/octet-stream")) }),
+                    Row0(Sym.Upload, "Export all contacts", null, onClick = { exportLauncher.launch("contacts.vcf") }),
                 ))
             }
             item {
                 Group("About", listOf(
-                    Row0(Icons.Filled.Info, "Version", BuildConfig.VERSION_NAME, onClick = {}),
-                    Row0(Icons.Filled.Code, "Source on GitHub", REPO, onClick = { context.openWeb(REPO) }),
-                    Row0(Icons.Filled.PrivacyTip, "Privacy policy", null, onClick = { context.openWeb("$REPO/blob/main/PRIVACY_POLICY.md") }),
-                    Row0(Icons.Filled.Description, "Open-source licenses", null, onClick = { dialog = "licenses" }),
+                    Row0(Sym.Info, "Version", BuildConfig.VERSION_NAME, onClick = {}),
+                    Row0(Sym.Code, "Source on GitHub", REPO, onClick = { context.openWeb(REPO) }),
+                    Row0(Sym.PrivacyTip, "Privacy policy", null, onClick = { context.openWeb("$REPO/blob/main/PRIVACY_POLICY.md") }),
+                    Row0(Sym.Description, "Open-source licenses", null, onClick = { dialog = "licenses" }),
                 ))
             }
         }
@@ -148,7 +132,7 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
 
     when (dialog) {
         "autoLock" -> ChoiceDialog("Auto-lock after", AutoLock.entries, settings.lock.autoLock, { it.label }, { dialog = null }) { scope.launch { vm.prefs.setAutoLock(it) }; dialog = null }
-        "theme" -> ChoiceDialog("Theme", ThemeMode.entries, settings.theme, { it.name }, { dialog = null }) { scope.launch { vm.prefs.setTheme(it) }; dialog = null }
+        "theme" -> ChoiceDialog("Theme", ThemeMode.entries, settings.theme, { it.label }, { dialog = null }) { scope.launch { vm.prefs.setTheme(it) }; dialog = null }
         "removeLock" -> ConfirmDialog("Turn off app lock?", "Anyone who opens Alternate will see your contacts.", "Turn off", { scope.launch { vm.prefs.clearPin() }; dialog = null }, { dialog = null })
         "licenses" -> AlertDialog({ dialog = null }, confirmButton = { TextButton({ dialog = null }) { Text("Close") } }, title = { Text("Open-source licenses") },
             text = { Text("Alternate is built with AndroidX (Compose, Room, Navigation, DataStore, Biometric), Material Components for Android and Coil — all Apache License 2.0.") })
@@ -163,8 +147,8 @@ private fun Group(title: String, rows: List<Row0>) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         rows.forEachIndexed { i, r ->
             Row(Modifier.fillMaxWidth().segment(i, rows.size).clickable(onClick = r.onClick).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape), Alignment.Center) { Icon(r.icon, null, tint = MaterialTheme.colorScheme.onSecondaryContainer) }
-                Spacer(Modifier.width(16.dp))
+                Icon(r.icon, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(24.dp))
                 Column(Modifier.weight(1f)) {
                     Text(r.title, style = MaterialTheme.typography.bodyLarge)
                     if (r.subtitle != null) Text(r.subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.detail
 
+import com.lulu786.alternate.ui.Sym
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,19 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Message
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Cake
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -104,15 +92,15 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
     Column(Modifier.fillMaxSize().sharedKey("contact-$id").background0()) {
         TopAppBar(
             title = {},
-            navigationIcon = { IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
+            navigationIcon = { IconButton(onBack) { Icon(Sym.ArrowBack, "Back") } },
             actions = {
                 IconButton({ vm.star(listOf(id), !starred) }) {
-                    Icon(if (starred) Icons.Filled.Star else Icons.Outlined.StarBorder, if (starred) "Remove from favorites" else "Add to favorites",
+                    Icon(if (starred) Sym.StarFilled else Sym.Star, if (starred) "Remove from favorites" else "Add to favorites",
                         tint = if (starred) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                 }
-                IconButton(onEdit) { Icon(Icons.Filled.Edit, "Edit contact") }
+                IconButton(onEdit) { Icon(Sym.Edit, "Edit contact") }
                 androidx.compose.foundation.layout.Box {
-                    IconButton({ menu = true }) { Icon(Icons.Filled.MoreVert, "More options") }
+                    IconButton({ menu = true }) { Icon(Sym.MoreVert, "More options") }
                     DropdownMenu(menu, { menu = false }) {
                         DropdownMenuItem({ Text("Share as VCF") }, { menu = false; vm.share(context, listOf(id)) })
                         DropdownMenuItem({ Text("Add to group") }, { menu = false; groupSheet = true })
@@ -135,11 +123,11 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
 
             if (first != null) {
                 FlowRow(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly, Arrangement.spacedBy(12.dp)) {
-                    CircleAction("Call", { context.dial(first.fullPhoneNumber) }) { Icon(Icons.Filled.Call, "Call $name, ${first.label}") }
-                    CircleAction("Text", { context.sms(first.fullPhoneNumber) }) { Icon(Icons.AutoMirrored.Filled.Message, "Text $name") }
-                    CircleAction("WhatsApp", { context.whatsApp(first.fullPhoneNumber) }) { Icon(painterResource(R.drawable.ic_whatsapp), "WhatsApp $name", Modifier.size(28.dp), tint = Color.Unspecified) }
-                    CircleAction("Telegram", { context.telegram(first.fullPhoneNumber) }) { Icon(painterResource(R.drawable.ic_telegram), "Telegram $name", Modifier.size(28.dp), tint = Color.Unspecified) }
-                    if (!c?.email.isNullOrEmpty()) CircleAction("Email", { context.mail(c!!.email) }) { Icon(Icons.Filled.Email, "Email $name") }
+                    CircleAction("Call", { context.dial(first.fullPhoneNumber) }) { Icon(Sym.Call, "Call $name, ${first.label}") }
+                    CircleAction("Text", { context.sms(first.fullPhoneNumber) }) { Icon(Sym.Sms, "Text $name") }
+                    CircleAction("WhatsApp", { context.whatsApp(first.fullPhoneNumber) }) { Icon(Sym.Whatsapp, "WhatsApp $name", Modifier.size(28.dp), tint = Color.Unspecified) }
+                    CircleAction("Telegram", { context.telegram(first.fullPhoneNumber) }) { Icon(Sym.Telegram, "Telegram $name", Modifier.size(28.dp), tint = Color.Unspecified) }
+                    if (!c?.email.isNullOrEmpty()) CircleAction("Email", { context.mail(c!!.email) }) { Icon(Sym.Mail, "Email $name") }
                 }
                 Spacer(Modifier.height(24.dp))
             }
@@ -151,19 +139,19 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
                     d.phones.forEach { p ->
                         val country = Countries.byCode(p.countryCode)
                         InfoRow(
-                            icon = { Icon(Icons.Filled.Call, null) },
+                            icon = { Icon(Sym.Call, null) },
                             title = formatPhone(p.fullPhoneNumber, p.countryCode),
                             subtitle = listOfNotNull(p.label, country?.name).joinToString(" · "),
                             description = "Call ${d.contact.name}, ${p.label}",
                             onClick = { context.dial(p.fullPhoneNumber) },
                             onLongClick = { context.copyToClipboard("Number", "+${p.fullPhoneNumber}"); vm.say("Number copied") },
-                            trailing = { IconButton({ context.sms(p.fullPhoneNumber) }) { Icon(Icons.AutoMirrored.Filled.Message, "Text ${p.label} number") } },
+                            trailing = { IconButton({ context.sms(p.fullPhoneNumber) }) { Icon(Sym.Sms, "Text ${p.label} number") } },
                         )
                     }
-                    if (d.contact.email.isNotEmpty()) InfoRow({ Icon(Icons.Filled.Email, null) }, d.contact.email, null, "Email ${d.contact.email}", { context.mail(d.contact.email) }, { context.copyToClipboard("Email", d.contact.email); vm.say("Email copied") })
-                    if (d.contact.website.isNotEmpty()) InfoRow({ Icon(Icons.Filled.Link, null) }, d.contact.website, null, "Open ${d.contact.website}", { context.openWeb(d.contact.website) }, { context.copyToClipboard("Website", d.contact.website); vm.say("Link copied") })
-                    formatBirthday(d.contact.birthday)?.let { InfoRow({ Icon(Icons.Filled.Cake, null) }, it, "Birthday", "Birthday $it", {}, {}) }
-                    if (d.contact.location.isNotEmpty()) InfoRow({ Icon(Icons.Filled.LocationOn, null) }, d.contact.location, null, d.contact.location, {}, { context.copyToClipboard("Location", d.contact.location); vm.say("Copied") })
+                    if (d.contact.email.isNotEmpty()) InfoRow({ Icon(Sym.Mail, null) }, d.contact.email, null, "Email ${d.contact.email}", { context.mail(d.contact.email) }, { context.copyToClipboard("Email", d.contact.email); vm.say("Email copied") })
+                    if (d.contact.website.isNotEmpty()) InfoRow({ Icon(Sym.Link, null) }, d.contact.website, null, "Open ${d.contact.website}", { context.openWeb(d.contact.website) }, { context.copyToClipboard("Website", d.contact.website); vm.say("Link copied") })
+                    formatBirthday(d.contact.birthday)?.let { InfoRow({ Icon(Sym.Cake, null) }, it, "Birthday", "Birthday $it", {}, {}) }
+                    if (d.contact.location.isNotEmpty()) InfoRow({ Icon(Sym.LocationOn, null) }, d.contact.location, null, d.contact.location, {}, { context.copyToClipboard("Location", d.contact.location); vm.say("Copied") })
                     Spacer(Modifier.height(8.dp))
                 }
                 Spacer(Modifier.height(12.dp))
@@ -171,7 +159,7 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
                     Text("Groups", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 4.dp))
                     FlowRow(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), Arrangement.spacedBy(8.dp)) {
                         d.groups.forEach { g -> AssistChip({ onOpenGroup(g.id) }, { Text(g.name) }) }
-                        AssistChip({ groupSheet = true }, { Text("Add") }, leadingIcon = { Icon(Icons.Filled.Add, null, Modifier.size(18.dp)) })
+                        AssistChip({ groupSheet = true }, { Text("Add") }, leadingIcon = { Icon(Sym.Add, null, Modifier.size(18.dp)) })
                     }
                 }
                 if (d.contact.nickname.isNotEmpty() || d.contact.notes.isNotEmpty()) {

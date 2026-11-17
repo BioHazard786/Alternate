@@ -9,6 +9,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,7 +37,7 @@ class MainActivity : FragmentActivity() {
             val model: AppViewModel = viewModel(factory = viewModelFactory { initializer { AppViewModel(container) } })
             vm = model
             val s = model.settings.collectAsStateWithLifecycle().value
-            val dark = when (s?.theme) { ThemeMode.Light -> false; ThemeMode.Dark -> true; else -> isSystemInDarkTheme() }
+            val dark = when (s?.theme) { ThemeMode.Light -> false; ThemeMode.Dark, ThemeMode.Amoled -> true; else -> isSystemInDarkTheme() }
             LaunchedEffect(s) { s?.let(model::onSettingsLoaded) }
             // No recents preview while an app lock is on.
             LaunchedEffect(s?.lock?.enabled) {
@@ -44,8 +45,9 @@ class MainActivity : FragmentActivity() {
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
             CompositionLocalProvider(LocalContainer provides container) {
-                AlternateTheme(dark, s?.dynamicColor ?: true) {
-                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+                AlternateTheme(dark, s?.dynamicColor ?: true, s?.theme == ThemeMode.Amoled) {
+                    // Surface supplies the content colour: without it text defaults to black, unreadable in dark mode.
+                    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
                         val locked = model.locked
                         when {
                             s == null || locked == null -> Unit // one DataStore read; the window background covers it

@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.components
 
+import com.lulu786.alternate.ui.Sym
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -49,7 +48,7 @@ fun GroupPickerSheet(vm: AppViewModel, current: Set<Long>, onDismiss: () -> Unit
             }
             item {
                 Row(Modifier.fillMaxWidth().clickable { creating = true }.padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Add, null); Spacer(Modifier.width(16.dp)); Text("New group")
+                    Icon(Sym.Add, null); Spacer(Modifier.width(16.dp)); Text("New group")
                 }
             }
             item {
