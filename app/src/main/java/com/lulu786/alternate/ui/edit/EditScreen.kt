@@ -125,7 +125,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                     "Website" to d.contact.website, "Birthday" to d.contact.birthday, "Notes" to d.contact.notes)
                     .forEach { (k, v) -> extras[k] = v; if (v.isNotEmpty()) visibleExtras += k }
                 phones.clear()
-                d.phones.forEachIndexed { i, p -> phones += PhoneForm(i + 1L, Countries.forNumber(p.countryCode, p.fullPhoneNumber) ?: countryOf(sim), p.phoneNumber, p.label) }
+                d.phones.forEachIndexed { i, p -> phones += Countries.forNumber(p.countryCode, p.fullPhoneNumber).let { c -> PhoneForm(i + 1L, c ?: countryOf(sim), if (c == Countries.NONE) p.fullPhoneNumber else p.phoneNumber, p.label) } }
                 if (phones.isEmpty()) phones += PhoneForm(0, countryOf(sim))
                 groupIds = d.groups.map { it.id }.toSet()
                 photo = d.contact.photoPath; origPhoto = photo
@@ -278,7 +278,9 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
 private fun mutableStateMapOfStrings() = androidx.compose.runtime.mutableStateMapOf<String, String>()
 
 private fun phoneEntity(p: PhoneForm): PhoneEntity {
-    val digits = p.number.filter(Char::isDigit).trimStart('0')
+    // "As typed" keeps every digit, leading zeros included; a number with a country code drops the trunk zero.
+    val raw = p.country == Countries.NONE
+    val digits = p.number.filter(Char::isDigit).let { if (raw) it else it.trimStart('0') }
     val dial = p.country.dialCode
     return PhoneEntity(contactId = 0, fullPhoneNumber = if (digits.isEmpty()) "" else dial + digits, phoneNumber = digits, countryCode = p.country.code, label = p.label.ifBlank { "Mobile" })
 }
@@ -311,12 +313,13 @@ private fun PhoneRow(
             OutlinedTextField(
                 p.number, { p.number = it.filter { c -> c.isDigit() || c == ' ' || c == '-' }; onChange() }, Modifier.weight(1f), label = { Text("Phone") }, singleLine = true,
                 // The country sits inside the field so both share one baseline and border.
-                leadingIcon = { TextButton({ picker = true }) { Text("${country.flag} +${country.dialCode}"); Icon(Sym.ArrowDropDown, null) } },
+                leadingIcon = { TextButton({ picker = true }) { Text(if (country == Countries.NONE) "${country.flag} No code" else "${country.flag} +${country.dialCode}"); Icon(Sym.ArrowDropDown, null) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), isError = error != null || duplicateInForm,
                 supportingText = {
                     when {
                         error != null -> Row(verticalAlignment = Alignment.CenterVertically) { Text("Already saved as ${error.second}"); TextButton({ onView(error.first) }) { Text("View") } }
                         duplicateInForm -> Text("Number entered twice")
+                        country == Countries.NONE -> Text("Saved and dialled exactly as typed")
                     }
                 },
             )

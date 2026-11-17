@@ -53,12 +53,17 @@ interface ContactDao {
     @Query("SELECT g.* FROM contact_group g JOIN group_member m ON m.groupId = g.id WHERE m.contactId = :id ORDER BY g.position, g.name")
     suspend fun groupsOf(id: Long): List<GroupEntity>
 
-    /** Caller-ID lookup; hits the phoneNumber and fullPhoneNumber indexes, never loads blobs. */
+    /**
+     * Caller-ID lookup; hits the phoneNumber and fullPhoneNumber indexes, never loads blobs. Numbers saved "as typed"
+     * (empty countryCode) match by their digits without the trunk zero, e.g. 08012345678 also answers +91 80 1234 5678.
+     */
     @Query(
         """SELECT c.id AS contactId, c.name, c.prefix, c.suffix, c.appointment, c.location, c.photoPath, c.avatarSeed,
            p.fullPhoneNumber, p.phoneNumber, p.label, p.countryCode
            FROM phone p JOIN contact c ON c.id = p.contactId
-           WHERE p.fullPhoneNumber = :n OR p.phoneNumber = :n LIMIT 1"""
+           WHERE p.fullPhoneNumber = :n OR p.phoneNumber = :n
+              OR (p.countryCode = '' AND LENGTH(ltrim(p.phoneNumber, '0')) >= 7 AND :n LIKE '%' || ltrim(p.phoneNumber, '0'))
+           LIMIT 1"""
     )
     suspend fun lookup(n: String): CallerHit?
 

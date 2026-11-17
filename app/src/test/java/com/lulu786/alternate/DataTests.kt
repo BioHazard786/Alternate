@@ -91,6 +91,14 @@ class DataTests {
         assertEquals("1849", Countries.forNumber("DO", "18495551234")!!.dialCode)
     }
 
+    @Test fun numbersSavedAsTypedHaveNoCountryAndNoPlus() {
+        assertEquals(Countries.NONE, Countries.forNumber("", "08012345678"))
+        assertEquals("08012345678", com.lulu786.alternate.util.intl("08012345678", ""))
+        assertEquals("+919876543210", com.lulu786.alternate.util.intl("919876543210", "IN"))
+        assertEquals("+919876543210", com.lulu786.alternate.util.intl("919876543210", null))
+        kotlin.test.assertFalse(Countries.all.contains(Countries.NONE))
+    }
+
     @Test fun sharedDialCodesAreToldApartByNationalNumber() {
         fun c(d: String, sim: String? = null) = Countries.split(d, sim)!!.first.code
         assertEquals("KZ", c("77012345678")); assertEquals("RU", c("74951234567")); assertEquals("RU", c("74951234567", "KZ"))
@@ -109,6 +117,7 @@ class DataTests {
     @Test fun countryListHasNoDuplicatesAndIsSorted() {
         val all = Countries.all
         assertEquals(all.size, all.map { it.code to it.dialCode }.toSet().size)
+        assertEquals(all.size, all.map { it.key }.toSet().size) // the picker's LazyColumn key; a repeat crashes the app when scrolled to
         assertEquals(all.map { it.name }, all.map { it.name }.sortedBy { java.text.Normalizer.normalize(it, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}"), "").lowercase() })
         for (code in listOf("HK", "MO", "CD", "PS", "XK", "GI", "AW", "PR")) kotlin.test.assertNotNull(Countries.byCode(code), code)
         assertEquals("852", Countries.split("85212345678", null)!!.first.dialCode)

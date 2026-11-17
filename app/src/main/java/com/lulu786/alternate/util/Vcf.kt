@@ -37,8 +37,8 @@ object Vcf {
         var custom = 0
         for (p in item.phones.sortedBy { it.position }) {
             val type = standardTypes[p.label]
-            if (type != null) lines += "TEL;TYPE=$type:+${p.fullPhoneNumber}"
-            else { custom++; lines += "item$custom.TEL:+${p.fullPhoneNumber}"; lines += "item$custom.X-ABLabel:${esc(p.label)}" }
+            if (type != null) lines += "TEL;TYPE=$type:${intl(p.fullPhoneNumber, p.countryCode)}"
+            else { custom++; lines += "item$custom.TEL:${intl(p.fullPhoneNumber, p.countryCode)}"; lines += "item$custom.X-ABLabel:${esc(p.label)}" }
         }
         if (c.email.isNotEmpty()) lines += "EMAIL;TYPE=INTERNET:${esc(c.email)}"
         if (c.location.isNotEmpty()) lines += "ADR;TYPE=HOME:;;;;${esc(c.location)};;"

@@ -61,6 +61,7 @@ import com.lulu786.alternate.util.dial
 import com.lulu786.alternate.util.displayName
 import com.lulu786.alternate.util.formatBirthday
 import com.lulu786.alternate.util.formatPhone
+import com.lulu786.alternate.util.intl
 import com.lulu786.alternate.util.mail
 import com.lulu786.alternate.util.openWeb
 import com.lulu786.alternate.util.sms
@@ -127,10 +128,10 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
 
             if (first != null) {
                 FlowRow(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly, Arrangement.spacedBy(12.dp)) {
-                    CircleAction("Call", { context.dial(first.fullPhoneNumber) }) { Icon(Sym.Call, "Call $name, ${first.label}") }
-                    CircleAction("Text", { context.sms(first.fullPhoneNumber) }) { Icon(Sym.Sms, "Text $name") }
-                    CircleAction("WhatsApp", { context.whatsApp(first.fullPhoneNumber) }) { Icon(Sym.Whatsapp, "WhatsApp $name", Modifier.size(28.dp), tint = Color.Unspecified) }
-                    CircleAction("Telegram", { context.telegram(first.fullPhoneNumber) }) { Icon(Sym.Telegram, "Telegram $name", Modifier.size(28.dp), tint = Color.Unspecified) }
+                    CircleAction("Call", { context.dial(intl(first.fullPhoneNumber, first.countryCode)) }) { Icon(Sym.Call, "Call $name, ${first.label}") }
+                    CircleAction("Text", { context.sms(intl(first.fullPhoneNumber, first.countryCode)) }) { Icon(Sym.Sms, "Text $name") }
+                    if (first.countryCode.isNotEmpty()) CircleAction("WhatsApp", { context.whatsApp(first.fullPhoneNumber) }) { Icon(Sym.Whatsapp, "WhatsApp $name", Modifier.size(28.dp), tint = Color.Unspecified) }
+                    if (first.countryCode.isNotEmpty()) CircleAction("Telegram", { context.telegram(first.fullPhoneNumber) }) { Icon(Sym.Telegram, "Telegram $name", Modifier.size(28.dp), tint = Color.Unspecified) }
                     if (!c?.email.isNullOrEmpty()) CircleAction("Email", { context.mail(c!!.email) }) { Icon(Sym.Mail, "Email $name") }
                 }
                 Spacer(Modifier.height(24.dp))
@@ -147,9 +148,9 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
                             title = formatPhone(p.fullPhoneNumber, p.countryCode),
                             subtitle = listOfNotNull(p.label, country?.name).joinToString(" · "),
                             description = "Call ${d.contact.name}, ${p.label}",
-                            onClick = { context.dial(p.fullPhoneNumber) },
-                            onLongClick = { context.copyToClipboard("Number", "+${p.fullPhoneNumber}"); vm.say("Number copied") },
-                            trailing = { IconButton({ context.sms(p.fullPhoneNumber) }) { Icon(Sym.Sms, "Text ${p.label} number") } },
+                            onClick = { context.dial(intl(p.fullPhoneNumber, p.countryCode)) },
+                            onLongClick = { context.copyToClipboard("Number", intl(p.fullPhoneNumber, p.countryCode)); vm.say("Number copied") },
+                            trailing = { IconButton({ context.sms(intl(p.fullPhoneNumber, p.countryCode)) }) { Icon(Sym.Sms, "Text ${p.label} number") } },
                         )
                     }
                     if (d.contact.email.isNotEmpty()) InfoRow({ Icon(Sym.Mail, null) }, d.contact.email, null, "Email ${d.contact.email}", { context.mail(d.contact.email) }, { context.copyToClipboard("Email", d.contact.email); vm.say("Email copied") })
@@ -219,7 +220,7 @@ private fun InfoRow(
 
 private fun summary(d: ContactDetail): String = buildString {
     appendLine(displayName(d.contact.prefix, d.contact.name, d.contact.suffix))
-    d.phones.forEach { appendLine("${it.label}: +${it.fullPhoneNumber}") }
+    d.phones.forEach { appendLine("${it.label}: ${intl(it.fullPhoneNumber, it.countryCode)}") }
     if (d.contact.email.isNotEmpty()) appendLine(d.contact.email)
     if (d.contact.location.isNotEmpty()) appendLine(d.contact.location)
 }.trim()

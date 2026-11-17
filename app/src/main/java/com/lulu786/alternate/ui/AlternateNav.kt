@@ -53,6 +53,7 @@ import com.lulu786.alternate.ui.lock.PinSetupScreen
 import com.lulu786.alternate.ui.settings.SettingsScreen
 import com.lulu786.alternate.ui.setup.SetupScreen
 import com.lulu786.alternate.util.copyToClipboard
+import com.lulu786.alternate.util.intl
 import kotlinx.serialization.Serializable
 
 @Serializable data object Contacts
@@ -102,7 +103,7 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                                     val any = ids.isNotEmpty()
                                     IconButton({ vm.share(context, ids) }, enabled = any) { Icon(Sym.Share, "Share selected") }
                                     IconButton({
-                                        context.copyToClipboard("Contacts", vm.rows.value.orEmpty().filter { it.id in ids }.joinToString("\n") { "${it.name} ${it.fullPhoneNumber?.let { n -> "+$n" }.orEmpty()}" })
+                                        context.copyToClipboard("Contacts", vm.rows.value.orEmpty().filter { it.id in ids }.joinToString("\n") { "${it.name} ${it.fullPhoneNumber?.let { n -> intl(n, it.countryCode) }.orEmpty()}" })
                                         vm.clearSelection(); vm.say("Copied")
                                     }, enabled = any) { Icon(Sym.ContentCopy, "Copy selected") }
                                     IconButton({ groupSheet = true }, enabled = any) { Icon(Sym.GroupAdd, "Add selected to group") }

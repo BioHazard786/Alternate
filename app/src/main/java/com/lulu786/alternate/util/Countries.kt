@@ -1,6 +1,9 @@
 package com.lulu786.alternate.util
 
-data class Country(val name: String, val code: String, val dialCode: String, val flag: String)
+data class Country(val name: String, val code: String, val dialCode: String, val flag: String) {
+    /** Unique per entry: Puerto Rico, the Dominican Republic and Jamaica have one entry per area code, so [code] alone repeats. */
+    val key get() = code + dialCode
+}
 
 /** Port of lib/countries.ts. Order is the A-Z order shown in the picker. */
 object Countries {
@@ -289,10 +292,13 @@ object Countries {
     // Longest dial code first so "1242" (Bahamas) wins over "1" for +1 242 ...
     private val byDialLength = all.sortedByDescending { it.dialCode.length }
 
+    /** Not in [all]: a number saved and dialled exactly as typed, with no country code (toll-free, short codes, STD landlines). */
+    val NONE = Country("No country code (dial as typed)", "", "", "📞")
+
     fun byCode(code: String): Country? = byCode[code.uppercase()]
 
     /** The entry a stored number belongs to: a few countries (Puerto Rico, Dominican Republic, Jamaica) have one per area code. */
-    fun forNumber(code: String, full: String): Country? = all.firstOrNull { it.code.equals(code, true) && full.startsWith(it.dialCode) } ?: byCode(code)
+    fun forNumber(code: String, full: String): Country? = if (code.isEmpty()) NONE else all.firstOrNull { it.code.equals(code, true) && full.startsWith(it.dialCode) } ?: byCode(code)
 
     /**
      * Splits a number that starts with a dial code (digits only, no '+') into country and national part.

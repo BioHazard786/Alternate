@@ -17,7 +17,10 @@ fun displayName(prefix: String, name: String, suffix: String): String = buildStr
     if (suffix.isNotBlank()) append(", ").append(suffix.trim())
 }
 
-fun formatPhone(full: String, iso: String?): String =
+/** A number saved "as typed" has an empty country code and no '+'; everything else is international digits. */
+fun intl(full: String, countryCode: String?): String = if (countryCode == "") full else "+$full"
+
+fun formatPhone(full: String, iso: String?): String = if (iso == "") full else
     android.telephony.PhoneNumberUtils.formatNumber("+$full", iso?.takeIf { it.isNotEmpty() } ?: java.util.Locale.getDefault().country) ?: "+$full"
 
 /** "--03-12" -> "12 March"; "1990-03-12" -> "12 March 1990 · 36 years". Parsed as a plain date, so no time-zone off-by-one. */

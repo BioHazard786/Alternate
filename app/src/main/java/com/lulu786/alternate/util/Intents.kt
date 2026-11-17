@@ -19,8 +19,9 @@ fun Context.startSafely(primary: Intent, fallback: Intent? = null): Boolean = tr
 
 private fun view(uri: String) = Intent(Intent.ACTION_VIEW, uri.toUri())
 
-fun Context.dial(full: String) = startSafely(Intent(Intent.ACTION_DIAL, "tel:+$full".toUri()))
-fun Context.sms(full: String) = startSafely(Intent(Intent.ACTION_SENDTO, "smsto:+$full".toUri()))
+/** [number] comes from [intl]: "+919876543210", or the digits exactly as typed. */
+fun Context.dial(number: String) = startSafely(Intent(Intent.ACTION_DIAL, "tel:$number".toUri()))
+fun Context.sms(number: String) = startSafely(Intent(Intent.ACTION_SENDTO, "smsto:$number".toUri()))
 fun Context.mail(address: String) = startSafely(Intent(Intent.ACTION_SENDTO, "mailto:$address".toUri()))
 fun Context.openWeb(url: String) =
     startSafely(view(if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"))

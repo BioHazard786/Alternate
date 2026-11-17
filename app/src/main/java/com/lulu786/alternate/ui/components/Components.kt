@@ -167,7 +167,8 @@ fun CountryPickerSheet(current: Country, simCode: String?, onPick: (Country) -> 
         val q = query.trim().lowercase()
         val filtered = Countries.all.filter { q.isEmpty() || it.name.lowercase().contains(q) || it.dialCode.contains(q.removePrefix("+")) || it.code.lowercase() == q }
         val sim = filtered.firstOrNull { it.code == simCode }
-        if (sim != null && q.isEmpty()) listOf(sim) + (filtered - sim) else filtered
+        val none = Countries.NONE.takeIf { q.isEmpty() || it.name.lowercase().contains(q) || "raw".startsWith(q) }
+        listOfNotNull(none) + if (sim != null && q.isEmpty()) listOf(sim) + (filtered - sim) else filtered
     }
     ModalBottomSheet(onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         OutlinedTextField(
@@ -175,7 +176,7 @@ fun CountryPickerSheet(current: Country, simCode: String?, onPick: (Country) -> 
             placeholder = { Text("Search country or code") }, leadingIcon = { Icon(Sym.Search, null) }, singleLine = true,
         )
         LazyColumn(Modifier.padding(top = 8.dp)) {
-            items(list, key = { it.code }) { c ->
+            items(list, key = { it.key }) { c ->
                 val selected = c == current
                 Row(
                     Modifier.fillMaxWidth().clickable { onPick(c) }
@@ -186,7 +187,7 @@ fun CountryPickerSheet(current: Country, simCode: String?, onPick: (Country) -> 
                     Text(c.flag, style = MaterialTheme.typography.titleLarge)
                     Spacer(Modifier.width(16.dp))
                     Text(c.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    Text("+${c.dialCode}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (c.dialCode.isNotEmpty()) Text("+${c.dialCode}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
