@@ -52,6 +52,7 @@ A privacy-focused Android app that tells you who is calling without adding them 
 - **Private by design**: contacts live only in this app's database. They never reach the system contacts, messaging apps or the cloud
 - **Dialer integration**: shows your saved names in the Google Phone app's call screen where the system supports it
 - **Several numbers per contact**, each with a label (Mobile, Work, or your own) and a country, or saved as typed with no country code (toll-free numbers, STD landlines)
+- **Save from recent calls**: pick someone from your call log in the + menu and their number is filled in, no copy and paste
 - **Groups and favorites**: organise people into groups like Family or Work, and pin favorites to the top
 - **Fast search**: finds names, nicknames, numbers, notes and groups, with the match highlighted
 - **Quick scrolling**: a Niagara-style A-Z scrubber with a favorites shortcut
@@ -75,7 +76,7 @@ Install the 3.x APK over the old app. The package name and signing key are uncha
 
 | Permission | Why |
 | --- | --- |
-| Phone state, Call log | Notice when a call starts and which number is calling |
+| Phone state, Call log | Notice when a call starts and which number is calling, and let you pick a recent caller to save |
 | Display over other apps | Draw the caller popup on top of the dialer |
 | Wake lock, Dismiss keyguard | Show the popup on a locked or sleeping screen |
 | Biometrics | Optional fingerprint unlock for the app lock |

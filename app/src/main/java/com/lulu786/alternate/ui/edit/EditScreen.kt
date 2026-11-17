@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lulu786.alternate.LocalContainer
+import com.lulu786.alternate.callerid.PhoneNormalizer
 import com.lulu786.alternate.data.ContactEntity
 import com.lulu786.alternate.data.PhoneEntity
 import com.lulu786.alternate.ui.AppViewModel
@@ -85,13 +86,21 @@ private class PhoneForm(val key: Long, country: Country, number: String = "", la
 
 private fun countryOf(code: String) = Countries.byCode(code) ?: Countries.byCode("IN")!!
 
+/** A raw call-log number as a form row: international numbers split by dial code, local ones take the SIM country. */
+private fun prefillPhone(raw: String, sim: String): PhoneForm {
+    val digits = PhoneNormalizer.normalize(raw, sim)
+    val international = raw.trim().let { it.startsWith("+") || it.startsWith("00") }
+    val (country, national) = (if (international) Countries.split(digits, sim) else null) ?: (countryOf(sim) to digits)
+    return PhoneForm(0, country, national)
+}
+
 private val builtInLabels = listOf("Mobile", "Work", "Home", "Main", "Other")
 private val extraFields = listOf("Prefix", "Suffix", "Nickname", "Email", "Website", "Birthday", "Notes")
 
 /** Create (id = 0) and edit in one screen. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> Unit, onSaved: (Long) -> Unit, onViewExisting: (Long) -> Unit) {
+fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, prefillNumber: String?, onClose: () -> Unit, onSaved: (Long) -> Unit, onViewExisting: (Long) -> Unit) {
     val context = LocalContext.current
     val photos = LocalContainer.current.photos
     val scope = rememberCoroutineScope()
@@ -107,7 +116,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
     var location by remember { mutableStateOf("") }
     val extras = remember { mutableStateMapOfStrings() }
     val visibleExtras = remember { mutableStateListOf<String>() }
-    val phones = remember { mutableStateListOf(PhoneForm(0, countryOf(sim))) }
+    val phones = remember { mutableStateListOf(prefillNumber?.let { prefillPhone(it, sim) } ?: PhoneForm(0, countryOf(sim))) }
     var groupIds by remember { mutableStateOf(emptySet<Long>()) }
     var photo by remember { mutableStateOf("") }
     var origPhoto by remember { mutableStateOf("") }

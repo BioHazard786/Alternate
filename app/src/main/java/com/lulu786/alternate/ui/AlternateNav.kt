@@ -43,6 +43,7 @@ import androidx.navigation.toRoute
 import com.lulu786.alternate.data.AppSettings
 import com.lulu786.alternate.ui.components.ConfirmDialog
 import com.lulu786.alternate.ui.components.GroupPickerSheet
+import com.lulu786.alternate.ui.calllog.RecentCallsScreen
 import com.lulu786.alternate.ui.contacts.ContactsScreen
 import com.lulu786.alternate.ui.detail.DetailScreen
 import com.lulu786.alternate.ui.edit.EditScreen
@@ -60,7 +61,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object Groups
 @Serializable data object Settings
 @Serializable data class Detail(val id: Long)
-@Serializable data class Edit(val id: Long = 0, val name: String? = null)
+@Serializable data class Edit(val id: Long = 0, val name: String? = null, val number: String? = null)
+@Serializable data object RecentCalls
 @Serializable data class GroupDetail(val id: Long)
 @Serializable data class MemberPicker(val groupId: Long)
 @Serializable data object Setup
@@ -130,7 +132,7 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                     nav, startDestination = start, modifier = Modifier.padding(bottom = pad.calculateBottomPadding()),
                     enterTransition = { fadeIn(tween(200)) }, exitTransition = { fadeOut(tween(120)) }, popEnterTransition = { fadeIn(tween(200)) }, popExitTransition = { fadeOut(tween(120)) },
                 ) {
-                    composable<Contacts> { Anim { ContactsScreen(vm, { nav.navigate(Detail(it)) }, { nav.navigate(Edit(0, it)) }, { nav.navigate(Setup) }) } }
+                    composable<Contacts> { Anim { ContactsScreen(vm, { nav.navigate(Detail(it)) }, { nav.navigate(Edit(0, it)) }, { nav.navigate(RecentCalls) }, { nav.navigate(Setup) }) } }
                     composable<Groups> { Anim { GroupsScreen(vm) { nav.navigate(GroupDetail(it)) } } }
                     composable<Settings> { Anim { SettingsScreen(vm, { nav.navigate(Setup) }, { nav.navigate(PinSetup) }) } }
                     composable<Detail> { e ->
@@ -140,9 +142,16 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                     composable<Edit> { e ->
                         val r = e.toRoute<Edit>()
                         Anim {
-                            EditScreen(vm, r.id, r.name, { nav.popBackStack() },
+                            EditScreen(vm, r.id, r.name, r.number, { nav.popBackStack() },
                                 { saved -> if (r.id == 0L) nav.navigate(Detail(saved)) { popUpTo<Edit> { inclusive = true } } else nav.popBackStack() },
                                 { existing -> nav.navigate(Detail(existing)) })
+                        }
+                    }
+                    composable<RecentCalls> {
+                        Anim {
+                            RecentCallsScreen({ nav.popBackStack() }) { number, name ->
+                                nav.navigate(Edit(0, name.ifEmpty { null }, number)) { popUpTo<RecentCalls> { inclusive = true } }
+                            }
                         }
                     }
                     composable<GroupDetail> { e ->

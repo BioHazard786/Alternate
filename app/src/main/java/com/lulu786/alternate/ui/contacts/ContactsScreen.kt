@@ -34,7 +34,14 @@ import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.FloatingActionButton
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.SearchBar
@@ -59,7 +66,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lulu786.alternate.data.ContactRow
 import com.lulu786.alternate.ui.AppViewModel
-import com.lulu786.alternate.ui.components.AppFab
 import com.lulu786.alternate.ui.components.ContactAvatar
 import com.lulu786.alternate.ui.components.ContactListRow
 import com.lulu786.alternate.ui.components.EmptyState
@@ -70,7 +76,7 @@ import com.lulu786.alternate.util.simCountry
 import kotlinx.coroutines.launch
 
 @Composable
-fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onCreate: (String?) -> Unit, onSetup: () -> Unit) {
+fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onCreate: (String?) -> Unit, onRecentCalls: () -> Unit, onSetup: () -> Unit) {
     val model by vm.list.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val state = rememberLazyListState()
@@ -93,8 +99,34 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onCreate: (String?)
             }
         }
         if (!vm.selecting) {
-            AppFab(Sym.Add, "Create contact", { onCreate(null) }, Modifier.align(Alignment.BottomEnd).padding(16.dp).sharedKey("create"))
+            CreateFabMenu({ onCreate(null) }, onRecentCalls, Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
+    }
+}
+
+/** Expressive FAB menu: new contact, or start from someone who recently called. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun CreateFabMenu(onCreate: () -> Unit, onRecentCalls: () -> Unit, modifier: Modifier) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    BackHandler(expanded) { expanded = false }
+    if (expanded) Box(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { expanded = false },
+    )
+    FloatingActionButtonMenu(
+        expanded, modifier = modifier,
+        button = {
+            ToggleFloatingActionButton(expanded, { expanded = it }, Modifier.sharedKey("create")) {
+                Icon(
+                    if (checkedProgress > 0.5f) Sym.Close else Sym.Add, if (expanded) "Close menu" else "Add contact",
+                    Modifier.animateIcon({ checkedProgress }),
+                )
+            }
+        },
+    ) {
+        FloatingActionButtonMenuItem({ expanded = false; onRecentCalls() }, { Text("From recent calls") }, { Icon(Sym.Call, null) })
+        FloatingActionButtonMenuItem({ expanded = false; onCreate() }, { Text("New contact") }, { Icon(Sym.PersonAdd, null) })
     }
 }
 

@@ -1,0 +1,4 @@
+v3.1.0 - Save numbers from recent calls
+ - New "From recent calls" option in the + menu: pick a recent caller and the number is filled in for you
+ - The + button is now an expressive menu
+ - Workflow updated for newer GitHub Actions
