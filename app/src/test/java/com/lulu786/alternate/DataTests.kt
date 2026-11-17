@@ -74,6 +74,11 @@ class DataTests {
         assertEquals("IN", Countries.split("919876543210", null)!!.first.code)
         assertEquals("9876543210", Countries.split("919876543210", "IN")!!.second)
         assertEquals("CA", Countries.split("14165551234", "CA")!!.first.code)
+        // +1: area code decides US vs Canada whatever the SIM says
+        assertEquals("US", Countries.split("12025550100", "CA")!!.first.code)
+        assertEquals("US", Countries.split("12025550100", null)!!.first.code)
+        assertEquals("CA", Countries.split("14165550100", "US")!!.first.code)
+        assertEquals("US", Countries.split("1202", null)!!.first.code)
     }
 
     @Test fun segmentedShapes() {

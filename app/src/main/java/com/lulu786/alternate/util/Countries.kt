@@ -202,6 +202,13 @@ object Countries {
     Country("Zimbabwe", "ZW", "263", "🇿🇼"),
     )
 
+    // shortcut: a snapshot of Canadian area codes; a code added later reads as US until it is listed here.
+    private val CANADA_AREA_CODES = setOf(
+        "204", "226", "236", "249", "250", "263", "289", "306", "343", "354", "365", "367", "368", "382", "403", "416", "418", "428",
+        "431", "437", "438", "450", "468", "474", "506", "514", "519", "548", "579", "581", "584", "587", "604", "613", "639", "647",
+        "672", "683", "705", "709", "742", "753", "778", "780", "782", "807", "819", "825", "867", "873", "879", "902", "905",
+    )
+
     private val byCode = all.associateBy { it.code }
     // Longest dial code first so "1242" (Bahamas) wins over "1" for +1 242 ...
     private val byDialLength = all.sortedByDescending { it.dialCode.length }
@@ -217,7 +224,10 @@ object Countries {
         if (matches.isEmpty()) return null
         val longest = matches.maxOf { it.dialCode.length }
         val top = matches.filter { it.dialCode.length == longest }
-        val pick = top.firstOrNull { it.code.equals(preferred, true) } ?: top.first()
+        // +1 is shared by the US and Canada: the area code tells them apart, so the SIM country must not decide it.
+        val pick = if (top.size > 1 && top.all { it.dialCode == "1" })
+            top.first { it.code == if (digits.substring(1, minOf(4, digits.length)) in CANADA_AREA_CODES) "CA" else "US" }
+        else top.firstOrNull { it.code.equals(preferred, true) } ?: top.first()
         return pick to digits.substring(pick.dialCode.length)
     }
 }
