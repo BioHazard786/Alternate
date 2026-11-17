@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import com.lulu786.alternate.data.ContactRow
 import com.lulu786.alternate.util.Countries
 import com.lulu786.alternate.util.Country
+import com.lulu786.alternate.util.formatPhone
 import kotlinx.coroutines.launch
 
 /** Applies the Google-Contacts grouped look to one row of a list: rounded outer corners, 4dp inner corners. */
@@ -92,7 +93,9 @@ fun ContactListRow(
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.5f, stiffness = 500f), label = "press")
-    val subtitle = row.subtitle.ifEmpty { row.fullPhoneNumber?.let { "+$it" }.orEmpty() }
+    val subtitle = remember(row.subtitle, row.fullPhoneNumber) {
+        row.subtitle.ifEmpty { row.fullPhoneNumber?.let { formatPhone(it, row.countryCode) }.orEmpty() }
+    }
     Row(
         modifier
             .fillMaxWidth()

@@ -130,7 +130,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                     "Website" to d.contact.website, "Birthday" to d.contact.birthday, "Notes" to d.contact.notes)
                     .forEach { (k, v) -> extras[k] = v; if (v.isNotEmpty()) visibleExtras += k }
                 phones.clear()
-                d.phones.forEachIndexed { i, p -> phones += PhoneForm(i.toLong(), p.countryCode, p.phoneNumber, p.label) }
+                d.phones.forEachIndexed { i, p -> phones += PhoneForm(i + 1L, p.countryCode, p.phoneNumber, p.label) }
                 if (phones.isEmpty()) phones += PhoneForm(0, sim)
                 groupIds = d.groups.map { it.id }.toSet()
                 photo = d.contact.photoPath; origPhoto = photo
@@ -200,7 +200,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
             FieldRow(Icons.Filled.Business) { OutlinedTextField(appointment, { appointment = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Appointment") }, singleLine = true) }
             FieldRow(Icons.Filled.LocationOn) { OutlinedTextField(location, { location = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Location") }, singleLine = true) }
 
-            phones.forEachIndexed { i, p ->
+            phones.forEachIndexed { i, p -> androidx.compose.runtime.key(p.key) {
                 PhoneRow(
                     p, first = i == 0,
                     error = conflicts[entities[i].fullPhoneNumber],
@@ -208,7 +208,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                     sim = sim, canRemove = phones.size > 1,
                     onChange = { dirty = true }, onRemove = { phones.removeAt(i); dirty = true }, onView = onViewExisting,
                 )
-            }
+            } }
             TextButton({ phones += PhoneForm(System.nanoTime(), sim, label = if (phones.size == 1) "Work" else "Other"); dirty = true }, Modifier.padding(start = 56.dp)) {
                 Icon(Icons.Filled.Add, null); Spacer(Modifier.width(8.dp)); Text("Add phone")
             }

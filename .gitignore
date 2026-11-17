@@ -1,49 +1,20 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
-node_modules/
-
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-# caller-id module build
-modules/caller-id/android/build/
-
-# APK files (keep generated APKs out of source control)
-*.apk
-*.aab
-
-# Android build files
-android/app/build/
-android/build/
-android/.gradle/
-android/local.properties
-
-# Android release files
-android/app/release/
-
-# Test files
-test.ts
 # Gradle / Android
 .gradle/
 build/
 local.properties
 keystore.properties
 *.jks
+*.keystore
+!app/debug.keystore
 .idea/
 *.iml
+.kotlin/
+
+# APK files (keep generated APKs out of source control)
+*.apk
+*.aab
+
+# OS / env
+.DS_Store
+*.pem
+.env*.local

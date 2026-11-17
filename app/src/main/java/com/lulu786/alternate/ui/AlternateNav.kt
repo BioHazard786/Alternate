@@ -85,6 +85,8 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
     val snack = remember { SnackbarHostState() }
     LaunchedEffect(Unit) { vm.events.collect { snack.showSnackbar(it) } }
 
+    // Frozen on first composition: finishing Setup flips settings.setupDone, which must not rebuild the nav graph.
+    val start = remember { if (settings.setupDone) Contacts else Setup }
     val dest = entry?.destination
     val onTab = dest != null && tabs.any { t -> dest.hierarchy.any { it.hasRoute(t.route::class) } }
     var groupSheet by remember { mutableStateOf(false) }
@@ -124,7 +126,7 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                 },
             ) { pad ->
                 NavHost(
-                    nav, startDestination = if (settings.setupDone) Contacts else Setup, modifier = Modifier.padding(bottom = pad.calculateBottomPadding()),
+                    nav, startDestination = start, modifier = Modifier.padding(bottom = pad.calculateBottomPadding()),
                     enterTransition = { fadeIn() }, exitTransition = { fadeOut() }, popEnterTransition = { fadeIn() }, popExitTransition = { fadeOut() },
                 ) {
                     composable<Contacts> { Anim { ContactsScreen(vm, { nav.navigate(Detail(it)) }, { nav.navigate(Edit(0, it)) }, { nav.navigate(Setup) }) } }
