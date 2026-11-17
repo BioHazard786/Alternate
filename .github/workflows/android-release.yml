@@ -6,7 +6,6 @@ on:
       - "*"
 
 env:
-  NODE_VERSION: "18"
   JAVA_VERSION: "17"
   KEYSTORE_FILE: "release.jks"
 
@@ -19,19 +18,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
@@ -39,17 +30,17 @@ jobs:
           cache-read-only: false
 
       - name: Make gradlew executable
-        run: chmod +x android/gradlew
+        run: chmod +x gradlew
 
       - name: Decode Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo $KEYSTORE_BASE64 | base64 -d > android/app/${{ env.KEYSTORE_FILE }}
+          echo $KEYSTORE_BASE64 | base64 -d > app/${{ env.KEYSTORE_FILE }}
 
       - name: Generate keystore.properties
         run: |
-          cat <<EOF > android/keystore.properties
+          cat <<EOF > keystore.properties
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.KEY_PASSWORD }}
           keyAlias=${{ secrets.KEY_ALIAS }}
@@ -58,15 +49,14 @@ jobs:
 
       - name: Build Release APKs
         run: |
-          cd android
           ./gradlew assembleRelease
 
       - name: Get tag name and version code
         id: tag
         run: |
           echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          # Extract versionCode from app.json
-          VERSION_CODE=$(cat app.json | grep -o '"versionCode":[[:space:]]*[0-9]\+' | grep -o '[0-9]\+')
+          # Extract versionCode from the Gradle build file
+          VERSION_CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
           echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
 
       - name: Get changelog from versionCode
@@ -131,18 +121,13 @@ jobs:
 
             ${{ steps.changelog.outputs.changelog_bullets }}
 
-            ## 📦 Download Options
+            ## 📦 Download
 
-            Choose the APK that matches your device architecture:
-
-            - **ARM64 (64-bit)** – Recommended for most modern devices  
-            - **ARM (32-bit)** – For older Android devices  
-            - **x86 (64-bit)** – For Intel-based Android devices/emulators  
-            - **x86 (32-bit)** – For older Intel-based devices  
+            One universal APK works on every supported device (arm64, arm32, x86).
 
             ## 🔧 Installation
 
-            1. Download the appropriate APK for your device
+            1. Download the APK
             2. Enable "Install from unknown sources" in your Android settings
             3. Install the APK file
 
@@ -151,44 +136,14 @@ jobs:
             - Android 7.0 (API level 24) or higher
             - Permissions: Contacts, Phone
 
-      - name: Upload arm64-v8a APK
+      - name: Upload APK
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
-          asset_name: alternate-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
-          asset_content_type: application/vnd.android.package-archive
-
-      - name: Upload armeabi-v7a APK
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android/app/build/outputs/apk/release/app-armeabi-v7a-release.apk
-          asset_name: alternate-armeabi-v7a-${{ steps.tag.outputs.tag }}.apk
-          asset_content_type: application/vnd.android.package-archive
-
-      - name: Upload x86_64 APK
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android/app/build/outputs/apk/release/app-x86_64-release.apk
-          asset_name: alternate-x86_64-${{ steps.tag.outputs.tag }}.apk
-          asset_content_type: application/vnd.android.package-archive
-
-      - name: Upload x86 APK
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android/app/build/outputs/apk/release/app-x86-release.apk
-          asset_name: alternate-x86-${{ steps.tag.outputs.tag }}.apk
+          asset_path: app/build/outputs/apk/release/app-release.apk
+          asset_name: alternate-${{ steps.tag.outputs.tag }}.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Upload metadata
@@ -197,6 +152,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android/app/build/outputs/apk/release/output-metadata.json
+          asset_path: app/build/outputs/apk/release/output-metadata.json
           asset_name: output-metadata.json
           asset_content_type: application/json

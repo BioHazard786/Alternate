@@ -1,0 +1,8 @@
+v3.0.0 - Rebuilt with a new look
+ - New Google Contacts-style design with dynamic color
+ - Several numbers per contact, each with a label
+ - Groups and favorites
+ - Search also finds notes, numbers and groups
+ - Faster startup and scrolling, much smaller app
+ - Fixed wrong birthday day and PIN lockout bugs
+ - Android only. Your contacts, PIN and theme carry over

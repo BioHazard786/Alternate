@@ -42,7 +42,7 @@
 
 # Alternate - Local Caller ID Detector
 
-A privacy-focused React Native app that helps you identify unknown callers without cluttering your device's main contact list. Perfect for temporary number storage when you need to know who's calling but don't want the number to appear in WhatsApp, Telegram, or other messaging apps.
+A privacy-focused Android app that helps you identify unknown callers without cluttering your device's main contact list. Perfect for temporary number storage when you need to know who's calling but don't want the number to appear in WhatsApp, Telegram, or other messaging apps.
 
 ## Features
 
@@ -50,9 +50,11 @@ A privacy-focused React Native app that helps you identify unknown callers witho
 - **Temporary Number Storage**: Save numbers locally without affecting your main contacts
 - **Privacy Protection**: Numbers won't appear in WhatsApp, Telegram, or other messaging apps
 - **Phone Number Validation**: Smart phone number input with country selection
-- **Custom Native Module**: Built-in caller ID functionality using Android's native capabilities
-- **Country Selector**: Beautiful bottom sheet country picker with search
-- **Material Design**: Modern UI following Material Design 3 principles
+- **Multiple numbers per contact**: Each with an editable label (Mobile, Work, or your own)
+- **Groups and favorites**: Organise contacts into groups like Family or Work
+- **Search**: Finds names, numbers, notes and groups, with the match highlighted
+- **Material 3 Expressive**: A Google Contacts–style interface with dynamic color
+- **App lock**: PIN and fingerprint
 - **Offline Storage**: All data stored locally using Android's native SQLite database
 
 ## Use Case
@@ -66,10 +68,10 @@ When you receive calls from unknown numbers but don't want to save them to your 
 
 ## Tech Stack
 
-- **React Native** with **Expo**
-- **TypeScript** for type safety
-- **React Native Paper** for Material Design components
-- **Room** for local data storage
+- **Kotlin** with **Jetpack Compose** and **Material 3 Expressive**
+- **Room** for local data storage, **DataStore** for settings
+- **Coil** for photos, **androidx.biometric** for fingerprint unlock
+- No network access: the release build removes the `INTERNET` permission
 
 ## Screenshots
 
@@ -85,120 +87,42 @@ When you receive calls from unknown numbers but don't want to save them to your 
 
 <!-- ## Download -->
 
-## Installation
+## Building
 
 ### Prerequisites
 
-- Node.js (v18 or later)
-- npm or yarn
-- Expo CLI
-- Android Studio (for Android development)
-- Xcode (for iOS development, macOS only)
+- JDK 17 or later
+- Android SDK (API 37 platform) — Android Studio installs everything needed
 
-### Setup
-
-1. Clone the repository:
+### Debug build
 
 ```bash
 git clone https://github.com/BioHazard786/Alternate.git
 cd Alternate
+./gradlew assembleDebug
 ```
 
-2. Install dependencies:
+The APK is written to `app/build/outputs/apk/debug/`.
+
+### Signed release build
+
+Create `keystore.properties` in the project root (it is git-ignored):
+
+```properties
+storeFile=release.jks        # relative to app/
+storePassword=...
+keyAlias=...
+keyPassword=...
+```
+
+Then run `./gradlew assembleRelease`. The universal APK is written to `app/build/outputs/apk/release/`. Without `keystore.properties` the release APK is left unsigned.
+
+### Tests
 
 ```bash
-npm install
+./gradlew testDebugUnitTest          # JVM unit tests
+./gradlew connectedDebugAndroidTest  # needs a device or emulator (migration test)
 ```
-
-3. Start the development server:
-
-```bash
-npx expo start
-```
-
-## Building APK
-
-### Development Build
-
-To build a development APK:
-
-```bash
-npx expo run:android
-```
-
-### Production Build with EAS
-
-1. Install EAS CLI:
-
-```bash
-npm install -g eas-cli
-```
-
-2. Configure EAS:
-
-```bash
-npx eas build:configure
-```
-
-3. Build for Android:
-
-```bash
-npx eas build --platform android
-```
-
-### Local Production Build
-
-To build a production APK locally without EAS:
-
-#### Method 1: Quick Build (Debug-Signed)
-
-For development and testing purposes:
-
-1. Install dependencies:
-
-```bash
-npm ci
-```
-
-2. Build for Android:
-
-```bash
-cd android
-./gradlew assembleRelease
-```
-
-**Note:** This creates a release APK but signed with debug keystore. The APK will be generated at `android/app/build/outputs/apk/release/`
-
-#### Method 2: Properly Signed APK (Recommended for Distribution)
-
-For production distribution, use Android Studio to create a properly signed APK:
-
-1. **Open the project in Android Studio**:
-
-   - Open Android Studio
-   - Select "Open an existing Android Studio project"
-   - Navigate to the `android` folder in your project
-   - Click "OK"
-
-2. **Generate Signed APK**:
-
-   - Go to `Build` → `Generate Signed Bundle / APK`
-   - Select "APK" and click "Next"
-   - Choose "Create new..." to generate a new keystore or "Choose existing..." if you have one
-   - Fill in the keystore details (store this information securely!)
-   - Click "Next"
-   - Select "release" build variant
-   - Click "Create"
-
-3. **Locate the signed APK**:
-   - The signed APK will be generated in `android/app/release/`
-   - This APK is properly signed and ready for distribution
-
-**Important Notes:**
-
-- Debug-signed APKs (from `./gradlew assembleRelease`) are fine for development and testing
-- For Play Store or distribution to users, always use properly signed APKs from Android Studio
-- APKs signed with different keystores cannot update each other on Android devices
 
 ## Project Structure
 

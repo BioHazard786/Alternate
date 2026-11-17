@@ -53,21 +53,16 @@ git push origin v1.1.0
 
 ## What the Workflow Does
 
-1. **Setup Environment**: Installs Node.js and Java
-2. **Install Dependencies**: Runs `npm ci` to install project dependencies
-3. **Build APKs**: Uses Gradle to build release APKs for all architectures
-4. **Sign APKs**: Signs the APKs with your release keystore
+1. **Setup Environment**: Installs Java 17
+2. **Build APK**: Runs `./gradlew assembleRelease` (R8 minified, one universal APK)
+3. **Sign APK**: Signs it with your release keystore via `keystore.properties`
+4. **Read the changelog**: Uses `fastlane/.../changelogs/<versionCode>.txt`
 5. **Create Release**: Creates a GitHub release with the tag
-6. **Upload APKs**: Uploads all split APKs to the release
+6. **Upload APK**: Uploads the APK to the release
 
 ## Generated APK Files
 
-The workflow creates the following APK files:
-
-- `alternate-arm64-v8a-[tag].apk` - For modern 64-bit ARM devices
-- `alternate-armeabi-v7a-[tag].apk` - For older 32-bit ARM devices
-- `alternate-x86_64-[tag].apk` - For 64-bit x86 devices
-- `alternate-x86-[tag].apk` - For 32-bit x86 devices
+- `alternate-[tag].apk` - Universal APK for all devices
 - `output-metadata.json` - Build metadata
 
 ## Troubleshooting
@@ -76,33 +71,15 @@ The workflow creates the following APK files:
 
 1. **Keystore decoding fails**: Make sure your base64 encoding doesn't contain newlines
 2. **Signing fails**: Verify your keystore password, key alias, and key password are correct
-3. **Build fails**: Check that your dependencies are properly defined in package.json
+3. **Build fails**: Check that your dependencies are properly defined in `gradle/libs.versions.toml`
 
 ### Testing the Build Locally
 
 Before pushing a tag, you can test the build process locally:
 
 ```bash
-# Install dependencies
-npm ci
-
-# Prebuild
-npx expo prebuild --platform android --clean
-
-# Build (replace with your actual keystore details)
-cd android
-./gradlew assembleRelease \
-  -Pandroid.injected.signing.store.file=../keystore/alternate-release-key.jks \
-  -Pandroid.injected.signing.store.password=YOUR_KEYSTORE_PASSWORD \
-  -Pandroid.injected.signing.key.alias=YOUR_KEY_ALIAS \
-  -Pandroid.injected.signing.key.password=YOUR_KEY_PASSWORD
+# keystore.properties (git-ignored) in the project root:
+#   storeFile=release.jks      (relative to app/)
+#   storePassword=...  keyAlias=...  keyPassword=...
+./gradlew assembleRelease
 ```
-
-## File Locations
-
-After a successful build, APKs will be located at:
-
-- `android/app/build/outputs/apk/release/app-arm64-v8a-release.apk`
-- `android/app/build/outputs/apk/release/app-armeabi-v7a-release.apk`
-- `android/app/build/outputs/apk/release/app-x86_64-release.apk`
-- `android/app/build/outputs/apk/release/app-x86-release.apk`

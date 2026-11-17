@@ -3,6 +3,7 @@ package com.lulu786.alternate
 import com.lulu786.alternate.callerid.PhoneNormalizer
 import com.lulu786.alternate.data.MmkvParser
 import com.lulu786.alternate.data.Prefs
+import com.lulu786.alternate.ui.components.AvatarSpec
 import com.lulu786.alternate.ui.components.segmentedShape
 import com.lulu786.alternate.util.Countries
 import com.lulu786.alternate.util.sectionOf
@@ -149,5 +150,40 @@ class VcfTests {
 
     @Test fun skipsCardsWithoutNumbers() {
         assertEquals(0, com.lulu786.alternate.util.Vcf.parse("BEGIN:VCARD\nFN:Nobody\nEND:VCARD", "IN").size)
+    }
+}
+
+class AvatarTests {
+    @Test fun seedMapsToShapeColorPattern() {
+        // Pinned values: changing the mapping would change every existing contact's avatar.
+        fun t(seed: Int) = Triple(AvatarSpec.shape(seed), AvatarSpec.color(seed), AvatarSpec.pattern(seed))
+        assertEquals(Triple(0, 0, 0), t(0))
+        assertEquals(Triple(5, 0, 0), t(5))
+        assertEquals(Triple(0, 1, 0), t(12))
+        assertEquals(Triple(0, 0, 1), t(120))
+        assertEquals(Triple(11, 9, 3), t(12 * 10 * 3 + 12 * 9 + 11))
+        assertEquals(Triple(7, 0, 1), t(Int.MAX_VALUE))
+    }
+
+    @Test fun listsKeepTheirOrder() {
+        assertEquals(listOf(0xFF0090FF, 0xFF00A2C7, 0xFF12A594, 0xFF30A46C, 0xFFBDEE63, 0xFFFFC53D, 0xFFF76B15, 0xFFE5484D, 0xFFD6409F, 0xFF8E4EC6).map { it.toInt() }, AvatarSpec.hues.toList())
+        assertEquals(listOf("Cookie4Sided", "Cookie6Sided", "Cookie7Sided", "Cookie9Sided", "Cookie12Sided", "Clover4Leaf", "Clover8Leaf", "Sunny", "VerySunny", "Flower", "SoftBurst", "Pentagon"), com.lulu786.alternate.ui.components.AvatarShapes.names)
+        assertEquals(AvatarSpec.SHAPES, 12); assertEquals(AvatarSpec.COLORS, 10); assertEquals(AvatarSpec.PATTERNS, 4)
+    }
+}
+
+class AvatarContrastTests {
+    private fun lum(c: Int): Double {
+        fun ch(v: Int): Double = (v / 255.0).let { if (it <= 0.03928) it / 12.92 else Math.pow((it + 0.055) / 1.055, 2.4) }
+        return 0.2126 * ch(c shr 16 and 0xff) + 0.7152 * ch(c shr 8 and 0xff) + 0.0722 * ch(c and 0xff)
+    }
+    private fun contrast(a: Int, b: Int) = (maxOf(lum(a), lum(b)) + 0.05) / (minOf(lum(a), lum(b)) + 0.05)
+
+    @Test fun letterIsReadableOnEveryHueInLightAndDark() {
+        val primaries = listOf(0xFF6750A4.toInt(), 0xFF0B57D0.toInt(), 0xFF006C4C.toInt(), 0xFFB3261E.toInt())
+        for (primary in primaries) for (light in listOf(true, false)) for (i in 0 until AvatarSpec.COLORS) {
+            val (bg, fg) = AvatarSpec.roles(i, primary, light)
+            assert(contrast(bg, fg) >= 4.5) { "hue $i light=$light primary=${primary.toString(16)} contrast=${contrast(bg, fg)}" }
+        }
     }
 }
