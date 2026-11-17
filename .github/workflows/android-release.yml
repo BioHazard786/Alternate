@@ -1,17 +1,21 @@
 name: Android Release Build
 
+# Push a tag like v3.0.0 (must equal versionName in app/build.gradle.kts) to build, sign and publish a release.
 on:
   push:
     tags:
-      - "*"
+      - "v*"
+
+permissions:
+  contents: write # create the GitHub release
 
 env:
-  JAVA_VERSION: "17"
+  JAVA_VERSION: "21"
   KEYSTORE_FILE: "release.jks"
 
 jobs:
   build:
-    name: Build and Release Android APKs
+    name: Build and Release Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -25,133 +29,96 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          cache-read-only: false
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Read version and check the tag
+        id: version
+        run: |
+          VERSION_NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          VERSION_CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          TAG="${GITHUB_REF_NAME}"
+          if [ "${TAG#v}" != "$VERSION_NAME" ]; then
+            echo "::error::Tag $TAG does not match versionName $VERSION_NAME in app/build.gradle.kts"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
-      - name: Decode Keystore
+      - name: Decode keystore and write keystore.properties
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          echo $KEYSTORE_BASE64 | base64 -d > app/${{ env.KEYSTORE_FILE }}
+          # storeFile is resolved relative to app/ by app/build.gradle.kts
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "app/${KEYSTORE_FILE}"
+          {
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyPassword=$KEY_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=$KEYSTORE_FILE"
+          } > keystore.properties
 
-      - name: Generate keystore.properties
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease
+
+      - name: Verify the APK is signed
         run: |
-          cat <<EOF > keystore.properties
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          storeFile=${{ env.KEYSTORE_FILE }}
+          APK=app/build/outputs/apk/release/app-release.apk
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          "$APKSIGNER" verify --print-certs "$APK"
+
+      - name: Write release notes
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
+        run: |
+          # First line of the changelog is "v3.0.0 - Short title"; the rest are "- bullet" lines.
+          FILE="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
+          if [ -f "$FILE" ]; then
+            DESCRIPTION=$(head -n 1 "$FILE" | sed -E 's/^[^ ]+ +(-|–) +//')
+            BULLETS=$(tail -n +2 "$FILE" | sed -E 's/^ *- */- /')
+          else
+            echo "::warning::No changelog at $FILE"
+            DESCRIPTION="Latest Release"
+            BULLETS="- Latest improvements and bug fixes"
+          fi
+          cat > notes.md <<EOF
+          # 🚀 Alternate ${TAG} – ${DESCRIPTION}
+
+          ## ✨ What's New in ${TAG}
+
+          ${BULLETS}
+
+          ## 📦 Download
+
+          One universal APK works on every supported device (arm64, arm32, x86).
+
+          ## 🔧 Installation
+
+          1. Download the APK
+          2. Enable "Install from unknown sources" in your Android settings
+          3. Install the APK file. Updating from 2.x installs over the old app and keeps your contacts, PIN and theme.
+
+          ## 📋 System Requirements
+
+          - Android 7.0 (API level 24) or higher
+          - Permissions: Phone state and call log (to recognise calls), Display over other apps (for the caller popup), Biometrics (optional app lock)
+          - No network access: the app never goes online
           EOF
 
-      - name: Build Release APKs
-        run: |
-          ./gradlew assembleRelease
-
-      - name: Get tag name and version code
-        id: tag
-        run: |
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          # Extract versionCode from the Gradle build file
-          VERSION_CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
-          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
-
-      - name: Get changelog from versionCode
-        id: changelog
-        run: |
-          VERSION_CODE=${{ steps.tag.outputs.version_code }}
-          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
-
-          # Read the changelog file based on versionCode
-          CHANGELOG_FILE="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
-          if [ -f "$CHANGELOG_FILE" ]; then
-            # Read the changelog content and format it
-            CHANGELOG_CONTENT=$(cat "$CHANGELOG_FILE")
-            # Extract version and description from the first line
-            VERSION_LINE=$(echo "$CHANGELOG_CONTENT" | head -n 1)
-            VERSION=$(echo "$VERSION_LINE" | cut -d' ' -f1)
-            DESCRIPTION=$(echo "$VERSION_LINE" | cut -d'–' -f2 | sed 's/^ *//')
-            if [ -z "$DESCRIPTION" ]; then
-              DESCRIPTION=$(echo "$VERSION_LINE" | cut -d'-' -f2- | sed 's/^ *//')
-            fi
-            
-            # Extract bullet points (skip the first line)
-            BULLET_POINTS=$(echo "$CHANGELOG_CONTENT" | tail -n +2 | sed 's/^[ ]*-[ ]*/- /')
-            
-            echo "version=${VERSION}" >> $GITHUB_OUTPUT
-            echo "description=${DESCRIPTION}" >> $GITHUB_OUTPUT
-            
-            # Save bullet points to a file to preserve multiline content
-            echo "$BULLET_POINTS" > changelog_bullets.txt
-            echo "changelog_file=changelog_bullets.txt" >> $GITHUB_OUTPUT
-            
-            # Set changelog bullets as output variable for use in release body
-            echo "changelog_bullets<<EOF" >> $GITHUB_OUTPUT
-            echo "$BULLET_POINTS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "version=${{ steps.tag.outputs.tag }}" >> $GITHUB_OUTPUT
-            echo "description=Latest Release" >> $GITHUB_OUTPUT
-            echo "- Latest improvements and bug fixes" > changelog_bullets.txt
-            echo "changelog_file=changelog_bullets.txt" >> $GITHUB_OUTPUT
-            
-            # Set default changelog bullets as output variable
-            echo "changelog_bullets<<EOF" >> $GITHUB_OUTPUT
-            echo "- Latest improvements and bug fixes" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Create release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          release_name: Release ${{ steps.tag.outputs.tag }}
-          draft: false
-          prerelease: false
-          body: |
-            # 🚀 Alternate ${{ steps.tag.outputs.tag }} – ${{ steps.changelog.outputs.description }}
-
-            ## ✨ What's New in ${{ steps.tag.outputs.tag }}
-
-            ${{ steps.changelog.outputs.changelog_bullets }}
-
-            ## 📦 Download
-
-            One universal APK works on every supported device (arm64, arm32, x86).
-
-            ## 🔧 Installation
-
-            1. Download the APK
-            2. Enable "Install from unknown sources" in your Android settings
-            3. Install the APK file
-
-            ## 📋 System Requirements
-
-            - Android 7.0 (API level 24) or higher
-            - Permissions: Contacts, Phone
-
-      - name: Upload APK
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: app/build/outputs/apk/release/app-release.apk
-          asset_name: alternate-${{ steps.tag.outputs.tag }}.apk
-          asset_content_type: application/vnd.android.package-archive
-
-      - name: Upload metadata
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: app/build/outputs/apk/release/output-metadata.json
-          asset_name: output-metadata.json
-          asset_content_type: application/json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "alternate-${TAG}.apk"
+          gh release create "$TAG" \
+            "alternate-${TAG}.apk" \
+            app/build/outputs/apk/release/output-metadata.json \
+            --title "Release ${TAG}" \
+            --notes-file notes.md

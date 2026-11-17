@@ -1,8 +1,9 @@
 v3.0.0 - Rebuilt with a new look
- - New Google Contacts-style design with dynamic color
- - Several numbers per contact, each with a label
- - Groups and favorites
+ - New Material 3 Expressive design with dynamic color
+ - New caller popup with smooth animations
+ - Several numbers per contact, groups and favorites
+ - A-Z scrubber and bulk select actions
  - Search also finds notes, numbers and groups
- - Faster startup and scrolling, much smaller app
+ - Faster and much smaller app
  - Fixed wrong birthday day and PIN lockout bugs
- - Android only. Your contacts, PIN and theme carry over
+ - Your contacts, PIN and theme carry over

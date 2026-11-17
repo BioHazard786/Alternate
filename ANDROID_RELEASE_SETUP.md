@@ -43,22 +43,27 @@ The password for your signing key.
 
 ## Workflow Trigger
 
-The workflow is triggered when you push a tag that starts with 'v':
+The workflow runs when you push a tag that starts with `v`. The tag must equal `versionName` in `app/build.gradle.kts`
+(for example `v3.0.0` for `versionName = "3.0.0"`), otherwise the build stops before doing any work.
 
 ```bash
-# Create and push a tag
-git tag v1.1.0
-git push origin v1.1.0
+# 1. Bump versionCode and versionName in app/build.gradle.kts
+# 2. Add fastlane/metadata/android/en-US/changelogs/<versionCode>.txt
+#    (first line "v3.0.0 - Short title", then "- bullet" lines)
+# 3. Commit, then tag and push
+git tag v3.0.0
+git push origin v3.0.0
 ```
 
 ## What the Workflow Does
 
-1. **Setup Environment**: Installs Java 17
-2. **Build APK**: Runs `./gradlew assembleRelease` (R8 minified, one universal APK)
-3. **Sign APK**: Signs it with your release keystore via `keystore.properties`
-4. **Read the changelog**: Uses `fastlane/.../changelogs/<versionCode>.txt`
-5. **Create Release**: Creates a GitHub release with the tag
-6. **Upload APK**: Uploads the APK to the release
+1. **Check the tag**: compares it with `versionName`
+2. **Set up**: JDK 21 (Temurin) and Gradle
+3. **Test**: `./gradlew testDebugUnitTest`
+4. **Build and sign**: `./gradlew assembleRelease` (R8 minified, one universal APK), signed with your keystore through `keystore.properties`
+5. **Verify**: `apksigner verify` fails the run if the APK is not signed
+6. **Release notes**: built from `fastlane/.../changelogs/<versionCode>.txt`
+7. **Publish**: `gh release create` attaches the APK and `output-metadata.json`
 
 ## Generated APK Files
 
