@@ -1,7 +1,9 @@
 package com.lulu786.alternate
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -38,6 +41,14 @@ class MainActivity : FragmentActivity() {
             vm = model
             val s = model.settings.collectAsStateWithLifecycle().value
             val dark = when (s?.theme) { ThemeMode.Light -> false; ThemeMode.Dark, ThemeMode.Amoled -> true; else -> isSystemInDarkTheme() }
+            // Bar icons follow the app's own theme: with a Light app on a dark system they stayed white on a light bar.
+            DisposableEffect(dark) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark },
+                    navigationBarStyle = SystemBarStyle.auto(Color.argb(0xe6, 0xff, 0xff, 0xff), Color.argb(0x80, 0x1b, 0x1b, 0x1b)) { dark },
+                )
+                onDispose { }
+            }
             LaunchedEffect(s) { s?.let(model::onSettingsLoaded) }
             // No recents preview while an app lock is on.
             LaunchedEffect(s?.lock?.enabled) {
