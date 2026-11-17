@@ -1,0 +1,4 @@
+<paths>
+  <cache-path name="share" path="share/" />
+  <files-path name="photos" path="photos/" />
+</paths>

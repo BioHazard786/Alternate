@@ -1,0 +1,5 @@
+<resources>
+  <string name="app_name">Alternate</string>
+  <!-- Must stay the same as 2.x so dialers keep the directory. -->
+  <string name="callerid_authority" translatable="false">expo.modules.callerid.directory</string>
+</resources>

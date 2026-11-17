@@ -1,9 +1,0 @@
-{
-  "platforms": ["apple", "android", "web"],
-  "apple": {
-    "modules": ["CallerIdModule"]
-  },
-  "android": {
-    "modules": ["expo.modules.callerid.CallerIdModule"]
-  }
-}
