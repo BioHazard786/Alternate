@@ -7,9 +7,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -191,26 +188,28 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                 ContactAvatar(seed, name, photo, 96.dp, expressive = true)
                 TextButton({ photoSheet = true }) { Text(if (photo.isEmpty()) "Add picture" else "Change picture") }
             }
-            FieldRow(Sym.Person) { OutlinedTextField(name, { name = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Name") }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true) }
-            FieldRow(Sym.Work) { OutlinedTextField(appointment, { appointment = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Appointment") }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true) }
-            FieldRow(Sym.LocationOn) { OutlinedTextField(location, { location = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Location") }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true) }
+            OutlinedTextField(name, { name = it; dirty = true }, fieldPadding, label = { Text("Name") }, leadingIcon = { Icon(Sym.Person, null) }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true)
+            OutlinedTextField(appointment, { appointment = it; dirty = true }, fieldPadding, label = { Text("Appointment") }, leadingIcon = { Icon(Sym.Work, null) }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true)
+            OutlinedTextField(location, { location = it; dirty = true }, fieldPadding, label = { Text("Location") }, leadingIcon = { Icon(Sym.LocationOn, null) }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true)
 
             phones.forEachIndexed { i, p -> androidx.compose.runtime.key(p.key) {
                 PhoneRow(
-                    p, first = i == 0,
+                    p,
                     error = conflicts[entities[i].fullPhoneNumber],
                     duplicateInForm = entities[i].phoneNumber.isNotEmpty() && entities.count { it.fullPhoneNumber == entities[i].fullPhoneNumber } > 1,
                     sim = sim, canRemove = phones.size > 1,
                     onChange = { dirty = true }, onRemove = { phones.removeAt(i); dirty = true }, onView = onViewExisting,
                 )
             } }
-            TextButton({ phones += PhoneForm(System.nanoTime(), countryOf(sim), label = if (phones.size == 1) "Work" else "Other"); dirty = true }, Modifier.padding(start = 56.dp)) {
+            TextButton({ phones += PhoneForm(System.nanoTime(), countryOf(sim), label = if (phones.size == 1) "Work" else "Other"); dirty = true }, Modifier.padding(start = 4.dp)) {
                 Icon(Sym.Add, null); Spacer(Modifier.width(8.dp)); Text("Add phone")
             }
 
             val groups by vm.groups.collectAsStateWithLifecycle()
-            FieldRow(Sym.Label) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(start = 28.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) {
+                Icon(Sym.Label, null, Modifier.padding(top = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(16.dp))
+                FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     groups.orEmpty().filter { it.id in groupIds }.forEach { g ->
                         InputChip(true, { groupIds = groupIds - g.id; dirty = true }, { Text(g.name) }, trailingIcon = { Icon(Sym.Close, "Remove ${g.name}", Modifier.size(18.dp)) })
                     }
@@ -218,29 +217,29 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                 }
             }
 
-            visibleExtras.forEach { key ->
-                AnimatedVisibility(true, enter = expandVertically(), exit = shrinkVertically()) {
-                    FieldRow(null) {
-                        if (key == "Birthday") {
-                            OutlinedTextField(
-                                extras[key].orEmpty(), {}, Modifier.fillMaxWidth().clickable { datePicker = true }, readOnly = true, enabled = false,
-                                label = { Text("Birthday") }, trailingIcon = { IconButton({ datePicker = true }) { Icon(Sym.ArrowDropDown, "Pick date") } },
-                                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = MaterialTheme.colorScheme.onSurface, disabledBorderColor = MaterialTheme.colorScheme.outline,
-                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant, disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant),
-                            )
-                        } else OutlinedTextField(
-                            extras[key].orEmpty(), { extras[key] = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text(key) },
-                            singleLine = key != "Notes", minLines = if (key == "Notes") 3 else 1,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = when (key) { "Email" -> KeyboardType.Email; "Website" -> KeyboardType.Uri; else -> KeyboardType.Text },
-                                capitalization = when (key) { "Email", "Website" -> KeyboardCapitalization.None; "Notes" -> KeyboardCapitalization.Sentences; else -> KeyboardCapitalization.Words },
-                            ),
-                        )
-                    }
-                }
+            visibleExtras.toList().forEach { key ->
+                val remove = { visibleExtras.remove(key); extras[key] = ""; dirty = true }
+                if (key == "Birthday") {
+                    OutlinedTextField(
+                        extras[key].orEmpty(), {}, fieldPadding.clickable { datePicker = true }, readOnly = true, enabled = false,
+                        label = { Text("Birthday") }, leadingIcon = { Icon(Sym.Cake, null) },
+                        trailingIcon = { Row { IconButton({ datePicker = true }) { Icon(Sym.ArrowDropDown, "Pick date") }; RemoveIcon("Remove Birthday", remove) } },
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface, disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant, disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                    )
+                } else OutlinedTextField(
+                    extras[key].orEmpty(), { extras[key] = it; dirty = true }, fieldPadding, label = { Text(key) },
+                    leadingIcon = { Icon(extraIcon(key), null) }, trailingIcon = { RemoveIcon("Remove $key", remove) },
+                    singleLine = key != "Notes", minLines = if (key == "Notes") 3 else 1,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = when (key) { "Email" -> KeyboardType.Email; "Website" -> KeyboardType.Uri; else -> KeyboardType.Text },
+                        capitalization = when (key) { "Email", "Website" -> KeyboardCapitalization.None; "Notes" -> KeyboardCapitalization.Sentences; else -> KeyboardCapitalization.Words },
+                    ),
+                )
             }
-            TextButton({ fieldSheet = true }, Modifier.padding(start = 56.dp)) { Icon(Sym.Add, null); Spacer(Modifier.width(8.dp)); Text("Add more fields") }
+            TextButton({ fieldSheet = true }, Modifier.padding(start = 4.dp)) { Icon(Sym.Add, null); Spacer(Modifier.width(8.dp)); Text("Add more fields") }
         }
     }
 
@@ -285,47 +284,49 @@ private fun phoneEntity(p: PhoneForm): PhoneEntity {
     return PhoneEntity(contactId = 0, fullPhoneNumber = if (digits.isEmpty()) "" else dial + digits, phoneNumber = digits, countryCode = p.country.code, label = p.label.ifBlank { "Mobile" })
 }
 
-@Composable
-private fun FieldRow(icon: androidx.compose.ui.graphics.vector.ImageVector?, content: @Composable () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.Top) {
-        Box56(icon)
-        Column(Modifier.weight(1f)) { content() }
-    }
-}
+private val fieldPadding = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
 
-@Composable private fun Box56(icon: androidx.compose.ui.graphics.vector.ImageVector?) {
-    androidx.compose.foundation.layout.Box(Modifier.width(40.dp).height(56.dp), Alignment.CenterStart) {
-        if (icon != null) Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+/** Red cross at the end of a field: takes away a field or number that was added by mistake. */
+@Composable
+private fun RemoveIcon(description: String, onClick: () -> Unit) =
+    IconButton(onClick) { Icon(Sym.Close, description, tint = MaterialTheme.colorScheme.error) }
+
+@Composable
+private fun extraIcon(key: String) = when (key) {
+    "Email" -> Sym.Mail; "Website" -> Sym.Link; "Birthday" -> Sym.Cake; "Notes" -> Sym.Description
+    else -> Sym.Person // prefix, suffix and nickname are all parts of the name
 }
 
 @Composable
 private fun PhoneRow(
-    p: PhoneForm, first: Boolean, error: Pair<Long, String>?, duplicateInForm: Boolean, sim: String, canRemove: Boolean,
+    p: PhoneForm, error: Pair<Long, String>?, duplicateInForm: Boolean, sim: String, canRemove: Boolean,
     onChange: () -> Unit, onRemove: () -> Unit, onView: (Long) -> Unit,
 ) {
     var picker by remember { mutableStateOf(false) }
     var labelMenu by remember { mutableStateOf(false) }
     var custom by remember { mutableStateOf(p.label !in builtInLabels) }
     val country = p.country
-    FieldRow(if (first) Sym.Call else null) {
-        Row(verticalAlignment = Alignment.Top) {
-            OutlinedTextField(
-                p.number, { p.number = it.filter { c -> c.isDigit() || c == ' ' || c == '-' }; onChange() }, Modifier.weight(1f), label = { Text("Phone") }, singleLine = true,
-                // The country sits inside the field so both share one baseline and border.
-                leadingIcon = { TextButton({ picker = true }) { Text(if (country == Countries.NONE) "${country.flag} No code" else "${country.flag} +${country.dialCode}"); Icon(Sym.ArrowDropDown, null) } },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), isError = error != null || duplicateInForm,
-                supportingText = {
-                    when {
-                        error != null -> Row(verticalAlignment = Alignment.CenterVertically) { Text("Already saved as ${error.second}"); TextButton({ onView(error.first) }) { Text("View") } }
-                        duplicateInForm -> Text("Number entered twice")
-                        country == Countries.NONE -> Text("Saved and dialled exactly as typed")
-                    }
-                },
-            )
-            if (canRemove) IconButton(onRemove, Modifier.padding(top = 4.dp)) { Icon(Sym.Close, "Remove number") }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        OutlinedTextField(
+            p.number, { p.number = it.filter { c -> c.isDigit() || c == ' ' || c == '-' }; onChange() }, Modifier.fillMaxWidth(), label = { Text("Phone") }, singleLine = true,
+            // Phone icon, then the country: all inside the field so they share its baseline and border.
+            leadingIcon = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Sym.Call, null, Modifier.padding(start = 12.dp))
+                    TextButton({ picker = true }) { Text(if (country == Countries.NONE) "${country.flag} No code" else "${country.flag} +${country.dialCode}"); Icon(Sym.ArrowDropDown, null) }
+                }
+            },
+            trailingIcon = if (canRemove) ({ RemoveIcon("Remove number", onRemove) }) else null,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), isError = error != null || duplicateInForm,
+            supportingText = {
+                when {
+                    error != null -> Row(verticalAlignment = Alignment.CenterVertically) { Text("Already saved as ${error.second}"); TextButton({ onView(error.first) }) { Text("View") } }
+                    duplicateInForm -> Text("Number entered twice")
+                    country == Countries.NONE -> Text("Saved and dialled exactly as typed")
+                }
+            },
+        )
+        Row(Modifier.padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.foundation.layout.Box {
                 TextButton({ labelMenu = true }) { Text(if (custom) "Custom" else p.label); Icon(Sym.ArrowDropDown, null) }
                 DropdownMenu(labelMenu, { labelMenu = false }) {
