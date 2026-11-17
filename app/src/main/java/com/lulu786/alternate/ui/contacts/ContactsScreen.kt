@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lulu786.alternate.data.ContactRow
 import com.lulu786.alternate.ui.AppViewModel
+import com.lulu786.alternate.ui.components.AppFab
 import com.lulu786.alternate.ui.components.ContactAvatar
 import com.lulu786.alternate.ui.components.ContactListRow
 import com.lulu786.alternate.ui.components.EmptyState
@@ -87,15 +88,12 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onCreate: (String?)
                 TopBar(vm, settings?.lock?.enabled == true, onOpen, onCreate, { importLauncher.launch(arrayOf("text/*", "application/octet-stream")) }, { exportLauncher.launch("contacts.vcf") })
                 Box(Modifier.weight(1f)) {
                     ContactList(vm, m, state, onOpen)
-                    if (m.total > 30) FastScroller(state, m.letterStarts, Modifier.align(Alignment.CenterEnd).padding(vertical = 8.dp))
+                    if (m.total > 30) FastScroller(state, m.letterStarts, Modifier.align(Alignment.CenterEnd).padding(top = 8.dp, bottom = 88.dp))
                 }
             }
         }
         if (!vm.selecting) {
-            FloatingActionButton(
-                onClick = { onCreate(null) },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).sharedKey("create"),
-            ) { Icon(Sym.Add, "Create contact") }
+            AppFab(Sym.Add, "Create contact", { onCreate(null) }, Modifier.align(Alignment.BottomEnd).padding(16.dp).sharedKey("create"))
         }
     }
 }
@@ -177,8 +175,13 @@ private fun ContactList(vm: AppViewModel, m: com.lulu786.alternate.ui.ContactLis
         if (m.favorites.isNotEmpty()) {
             item(key = "fav", contentType = "header") { SectionLabel("Favorites") }
             item(key = "favgrid", contentType = "favorites") {
-                FlowRow(Modifier.fillMaxWidth(), maxItemsInEachRow = 4, horizontalArrangement = Arrangement.SpaceBetween) {
-                    m.favorites.forEach { r -> FavoriteTile(r, r.id in selected, { if (vm.selecting) vm.toggle(r.id) else onOpen(r.id) }, { vm.toggle(r.id) }) }
+                Column(Modifier.fillMaxWidth()) {
+                    m.favorites.chunked(4).forEach { chunk ->
+                        Row(Modifier.fillMaxWidth()) {
+                            chunk.forEach { r -> FavoriteTile(r, r.id in selected, { if (vm.selecting) vm.toggle(r.id) else onOpen(r.id) }, { vm.toggle(r.id) }, Modifier.weight(1f)) }
+                            repeat(4 - chunk.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
                 }
             }
         }
@@ -206,9 +209,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.rows(
 /** Avatar (in the contact's own shape) with the first name under it; the Favorites section shows nothing else. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FavoriteTile(row: ContactRow, selected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+private fun FavoriteTile(row: ContactRow, selected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit, modifier: Modifier) {
     Column(
-        Modifier.width(80.dp).clip(RoundedCornerShape(16.dp)).combinedClickable(onClick = onClick, onLongClick = onLongClick).padding(vertical = 8.dp),
+        modifier.padding(horizontal = 4.dp).clip(RoundedCornerShape(16.dp)).combinedClickable(onClick = onClick, onLongClick = onLongClick).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ContactAvatar(row.avatarSeed, row.name, row.photoPath, 64.dp, expressive = true, selected = selected)

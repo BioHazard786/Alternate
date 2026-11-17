@@ -142,39 +142,6 @@ fun EmptyState(icon: ImageVector, title: String, body: String? = null, actions: 
     }
 }
 
-/** Right-edge A-Z scrubber with a letter bubble. [starts] maps each letter to the index of its header in the list. */
-@Composable
-fun FastScroller(state: LazyListState, starts: List<Pair<Char, Int>>, modifier: Modifier = Modifier) {
-    if (starts.isEmpty()) return
-    var dragging by remember { mutableStateOf<Char?>(null) }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var heightPx by remember { mutableStateOf(1f) }
-    Box(modifier.fillMaxHeight().width(28.dp).pointerInput(starts) {
-        detectDragGestures(
-            onDragStart = { dragging = null },
-            onDragEnd = { dragging = null },
-            onDragCancel = { dragging = null },
-        ) { change, _ ->
-            val i = ((change.position.y / heightPx) * starts.size).toInt().coerceIn(0, starts.lastIndex)
-            val (letter, at) = starts[i]
-            if (dragging != letter) { dragging = letter; scope.launch { state.scrollToItem(at) } }
-        }
-    }.semantics { contentDescription = "Fast scroller" }.onSizeChanged { heightPx = it.height.toFloat() }) {
-        Column(Modifier.fillMaxHeight(), Arrangement.SpaceEvenly, Alignment.CenterHorizontally) {
-            starts.forEach { (l, _) ->
-                Text(l.toString(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary,
-                    fontWeight = if (dragging == l) FontWeight.Bold else FontWeight.Normal)
-            }
-        }
-        dragging?.let {
-            Box(Modifier.align(Alignment.CenterStart).padding(end = 40.dp).size(56.dp)
-                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape), Alignment.Center) {
-                Text(it.toString(), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
-            }
-        }
-    }
-}
-
 /** Builds a string with [ranges] in bold primary, for search results. */
 @Composable
 fun highlighted(text: String, ranges: List<IntRange>): AnnotatedString {
@@ -233,4 +200,13 @@ fun ConfirmDialog(title: String, text: String, confirm: String, onConfirm: () ->
         confirmButton = { TextButton(onConfirm) { Text(confirm) } },
         dismissButton = { TextButton(onDismiss) { Text("Cancel") } },
     )
+}
+
+/** The one FAB every screen uses, so size, colour and elevation match everywhere. */
+@Composable
+fun AppFab(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    androidx.compose.material3.FloatingActionButton(
+        onClick, modifier,
+        elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(defaultElevation = 3.dp, pressedElevation = 3.dp, focusedElevation = 3.dp, hoveredElevation = 4.dp),
+    ) { Icon(icon, label) }
 }

@@ -119,6 +119,14 @@ class SearchTests {
 }
 
 class VcfTests {
+    @Test fun quotedPrintableEmojiNamesDecode() {
+        val vcf = "BEGIN:VCARD\nVERSION:2.1\nN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:;=5A=65=62=61=E2=99=A5=EF=B8=8F;;;\n" +
+            "FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=5A=65=62=61=E2=99=A5=EF=B8=8F\nTEL;CELL:7820054917\nEND:VCARD\n" +
+            "BEGIN:VCARD\nVERSION:2.1\nN;ENCODING=QUOTED-PRINTABLE:;Zaid =F0=9F=92=AB=\n=F0=9F=92=AB;;;\nTEL;CELL:6396634236\nEND:VCARD\n"
+        val names = com.lulu786.alternate.util.Vcf.parse(vcf, "IN").map { it.contact.name }
+        assertEquals(listOf("Zeba\u2665\uFE0F", "Zaid \uD83D\uDCAB\uD83D\uDCAB"), names)
+    }
+
     private fun contact(name: String) = com.lulu786.alternate.data.ContactEntity(
         name = name, prefix = "Dr", suffix = "Jr", nickname = "Jim", appointment = "Engineer", location = "Dehradun",
         email = "j@x.com", website = "x.com", birthday = "--03-12", notes = "line1\nline2, with; punctuation", photoPath = "",

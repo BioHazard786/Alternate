@@ -20,7 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExtendedFloatingActionButton
+import com.lulu786.alternate.ui.components.AppFab
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -65,7 +65,8 @@ fun GroupsScreen(vm: AppViewModel, onOpen: (Long) -> Unit) {
     Scaffold(
         Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = { LargeTopAppBar(title = { Text("Groups") }, scrollBehavior = scroll) },
-        floatingActionButton = { ExtendedFloatingActionButton(onClick = { creating = true }, icon = { Icon(Sym.Add, null) }, text = { Text("Create group") }) },
+        floatingActionButton = { AppFab(Sym.Add, "Create group", { creating = true }) },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0), // the tab bar already consumed the nav-bar inset
         containerColor = MaterialTheme.colorScheme.surface,
     ) { pad ->
         val list = groups
@@ -126,7 +127,7 @@ fun GroupDetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onOpen: (L
                 actions = { TextButton({ val ids = vm.selected.toList(); scope.launch { vm.repo.removeFromGroup(id, ids); vm.clearSelection() } }) { Text("Remove from group") } },
             ) else LargeTopAppBar(title = { Text(name) }, navigationIcon = { IconButton(onBack) { Icon(Sym.ArrowBack, "Back") } }, scrollBehavior = scroll)
         },
-        floatingActionButton = { if (!vm.selecting) ExtendedFloatingActionButton(onClick = onAddPeople, icon = { Icon(Sym.PersonAdd, null) }, text = { Text("Add people") }) },
+        floatingActionButton = { if (!vm.selecting) AppFab(Sym.PersonAdd, "Add people", onAddPeople) },
         containerColor = MaterialTheme.colorScheme.surface,
     ) { pad ->
         val list = rows

@@ -7,15 +7,15 @@
       android:id="@+id/main_card"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginStart="16dp"
-      android:layout_marginEnd="16dp"
+      android:layout_marginStart="12dp"
+      android:layout_marginEnd="12dp"
       android:background="@drawable/overlay_card"
       android:elevation="8dp"
       android:orientation="vertical"
       android:paddingStart="16dp"
-      android:paddingTop="12dp"
-      android:paddingEnd="8dp"
-      android:paddingBottom="12dp">
+      android:paddingTop="8dp"
+      android:paddingEnd="4dp"
+      android:paddingBottom="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
       <FrameLayout
           android:layout_width="48dp"
           android:layout_height="48dp"
-          android:layout_marginEnd="16dp">
+          android:layout_marginEnd="12dp">
 
         <TextView
             android:id="@+id/avatarLetter"
@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="?attr/colorOnSurface" />
 
         <TextView
@@ -83,27 +83,20 @@
 
       <ImageButton
           android:id="@+id/collapse_btn"
-          android:layout_width="48dp"
-          android:layout_height="48dp"
+          android:layout_width="44dp"
+          android:layout_height="44dp"
           android:background="?android:attr/selectableItemBackgroundBorderless"
           android:contentDescription="@string/overlay_minimize"
           android:src="@drawable/ic_minimize_24" />
 
       <ImageButton
           android:id="@+id/close_btn"
-          android:layout_width="48dp"
-          android:layout_height="48dp"
+          android:layout_width="44dp"
+          android:layout_height="44dp"
           android:background="?android:attr/selectableItemBackgroundBorderless"
           android:contentDescription="@string/overlay_close"
           android:src="@drawable/ic_close_24" />
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="@string/app_name"
-        android:textAppearance="?attr/textAppearanceLabelSmall"
-        android:textColor="?attr/colorOnSurfaceVariant" />
   </LinearLayout>
 </FrameLayout>

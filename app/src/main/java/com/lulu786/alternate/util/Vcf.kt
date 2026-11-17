@@ -77,8 +77,33 @@ object Vcf {
     }
 
     fun parse(text: String, simIso: String?): List<ImportedContact> {
-        val unfolded = text.replace(Regex("\r\n?"), "\n").replace(Regex("\n[ \t]"), "")
+        val unfolded = joinQpSoftBreaks(text.replace(Regex("\r\n?"), "\n").replace(Regex("\n[ \t]"), ""))
         return unfolded.split("BEGIN:VCARD", ignoreCase = true).mapNotNull { parseCard(it, simIso) }
+    }
+
+    /** Quoted-printable lines end in "=" when they continue on the next line. Only touches QP lines so base64 padding is safe. */
+    private fun joinQpSoftBreaks(text: String): String {
+        val out = StringBuilder(); val lines = text.split("\n"); var i = 0
+        while (i < lines.size) {
+            var line = lines[i]
+            if (line.substringBefore(':').uppercase().contains("QUOTED-PRINTABLE"))
+                while (line.endsWith("=") && i + 1 < lines.size) { line = line.dropLast(1) + lines[++i] }
+            out.append(line); if (i < lines.size - 1) out.append('\n'); i++
+        }
+        return out.toString()
+    }
+
+    /** Decodes =XX bytes (text between them is already ASCII) using the card's CHARSET, default UTF-8. */
+    private fun decodeQp(v: String, charset: String?): String {
+        val bytes = java.io.ByteArrayOutputStream(); var i = 0
+        while (i < v.length) {
+            val c = v[i]
+            if (c == '=' && i + 2 < v.length && v.substring(i + 1, i + 3).all { it.isDigit() || it.uppercaseChar() in 'A'..'F' }) {
+                bytes.write(v.substring(i + 1, i + 3).toInt(16)); i += 3
+            } else { bytes.write(c.toString().toByteArray(Charsets.UTF_8)); i++ }
+        }
+        val cs = runCatching { charset?.let { java.nio.charset.Charset.forName(it) } }.getOrNull() ?: Charsets.UTF_8
+        return bytes.toString(cs)
     }
 
     private class RawPhone(val group: String?, val value: String, val types: Set<String>)
@@ -93,8 +118,11 @@ object Vcf {
 
         for (line in card.split("\n")) {
             val colon = line.indexOf(':'); if (colon < 0) continue
-            val head = line.substring(0, colon); val rawValue = line.substring(colon + 1)
+            val head = line.substring(0, colon)
             val parts = head.split(';')
+            val rawValue = line.substring(colon + 1).let { v ->
+                if (parts.any { it.uppercase().contains("QUOTED-PRINTABLE") }) decodeQp(v, parts.firstOrNull { it.uppercase().startsWith("CHARSET=") }?.substringAfter('=')) else v
+            }
             val propFull = parts[0]
             val group = propFull.substringBefore('.', "").ifEmpty { null }
             val prop = propFull.substringAfter('.').uppercase()

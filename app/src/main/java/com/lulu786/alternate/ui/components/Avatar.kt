@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,7 +70,6 @@ fun ContactAvatar(
     val colorIndex = AvatarSpec.color(seed)
     val container = colors.container[colorIndex]
     val onContainer = colors.onContainer[colorIndex]
-    val next = colors.container[(colorIndex + 1) % AvatarSpec.COLORS]
 
     // Selection flips the avatar around its vertical axis, swapping to a check circle halfway.
     val flip = remember { Animatable(if (selected) 180f else 0f) }
@@ -83,7 +81,7 @@ fun ContactAvatar(
             .size(size)
             .graphicsLayer { rotationY = flip.value; cameraDistance = 12f * density }
             .clip(if (showCheck) CircleShape else shape)
-            .then(if (showCheck) Modifier.background(MaterialTheme.colorScheme.primary) else Modifier.avatarBackground(AvatarSpec.pattern(seed), container, onContainer, next)),
+            .then(if (showCheck) Modifier.background(MaterialTheme.colorScheme.primary) else Modifier.avatarBackground(container, onContainer)),
         contentAlignment = Alignment.Center,
     ) {
         if (showCheck) {
@@ -101,7 +99,7 @@ fun ContactAvatar(
             )
         } else {
             Text(
-                name.trim().firstOrNull()?.uppercase() ?: "#",
+                name.trim().let { if (it.isEmpty()) "#" else String(Character.toChars(it.codePointAt(0))).uppercase() },
                 color = onContainer,
                 fontWeight = FontWeight.Medium,
                 fontSize = (size.value * 0.4f).sp,
@@ -111,42 +109,11 @@ fun ContactAvatar(
     }
 }
 
-/**
- * 0 soft gradient with a light glow (Samsung style), 1 fine ripples (OnePlus style), 2 fine stripes, 3 fine dots.
- * Everything scales with the avatar and stays subtle, so the letter reads first. No bitmaps.
- */
-private fun Modifier.avatarBackground(pattern: Int, container: Color, onContainer: Color, @Suppress("UNUSED_PARAMETER") next: Color): Modifier =
+/** Soft diagonal gradient with a light glow (Samsung style). The stored pattern id is kept for compatibility but no longer drawn. */
+private fun Modifier.avatarBackground(container: Color, onContainer: Color): Modifier =
     drawWithCache {
         val s = size.minDimension
-        val light = lerp(container, Color.White, 0.22f)
-        val deep = lerp(container, onContainer, 0.16f)
-        val gradient = Brush.linearGradient(listOf(light, deep), Offset.Zero, Offset(s, s))
+        val gradient = Brush.linearGradient(listOf(lerp(container, Color.White, 0.22f), lerp(container, onContainer, 0.16f)), Offset.Zero, Offset(s, s))
         val glow = Brush.radialGradient(listOf(Color.White.copy(alpha = 0.28f), Color.Transparent), Offset(s * 0.3f, s * 0.25f), s * 0.75f)
-        val ink = onContainer.copy(alpha = 0.13f)
-        onDrawBehind {
-            when (pattern) {
-                0 -> { drawRect(gradient); drawRect(glow) }
-                1 -> {
-                    drawRect(container)
-                    val step = s * 0.075f
-                    var r = step
-                    while (r < s * 1.3f) { drawCircle(ink, r, Offset(s * 0.7f, s * 0.3f), style = Stroke(s * 0.02f)); r += step }
-                }
-                2 -> {
-                    drawRect(container)
-                    var x = -s
-                    while (x < s * 2) { drawLine(ink, Offset(x, s), Offset(x + s, 0f), s * 0.02f); x += s * 0.085f }
-                }
-                else -> {
-                    drawRect(container)
-                    val gap = s * 0.13f
-                    var row = 0; var y = gap / 2
-                    while (y < s) {
-                        var x = if (row % 2 == 0) gap / 2 else gap
-                        while (x < s) { drawCircle(ink.copy(alpha = 0.18f), s * 0.02f, Offset(x, y)); x += gap }
-                        y += gap * 0.87f; row++
-                    }
-                }
-            }
-        }
+        onDrawBehind { drawRect(gradient); drawRect(glow) }
     }
