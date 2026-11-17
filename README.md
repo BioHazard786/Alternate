@@ -92,13 +92,14 @@ You can also give Alternate the call screening role during setup, which makes ca
 ## Screenshots
 
 <p align="center">
-  <img src="./mockups/image1.png" alt="Home Screen" width="200" style="margin:10px;" />
-  <img src="./mockups/image2.png" alt="Add Contact" width="200" style="margin:10px;" />
-  <img src="./mockups/image3.png" alt="Country Picker" width="200" style="margin:10px;" />
+  <img src="./mockups/image1.png" alt="Contacts and favorites" width="200" style="margin:10px;" />
+  <img src="./mockups/image2.png" alt="Fast A-Z scrubber" width="200" style="margin:10px;" />
+  <img src="./mockups/image3.png" alt="Contact details" width="200" style="margin:10px;" />
 </p>
 <p align="center">
-  <img src="./mockups/image4.png" alt="Caller Popup" width="200" style="margin:10px;" />
-  <img src="./mockups/image5.png" alt="Directory Support" width="200" style="margin:10px;" />
+  <img src="./mockups/image4.png" alt="Edit contact" width="200" style="margin:10px;" />
+  <img src="./mockups/image5.png" alt="Country picker" width="200" style="margin:10px;" />
+  <img src="./mockups/image6.png" alt="Caller popup" width="200" style="margin:10px;" />
 </p>
 
 ## Building
