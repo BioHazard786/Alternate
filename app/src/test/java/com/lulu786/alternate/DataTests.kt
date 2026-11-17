@@ -74,11 +74,45 @@ class DataTests {
         assertEquals("IN", Countries.split("919876543210", null)!!.first.code)
         assertEquals("9876543210", Countries.split("919876543210", "IN")!!.second)
         assertEquals("CA", Countries.split("14165551234", "CA")!!.first.code)
-        // +1: area code decides US vs Canada whatever the SIM says
+        // +1: area code decides, whatever the SIM says
         assertEquals("US", Countries.split("12025550100", "CA")!!.first.code)
         assertEquals("US", Countries.split("12025550100", null)!!.first.code)
         assertEquals("CA", Countries.split("14165550100", "US")!!.first.code)
         assertEquals("US", Countries.split("1202", null)!!.first.code)
+        // territories with several area codes: one entry each, national part excludes the area code
+        assertEquals("PR", Countries.split("17875551234", null)!!.first.code)
+        assertEquals("1787", Countries.split("17875551234", null)!!.first.dialCode)
+        assertEquals("1939", Countries.split("19395551234", null)!!.first.dialCode)
+        assertEquals("DO", Countries.split("18295551234", null)!!.first.code)
+        assertEquals("5551234", Countries.split("18295551234", null)!!.second)
+        assertEquals("JM", Countries.split("16585551234", null)!!.first.code)
+        // a stored number finds its own entry again (the edit form used to take the last one: 787 turned into 939)
+        assertEquals("1787", Countries.forNumber("PR", "17875551234")!!.dialCode)
+        assertEquals("1849", Countries.forNumber("DO", "18495551234")!!.dialCode)
+    }
+
+    @Test fun sharedDialCodesAreToldApartByNationalNumber() {
+        fun c(d: String, sim: String? = null) = Countries.split(d, sim)!!.first.code
+        assertEquals("KZ", c("77012345678")); assertEquals("RU", c("74951234567")); assertEquals("RU", c("74951234567", "KZ"))
+        assertEquals("VA", c("390669812345")); assertEquals("IT", c("390612345678"))
+        assertEquals("GB", c("442071234567")); assertEquals("GG", c("441481123456")); assertEquals("JE", c("441534123456")); assertEquals("IM", c("441624123456"))
+        assertEquals("GB", c("447700900123")); assertEquals("JE", c("447700900123", "JE")) // SIM settles what no rule covers
+        assertEquals("AX", c("35818123456")); assertEquals("FI", c("358401234567"))
+        assertEquals("SJ", c("4779123456")); assertEquals("NO", c("4722123456"))
+        assertEquals("CC", c("61891621234")); assertEquals("CX", c("61891641234")); assertEquals("AU", c("61412345678"))
+        assertEquals("EH", c("212528891234")); assertEquals("MA", c("212612345678"))
+        assertEquals("YT", c("262269601234")); assertEquals("RE", c("262692123456"))
+        assertEquals("TA", c("29084123")); assertEquals("SH", c("29022123"))
+        assertEquals("BQ", c("59931812345")); assertEquals("CW", c("59990123456"))
+    }
+
+    @Test fun countryListHasNoDuplicatesAndIsSorted() {
+        val all = Countries.all
+        assertEquals(all.size, all.map { it.code to it.dialCode }.toSet().size)
+        assertEquals(all.map { it.name }, all.map { it.name }.sortedBy { java.text.Normalizer.normalize(it, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}"), "").lowercase() })
+        for (code in listOf("HK", "MO", "CD", "PS", "XK", "GI", "AW", "PR")) kotlin.test.assertNotNull(Countries.byCode(code), code)
+        assertEquals("852", Countries.split("85212345678", null)!!.first.dialCode)
+        assertEquals("CD", Countries.split("243812345678", null)!!.first.code)
     }
 
     @Test fun segmentedShapes() {
@@ -155,9 +189,9 @@ class VcfTests {
     }
 
     @Test fun importSplitsDialCodeAndDefaultsToSimCountry() {
-        val v = "BEGIN:VCARD\nVERSION:3.0\nFN:A B\nTEL;TYPE=WORK:+44 7911 123456\nTEL:09876543210\nCATEGORIES:Family\nEND:VCARD"
+        val v = "BEGIN:VCARD\nVERSION:3.0\nFN:A B\nTEL;TYPE=WORK:+44 7400 123456\nTEL:09876543210\nCATEGORIES:Family\nEND:VCARD"
         val c = com.lulu786.alternate.util.Vcf.parse(v, "IN").single()
-        assertEquals("GB", c.phones[0].countryCode); assertEquals("447911123456", c.phones[0].fullPhoneNumber); assertEquals("Work", c.phones[0].label)
+        assertEquals("GB", c.phones[0].countryCode); assertEquals("447400123456", c.phones[0].fullPhoneNumber); assertEquals("Work", c.phones[0].label)
         assertEquals("919876543210", c.phones[1].fullPhoneNumber)
     }
 

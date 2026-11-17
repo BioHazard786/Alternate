@@ -161,7 +161,7 @@ fun highlighted(text: String, ranges: List<IntRange>): AnnotatedString {
 /** Country chip sheet: search field pinned on top, SIM country first, then A-Z. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CountryPickerSheet(selectedCode: String, simCode: String?, onPick: (Country) -> Unit, onDismiss: () -> Unit) {
+fun CountryPickerSheet(current: Country, simCode: String?, onPick: (Country) -> Unit, onDismiss: () -> Unit) {
     var query by remember { mutableStateOf("") }
     val list = remember(query, simCode) {
         val q = query.trim().lowercase()
@@ -176,7 +176,7 @@ fun CountryPickerSheet(selectedCode: String, simCode: String?, onPick: (Country)
         )
         LazyColumn(Modifier.padding(top = 8.dp)) {
             items(list, key = { it.code }) { c ->
-                val selected = c.code == selectedCode
+                val selected = c == current
                 Row(
                     Modifier.fillMaxWidth().clickable { onPick(c) }
                         .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)

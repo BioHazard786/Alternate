@@ -72,6 +72,7 @@ import com.lulu786.alternate.ui.components.CountryPickerSheet
 import com.lulu786.alternate.ui.components.GroupPickerSheet
 import com.lulu786.alternate.ui.sharedKey
 import com.lulu786.alternate.util.Countries
+import com.lulu786.alternate.util.Country
 import com.lulu786.alternate.util.simCountry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,11 +80,13 @@ import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.random.Random
 
-private class PhoneForm(val key: Long, country: String, number: String = "", label: String = "Mobile") {
+private class PhoneForm(val key: Long, country: Country, number: String = "", label: String = "Mobile") {
     var country by mutableStateOf(country)
     var number by mutableStateOf(number)
     var label by mutableStateOf(label)
 }
+
+private fun countryOf(code: String) = Countries.byCode(code) ?: Countries.byCode("IN")!!
 
 private val builtInLabels = listOf("Mobile", "Work", "Home", "Main", "Other")
 private val extraFields = listOf("Prefix", "Suffix", "Nickname", "Email", "Website", "Birthday", "Notes")
@@ -107,7 +110,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
     var location by remember { mutableStateOf("") }
     val extras = remember { mutableStateMapOfStrings() }
     val visibleExtras = remember { mutableStateListOf<String>() }
-    val phones = remember { mutableStateListOf(PhoneForm(0, sim)) }
+    val phones = remember { mutableStateListOf(PhoneForm(0, countryOf(sim))) }
     var groupIds by remember { mutableStateOf(emptySet<Long>()) }
     var photo by remember { mutableStateOf("") }
     var origPhoto by remember { mutableStateOf("") }
@@ -122,8 +125,8 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                     "Website" to d.contact.website, "Birthday" to d.contact.birthday, "Notes" to d.contact.notes)
                     .forEach { (k, v) -> extras[k] = v; if (v.isNotEmpty()) visibleExtras += k }
                 phones.clear()
-                d.phones.forEachIndexed { i, p -> phones += PhoneForm(i + 1L, p.countryCode, p.phoneNumber, p.label) }
-                if (phones.isEmpty()) phones += PhoneForm(0, sim)
+                d.phones.forEachIndexed { i, p -> phones += PhoneForm(i + 1L, Countries.forNumber(p.countryCode, p.fullPhoneNumber) ?: countryOf(sim), p.phoneNumber, p.label) }
+                if (phones.isEmpty()) phones += PhoneForm(0, countryOf(sim))
                 groupIds = d.groups.map { it.id }.toSet()
                 photo = d.contact.photoPath; origPhoto = photo
             }
@@ -201,7 +204,7 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                     onChange = { dirty = true }, onRemove = { phones.removeAt(i); dirty = true }, onView = onViewExisting,
                 )
             } }
-            TextButton({ phones += PhoneForm(System.nanoTime(), sim, label = if (phones.size == 1) "Work" else "Other"); dirty = true }, Modifier.padding(start = 56.dp)) {
+            TextButton({ phones += PhoneForm(System.nanoTime(), countryOf(sim), label = if (phones.size == 1) "Work" else "Other"); dirty = true }, Modifier.padding(start = 56.dp)) {
                 Icon(Sym.Add, null); Spacer(Modifier.width(8.dp)); Text("Add phone")
             }
 
@@ -276,8 +279,8 @@ private fun mutableStateMapOfStrings() = androidx.compose.runtime.mutableStateMa
 
 private fun phoneEntity(p: PhoneForm): PhoneEntity {
     val digits = p.number.filter(Char::isDigit).trimStart('0')
-    val dial = Countries.byCode(p.country)?.dialCode.orEmpty()
-    return PhoneEntity(contactId = 0, fullPhoneNumber = if (digits.isEmpty()) "" else dial + digits, phoneNumber = digits, countryCode = p.country, label = p.label.ifBlank { "Mobile" })
+    val dial = p.country.dialCode
+    return PhoneEntity(contactId = 0, fullPhoneNumber = if (digits.isEmpty()) "" else dial + digits, phoneNumber = digits, countryCode = p.country.code, label = p.label.ifBlank { "Mobile" })
 }
 
 @Composable
@@ -302,13 +305,13 @@ private fun PhoneRow(
     var picker by remember { mutableStateOf(false) }
     var labelMenu by remember { mutableStateOf(false) }
     var custom by remember { mutableStateOf(p.label !in builtInLabels) }
-    val country = Countries.byCode(p.country)
+    val country = p.country
     FieldRow(if (first) Sym.Call else null) {
         Row(verticalAlignment = Alignment.Top) {
             OutlinedTextField(
                 p.number, { p.number = it.filter { c -> c.isDigit() || c == ' ' || c == '-' }; onChange() }, Modifier.weight(1f), label = { Text("Phone") }, singleLine = true,
                 // The country sits inside the field so both share one baseline and border.
-                leadingIcon = { TextButton({ picker = true }) { Text("${country?.flag.orEmpty()} +${country?.dialCode.orEmpty()}"); Icon(Sym.ArrowDropDown, null) } },
+                leadingIcon = { TextButton({ picker = true }) { Text("${country.flag} +${country.dialCode}"); Icon(Sym.ArrowDropDown, null) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), isError = error != null || duplicateInForm,
                 supportingText = {
                     when {
@@ -330,7 +333,7 @@ private fun PhoneRow(
             if (custom) OutlinedTextField(p.label, { p.label = it; onChange() }, Modifier.weight(1f), label = { Text("Label") }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true)
         }
     }
-    if (picker) CountryPickerSheet(p.country, sim, { p.country = it.code; picker = false; onChange() }, { picker = false })
+    if (picker) CountryPickerSheet(p.country, sim, { p.country = it; picker = false; onChange() }, { picker = false })
 }
 
 @Composable
