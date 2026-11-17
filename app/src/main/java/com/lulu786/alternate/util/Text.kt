@@ -16,3 +16,17 @@ fun displayName(prefix: String, name: String, suffix: String): String = buildStr
     append(name.trim())
     if (suffix.isNotBlank()) append(", ").append(suffix.trim())
 }
+
+fun formatPhone(full: String, iso: String?): String =
+    android.telephony.PhoneNumberUtils.formatNumber("+$full", iso?.takeIf { it.isNotEmpty() } ?: java.util.Locale.getDefault().country) ?: "+$full"
+
+/** "--03-12" -> "12 March"; "1990-03-12" -> "12 March 1990 · 36 years". Parsed as a plain date, so no time-zone off-by-one. */
+fun formatBirthday(value: String, today: java.time.LocalDate = java.time.LocalDate.now()): String? = runCatching {
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("d MMMM")
+    if (value.startsWith("--")) {
+        java.time.MonthDay.of(value.substring(2, 4).toInt(), value.substring(5, 7).toInt()).format(fmt)
+    } else {
+        val d = java.time.LocalDate.parse(value)
+        "${d.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy"))} · ${java.time.Period.between(d, today).years} years"
+    }
+}.getOrNull()

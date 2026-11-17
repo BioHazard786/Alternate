@@ -17,6 +17,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.MaterialColors
 import com.lulu786.alternate.R
 import com.lulu786.alternate.data.CallerHit
 import com.lulu786.alternate.data.PhotoStore
@@ -81,7 +82,7 @@ object CallOverlay {
         val letter = root.findViewById<TextView>(R.id.avatarLetter)
         val photo = root.findViewById<ImageView>(R.id.callerPhoto)
         val light = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES
-        val (bg, fg) = AvatarSpec.roles(context, AvatarSpec.color(hit.avatarSeed), light)
+        val (bg, fg) = AvatarSpec.roles(AvatarSpec.color(hit.avatarSeed), MaterialColors.getColor(context, androidx.appcompat.R.attr.colorPrimary, 0), light)
         letter.text = hit.name.trim().firstOrNull()?.uppercase() ?: "#"
         letter.setTextColor(fg)
         letter.background.mutate().setTint(bg)

@@ -10,6 +10,7 @@ plugins {
 kotlin {
     compilerOptions {
         optIn.addAll(
+            "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
             "androidx.compose.material3.ExperimentalMaterial3Api",
             "androidx.compose.foundation.ExperimentalFoundationApi",
             "androidx.compose.animation.ExperimentalSharedTransitionApi",
@@ -61,7 +62,7 @@ android {
         }
     }
 
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

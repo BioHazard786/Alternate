@@ -6,10 +6,13 @@ import com.lulu786.alternate.data.ContactRepository
 import com.lulu786.alternate.data.LegacyMmkvImport
 import com.lulu786.alternate.data.PhotoStore
 import com.lulu786.alternate.data.Prefs
+import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+
+val LocalContainer = staticCompositionLocalOf<AppContainer> { error("no AppContainer") }
 
 /** Manual DI: one container, created with the Application. */
 class AppContainer(app: Application) {

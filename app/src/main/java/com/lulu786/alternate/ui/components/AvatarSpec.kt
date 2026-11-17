@@ -1,6 +1,5 @@
 package com.lulu786.alternate.ui.components
 
-import android.content.Context
 import com.google.android.material.color.MaterialColors
 
 /**
@@ -24,10 +23,9 @@ object AvatarSpec {
         0xFFFFC53D.toInt(), 0xFFF76B15.toInt(), 0xFFE5484D.toInt(), 0xFFD6409F.toInt(), 0xFF8E4EC6.toInt(),
     )
 
-    /** Container/on-container colours for palette [index], nudged toward the user's wallpaper colour. */
-    fun roles(context: Context, index: Int, light: Boolean): Pair<Int, Int> {
-        val harmonized = MaterialColors.harmonizeWithPrimary(context, hues[index])
-        val r = MaterialColors.getColorRoles(harmonized, light)
+    /** Container/on-container colours for palette [index], nudged toward [primary] (the wallpaper colour with dynamic theming). */
+    fun roles(index: Int, primary: Int, light: Boolean): Pair<Int, Int> {
+        val r = MaterialColors.getColorRoles(MaterialColors.harmonize(hues[index], primary), light)
         return r.accentContainer to r.onAccentContainer
     }
 }

@@ -83,3 +83,71 @@ class DataTests {
         assertNotEquals(first, mid); assertNotEquals(mid, last); assertNotEquals(one, first)
     }
 }
+
+class SearchTests {
+    private fun doc(id: Long, name: String, notes: String = "", phones: String = "", groups: String = "") =
+        com.lulu786.alternate.data.SearchDoc(id, name, "", "", "", "", "", "", "", notes, phones, groups)
+
+    private val index = com.lulu786.alternate.util.SearchIndex(listOf(
+        doc(1, "Ravi Kumar", notes = "Installs CCTV cameras for shops", phones = "919876543210 9876543210 Mob II"),
+        doc(2, "Aarav Shah", groups = "Family"),
+    ))
+
+    @Test fun matchesNotesWithHighlight() {
+        val r = index.search("cctv").single()
+        assertEquals("Notes", r.matchedField)
+        assertEquals("cctv", r.snippet.substring(r.snippetRanges[0].first, r.snippetRanges[0].last + 1).lowercase())
+    }
+
+    @Test fun multiWordAndAcrossFields() {
+        assertEquals(listOf(1L), index.search("ravi cctv").map { it.id })
+        assertEquals(emptyList(), index.search("ravi family"))
+    }
+
+    @Test fun matchesNumbersLabelsAndGroups() {
+        assertEquals(listOf(1L), index.search("98765").map { it.id })
+        assertEquals(listOf(1L), index.search("mob ii").map { it.id })
+        assertEquals(listOf(2L), index.search("family").map { it.id })
+        assertEquals("Group", index.search("family").single().matchedField)
+    }
+
+    @Test fun nameMatchReportsNameRanges() {
+        val r = index.search("aar").single()
+        assertNull(r.matchedField); assertEquals(listOf(0..2), r.nameRanges)
+    }
+}
+
+class VcfTests {
+    private fun contact(name: String) = com.lulu786.alternate.data.ContactEntity(
+        name = name, prefix = "Dr", suffix = "Jr", nickname = "Jim", appointment = "Engineer", location = "Dehradun",
+        email = "j@x.com", website = "x.com", birthday = "--03-12", notes = "line1\nline2, with; punctuation", photoPath = "",
+    )
+
+    @Test fun roundTripKeepsNumbersLabelsGroupsAndFields() {
+        val phones = listOf(
+            com.lulu786.alternate.data.PhoneEntity(contactId = 1, fullPhoneNumber = "919876543210", phoneNumber = "9876543210", countryCode = "IN", label = "Mobile", position = 0),
+            com.lulu786.alternate.data.PhoneEntity(contactId = 1, fullPhoneNumber = "919812345678", phoneNumber = "9812345678", countryCode = "IN", label = "Mob II", position = 1),
+        )
+        val text = com.lulu786.alternate.util.Vcf.export(listOf(com.lulu786.alternate.data.ExportContact(contact("Jimmy Carter"), phones, listOf("Work", "Family, close"))))
+        assertEquals(true, text.contains("item1.X-ABLabel:Mob II"))
+        val back = com.lulu786.alternate.util.Vcf.parse(text, "IN").single()
+        assertEquals("Jimmy Carter", back.contact.name)
+        assertEquals("Dr", back.contact.prefix); assertEquals("Jr", back.contact.suffix); assertEquals("Jim", back.contact.nickname)
+        assertEquals("--03-12", back.contact.birthday)
+        assertEquals("line1\nline2, with; punctuation", back.contact.notes)
+        assertEquals(listOf("Mobile", "Mob II"), back.phones.map { it.label })
+        assertEquals(listOf("919876543210", "919812345678"), back.phones.map { it.fullPhoneNumber })
+        assertEquals(listOf("Work", "Family, close"), back.groups)
+    }
+
+    @Test fun importSplitsDialCodeAndDefaultsToSimCountry() {
+        val v = "BEGIN:VCARD\nVERSION:3.0\nFN:A B\nTEL;TYPE=WORK:+44 7911 123456\nTEL:09876543210\nCATEGORIES:Family\nEND:VCARD"
+        val c = com.lulu786.alternate.util.Vcf.parse(v, "IN").single()
+        assertEquals("GB", c.phones[0].countryCode); assertEquals("447911123456", c.phones[0].fullPhoneNumber); assertEquals("Work", c.phones[0].label)
+        assertEquals("919876543210", c.phones[1].fullPhoneNumber)
+    }
+
+    @Test fun skipsCardsWithoutNumbers() {
+        assertEquals(0, com.lulu786.alternate.util.Vcf.parse("BEGIN:VCARD\nFN:Nobody\nEND:VCARD", "IN").size)
+    }
+}
