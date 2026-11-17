@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -86,7 +87,7 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onCreate: (String?)
         when {
             m == null -> Unit // first Room emission arrives in a frame or two; nothing to show yet
             m.total == 0 -> EmptyContacts(onCreate) { importLauncher.launch(arrayOf("text/*", "application/octet-stream")) }
-            else -> Column(Modifier.fillMaxSize()) {
+            else -> Column(Modifier.fillMaxSize().statusBarsPadding()) {
                 TopBar(vm, settings?.lock?.enabled == true, onOpen, onCreate, { importLauncher.launch(arrayOf("text/*", "application/octet-stream")) }, { exportLauncher.launch("contacts.vcf") })
                 Box(Modifier.weight(1f)) {
                     ContactList(vm, m, state, onOpen)
