@@ -37,6 +37,27 @@
       </intent-filter>
     </activity>
 
+    <receiver android:name=".callerid.CallReceiver" android:enabled="true" android:exported="true">
+      <intent-filter><action android:name="android.intent.action.PHONE_STATE" /></intent-filter>
+      <intent-filter><action android:name="android.intent.action.NEW_OUTGOING_CALL" /></intent-filter>
+    </receiver>
+
+    <service
+        android:name=".callerid.CallDetectScreeningService"
+        android:exported="true"
+        android:permission="android.permission.BIND_SCREENING_SERVICE">
+      <intent-filter><action android:name="android.telecom.CallScreeningService" /></intent-filter>
+    </service>
+
+    <provider
+        android:name=".callerid.CallDirectoryProvider"
+        android:authorities="@string/callerid_authority"
+        android:enabled="true"
+        android:exported="true"
+        android:readPermission="android.permission.READ_CONTACTS">
+      <meta-data android:name="android.content.ContactDirectory" android:value="true" />
+    </provider>
+
     <provider
         android:name="androidx.core.content.FileProvider"
         android:authorities="${applicationId}.files"

@@ -1,5 +1,5 @@
 <resources>
-  <style name="Theme.Alternate" parent="android:Theme.Material.Light.NoActionBar">
-    <item name="android:windowLightStatusBar">true</item>
-  </style>
+  <style name="Theme.Alternate" parent="Theme.Material3.DayNight.NoActionBar" />
+  <!-- Wrapped with DynamicColors at runtime when the call overlay is shown. -->
+  <style name="Theme.Alternate.Overlay" parent="Theme.Material3.DynamicColors.DayNight" />
 </resources>
