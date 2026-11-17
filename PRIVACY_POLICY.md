@@ -1,151 +1,133 @@
 # Privacy Policy for Alternate - Local Caller ID Detector
 
-**Effective Date:** October 10, 2025  
-**Last Updated:** October 10, 2025
+**Effective Date:** November 17, 2026  
+**Last Updated:** November 17, 2026 (applies to version 3.0.0 and later)
 
 ## Introduction
 
-Alternate ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application Alternate - Local Caller ID Detector (the "App"). This policy applies to the App available on Google Play Store.
+Alternate ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains what information the mobile application Alternate - Local Caller ID Detector (the "App") handles, how it is used, and who can access it. It applies to the App however you obtain it (Google Play, GitHub Releases, IzzyOnDroid or any other source).
 
-**Key Privacy Principle:** Alternate is designed with privacy at its core. All contact data is stored locally on your device and is never transmitted to external servers or third parties.
+**Key Privacy Principle:** Alternate is designed with privacy at its core. The contacts you save are stored on your device. The App does not have the Android `INTERNET` permission, so it cannot send your data to any server.
 
-## Information We Collect
+## Information the App Handles
 
 ### Information You Provide Directly
 
-- **Contact Information:** Names, phone numbers, email addresses, appointments, locations, notes, websites, birthdays, labels, nicknames, and profile photos that you manually enter into the app
-- **App Settings:** Your preferences for incoming/outgoing call notifications and other app configurations
+- **Contact information** that you enter or import: names, prefixes and suffixes, nicknames, phone numbers (with labels and country), email addresses, websites, birthdays, appointments, locations, notes, groups, favorites and profile photos
+- **App settings:** your theme, whether the incoming and outgoing call popups are on, and your app lock settings
 
-### Information Automatically Collected
+### Information Used on Your Device
 
-- **Device Information:** We access your device's SIM card country code to assist with phone number formatting and validation
-- **Call State Information:** The app monitors incoming and outgoing call states to provide caller identification services
-- **Photos:** When you choose to add profile pictures, photos are stored locally on your device
+- **Phone number of a call:** when a call starts, the App reads the number from the call so it can look it up in your saved contacts and show the popup. Numbers that are not in your contacts are not stored.
+- **Call state:** whether a call is ringing, active or finished, to show and dismiss the popup
+- **SIM and network country code:** used only to format and validate phone numbers
+- **App lock:** if you turn it on, your PIN is stored as a salted hash, never as plain text. Fingerprint unlock is performed by Android; the App never receives or stores your fingerprint data.
+- **Photos:** when you add a profile picture, you choose it with Android's photo picker or take it with your device's camera app. The App does not hold camera or storage permissions. The picture you select is copied into the App's private storage.
 
-### Information We Do NOT Collect
+### Information the App Does NOT Collect
 
-- We do not collect your existing device contacts
-- We do not access your call history beyond real-time call state monitoring
-- We do not collect location data
-- We do not collect device identifiers
-- We do not collect usage analytics or crash reports
-- We do not collect any personal information for advertising purposes
+- Your device's contacts (the App has no Contacts permission)
+- Your call history. Android requires the call log permission for an app to receive the number of a call, but the App never reads your call log
+- Location data
+- Device identifiers or advertising IDs
+- Usage analytics or crash reports
+- Anything for advertising or profiling
 
-## How We Use Your Information
+## How the Information Is Used
 
-We use the collected information solely for the following purposes:
-
-1. **Caller Identification:** To identify incoming calls using your locally stored database
-2. **Contact Management:** To store and manage contacts you manually add to the app
-3. **App Functionality:** To provide phone number validation, country selection, and caller ID features
-4. **User Preferences:** To remember your app settings and notification preferences
+1. **Caller identification:** to recognise incoming and outgoing calls using the contacts stored in the App
+2. **Contact management:** to store, search, group and show the contacts you add
+3. **Phone number handling:** formatting, validation and country selection
+4. **Preferences and security:** to remember your settings and apply your app lock
 
 ## Data Storage and Security
 
-### Local Storage Only
-
-- **All data is stored locally** on your device using Android's native SQLite database
-- **No cloud storage** or external servers are used
-- **No data transmission** to remote servers or third parties
-- Your contact data remains completely private and under your control
-
-### Security Measures
-
-- Data is stored in Android's secure application sandbox
-- Access to stored data is restricted to the Alternate app only
-- Profile photos are cached securely in the app's private directory
-- Database operations use industry-standard SQLite encryption capabilities
+- **Local storage:** contacts are kept in a database in the App's private storage area, and profile photos in its private files directory. Other apps cannot read these files under normal Android security.
+- **No network access:** the App has no `INTERNET` permission and does not connect to any server
+- **App lock:** the optional PIN and fingerprint lock controls access to the App's screens
+- **Not separately encrypted:** the App does not add its own encryption to the database. It relies on Android's app isolation and your device's screen lock and storage encryption. Keep your device protected with a screen lock.
 
 ## Permissions Used
 
-The app requests the following Android permissions:
+### Permissions the App requests
 
-### Required Permissions
+- **READ_PHONE_STATE:** to detect when a call starts and ends and which number is calling
+- **READ_CALL_LOG:** required by Android so the App can receive the number of an incoming call. The call log itself is not read
+- **SYSTEM_ALERT_WINDOW (Display over other apps):** to show the caller popup on top of your phone app
+- **WAKE_LOCK** and **DISABLE_KEYGUARD:** to show the popup when the screen is off or locked
+- **USE_BIOMETRIC:** for the optional fingerprint unlock
 
-- **READ_PHONE_STATE:** To detect incoming calls and identify callers
-- **READ_CALL_LOG:** To monitor call state changes for caller identification
-- **SYSTEM_ALERT_WINDOW:** To display caller information popups during incoming calls
-- **WAKE_LOCK:** To ensure the app can respond to calls when the device is sleeping
-- **DISABLE_KEYGUARD:** To show caller information on the lock screen
+### Optional system role
 
-### Optional Permissions
+- **Call screening role:** you can give Alternate the "caller ID app" role during setup so the popup appears more reliably. With it, the App receives the number of a call. It never blocks, silences or rejects calls.
 
-- **CAMERA:** To take profile pictures for contacts (only when you choose to use this feature)
-- **READ_EXTERNAL_STORAGE:** To select existing photos for contact profiles (only when you choose to use this feature)
+### Permissions the App does not request
 
-### Permission Usage
+Contacts, camera, storage, microphone, location and internet.
 
-- Permissions are used exclusively for the caller identification functionality
-- No data accessed through these permissions is transmitted outside your device
-- You can revoke permissions at any time through your device settings
+You can change or revoke permissions at any time in your device settings. The caller popup needs them to work.
 
 ## Data Sharing and Disclosure
 
-**We do not share, sell, rent, or disclose your personal information to any third parties.** This includes:
+**We do not share, sell, rent or disclose your personal information to anyone.** We have no servers and receive no data from you. There is no data sharing with advertisers, analytics services, social networks, marketing companies or authorities (except where we are legally compelled, although we hold no data to give).
 
-- No data sharing with advertisers
-- No data sharing with analytics services  
-- No data sharing with social media platforms
-- No data sharing with marketing companies
-- No data sharing with government entities (except as required by law)
+The following involve other software on your device. They happen only as described.
 
-### Integration with Android System
+### Phone app integration (call directory)
 
-- The app integrates with Android's native call directory system to provide caller identification
-- This integration occurs locally on your device only
-- No data is transmitted to Google or other external services through this integration
+The App provides an Android contact directory so your phone app can show the names and photos of your saved numbers. Android only lets apps that hold the system Contacts permission, such as your phone app, read this directory. The lookup happens on your device and nothing is sent to Google or anyone else by the App.
+
+### Actions you start
+
+- **Export and share:** when you export a vCard (.vcf) file or share contacts, the data goes to the app or location you choose. The App places a temporary copy in its cache for the share.
+- **Call, text, WhatsApp, Telegram, email and links:** when you tap one of these, the number, address or link is passed to that app. It handles the data under its own privacy policy.
+- **Copy:** copied text goes to the Android clipboard, which other apps may be able to read.
+
+### Android backup
+
+The App allows Android's system backup. If device backup is turned on, Android may include the App's data (contacts, settings and photos) in your Google account backup and restore it when you set up a new device. This is done by Android and Google under Google's terms, not by the App. You can switch it off in your device's backup settings. Backups you delete from your Google account are no longer available for restore.
 
 ## Data Retention and Deletion
 
-### User Control
-
-- You have complete control over your data
-- You can edit or delete individual contacts at any time
-- You can clear all stored data through the app's settings
-- Uninstalling the app permanently deletes all stored data
-
-### Automatic Deletion
-
-- Temporary files (such as cached profile photos) are automatically cleaned up
-- No data is retained after app uninstallation
+- You can edit or delete a contact at any time, or select many contacts and delete them at once
+- You can erase everything with Android's **Clear data** option for the App in your device settings
+- Uninstalling the App removes its data from your device. Copies you exported, and any Android backup (see above), stay where they were saved until you delete them
+- We keep no data, so we have nothing to delete on our side
 
 ## Children's Privacy
 
-Alternate does not knowingly collect personal information from children under 13 years of age. The app is not directed toward children under 13, and we do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided personal information to us, please contact us, and we will delete such information.
+Alternate does not knowingly collect personal information from children under 13 years of age. The App is not directed toward children under 13. We hold no user data; if you are a parent or guardian with a concern, please contact us.
 
 ## International Data Transfers
 
-Since all data is stored locally on your device, there are no international data transfers. Your data never leaves your device through our app.
+The App itself performs no data transfers. If you use Android backup, Google may store your backup in other countries under Google's policies.
 
 ## Changes to Privacy Policy
 
-We may update this Privacy Policy from time to time. When we make changes, we will:
+We may update this Privacy Policy from time to time. When we do, we will:
 
 - Update the "Last Updated" date at the top of this policy
-- Notify users through app updates when significant changes are made
-- Continue to honor the privacy principles outlined in this policy
+- Mention significant changes in the release notes of the App update
+- Keep honouring the privacy principles in this policy
 
 ## Your Rights and Choices
 
-You have the right to:
+You can:
 
-- Access all data stored by the app (viewable within the app interface)
-- Modify or delete any stored contact information
-- Clear all app data at any time
-- Uninstall the app to permanently delete all data
-- Revoke app permissions through your device settings
+- See all stored data inside the App
+- Edit or delete any contact, or erase everything with Clear data
+- Export your contacts to a vCard file
+- Revoke permissions in your device settings
+- Turn off Android backup in your device settings
+- Uninstall the App
 
-## Legal Compliance
+## Open Source
 
-This privacy policy complies with:
-
-- Google Play Store privacy requirements
-- Android app privacy guidelines
-- General privacy best practices for mobile applications
+Alternate is open source under the MIT License. You can read exactly what the App does with your data at [https://github.com/BioHazard786/Alternate](https://github.com/BioHazard786/Alternate).
 
 ## Contact Information
 
-If you have any questions, concerns, or requests regarding this Privacy Policy or our privacy practices, please contact us at:
+If you have any questions, concerns or requests regarding this Privacy Policy or our privacy practices, please contact us at:
 
 **Email:** [bzatch70@gmail.com](mailto:bzatch70@gmail.com)  
 **GitHub:** [https://github.com/BioHazard786](https://github.com/BioHazard786)  
@@ -153,28 +135,27 @@ If you have any questions, concerns, or requests regarding this Privacy Policy o
 
 ## Technical Implementation Details
 
-For transparency, here are additional technical details about our privacy implementation:
+For transparency, here are additional details about how the App protects your privacy:
 
 ### Data Isolation
 
-- Contact data stored in Alternate does not appear in your device's main contact list
+- Contacts stored in Alternate do not appear in your device's main contact list
 - Data does not sync with messaging apps (WhatsApp, Telegram, etc.)
-- Caller information is isolated from other apps on your device
+- Other apps cannot read the App's database or photos directly
 
-### Native Module Security
+### Components
 
-- Our custom caller ID module uses Android's secure ContentProvider system
-- Database operations are performed through Android Room library with built-in security
-- All data access is restricted to the application's private storage area
+- The caller popup is shown by a broadcast receiver and an optional call screening service that only read the number of a call
+- Contacts are stored with the Android Room library on top of SQLite
+- The contact directory is a read-only Android content provider protected by the system Contacts read permission
 
 ### No Network Activity
 
-- The app does not establish any network connections for data storage or retrieval
-- All functionality works completely offline
-- No telemetry or usage data is transmitted
+- The App has no `INTERNET` permission and makes no network connections
+- No telemetry or usage data is collected or transmitted
 
 ---
 
-**By using Alternate, you acknowledge that you have read and understood this Privacy Policy and agree to be bound by its terms.**
+**By using Alternate, you acknowledge that you have read and understood this Privacy Policy.**
 
-This Privacy Policy is effective as of the date listed above and will remain in effect except with respect to any changes in its provisions in the future, which will be in effect immediately after being posted in the app or on this page.
+This Privacy Policy is effective as of the date listed above and stays in effect until it is changed. Changes take effect when they are posted on this page.

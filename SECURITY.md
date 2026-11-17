@@ -6,7 +6,8 @@ We take security seriously and strive to quickly address any vulnerabilities. Pl
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.x   | :white_check_mark: |
+| 3.x   | :white_check_mark: |
+| 2.x (`legacy-expo` branch) | :x: |
 | 1.x   | :x:                |
 
 ## Reporting a Vulnerability

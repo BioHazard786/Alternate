@@ -1,7 +1,7 @@
 # Terms of Service for Alternate - Local Caller ID Detector
 
-**Effective Date:** October 10, 2025  
-**Last Updated:** October 10, 2025
+**Effective Date:** November 17, 2026  
+**Last Updated:** November 17, 2026 (applies to version 3.0.0 and later)
 
 ## Introduction
 
@@ -15,12 +15,13 @@ Alternate is a privacy-focused caller identification application designed to hel
 
 ### Key Features
 
-- Local caller identification using your private database
-- Temporary contact storage without affecting your device's main contact list
+- Caller ID popup for incoming and outgoing calls using your private database
+- Contact storage that does not touch your device's main contact list
+- Several numbers per contact, groups, favorites and search
+- vCard (.vcf) import and export
+- Optional app lock with PIN and fingerprint
 - Privacy protection for messaging apps (WhatsApp, Telegram, etc.)
-- Phone number validation with country selection
-- Offline functionality with no internet connection required
-- Custom native caller ID functionality for Android devices
+- Fully offline: the App has no internet permission
 
 ## Acceptance of Terms
 
@@ -44,12 +45,16 @@ We reserve the right to modify these Terms at any time. When we make changes:
 
 ## License and Usage Rights
 
-### License Grant
+### Open Source License
 
-Subject to your compliance with these Terms, we grant you a limited, non-exclusive, non-transferable, revocable license to:
+Alternate's source code is released under the MIT License (see the [LICENSE](LICENSE) file). Your rights to copy, modify, build and redistribute the source code are governed by that license, and nothing in these Terms takes those rights away.
 
-- Download and install the App on your personal devices
-- Use the App for personal, non-commercial purposes
+### Use of the App
+
+Subject to your compliance with these Terms, you may:
+
+- Download and install the App on your devices
+- Use the App for personal or business purposes
 - Access the App's features and functionality as intended
 
 ### Usage Restrictions
@@ -57,13 +62,10 @@ Subject to your compliance with these Terms, we grant you a limited, non-exclusi
 You agree NOT to:
 
 - Use the App for any illegal, harmful, or unauthorized purposes
-- Reverse engineer, decompile, disassemble, or attempt to derive the source code
-- Modify, adapt, alter, translate, or create derivative works of the App
-- Distribute, sell, lease, rent, lend, or sublicense the App
-- Remove, alter, or obscure any proprietary notices or labels
-- Use the App to harass, abuse, or harm others
-- Attempt to gain unauthorized access to any part of the App or its systems
-- Use automated scripts, bots, or other automated means to access the App
+- Use the App to harass, abuse, stalk, or harm others
+- Misrepresent a modified version of the App as the official one, or use the App's name or icon in a way that suggests it is the official app
+
+Restrictions on copying, modifying and redistributing the source code are only those in the MIT License.
 
 ## User Responsibilities
 
@@ -102,10 +104,10 @@ You are responsible for ensuring:
 
 Alternate is designed with privacy as a core principle:
 
-- All data is stored locally on your device using secure SQLite databases
-- No personal information is transmitted to external servers or third parties
-- Contact information remains completely isolated from your device's main contacts
-- Data does not sync with cloud services or messaging applications
+- All data is stored locally on your device in the App's private storage
+- The App has no internet permission and does not transmit personal information to external servers or third parties
+- Contact information is kept separate from your device's main contacts
+- The App does not sync with messaging applications. Android's own device backup, if you have it on, may include the App's data (see the Privacy Policy)
 
 ### User Control
 
@@ -113,8 +115,8 @@ You maintain complete control over your data:
 
 - You can add, modify, or delete contact information at any time
 - You can clear all stored data through the app settings
-- Uninstalling the App permanently removes all stored data
-- No data recovery is possible once deleted, as we do not maintain backups
+- Uninstalling the App removes its data from your device
+- We keep no copy of your data, so we cannot recover anything you delete. Export your contacts to a vCard file if you want your own backup
 
 For detailed information about data collection and privacy practices, please refer to our [Privacy Policy](PRIVACY_POLICY.md).
 
@@ -124,28 +126,31 @@ For detailed information about data collection and privacy practices, please ref
 
 The App requires certain Android permissions to function:
 
-- **READ_PHONE_STATE:** To detect incoming calls and provide caller identification
-- **READ_CALL_LOG:** To monitor call state changes for real-time caller ID
-- **SYSTEM_ALERT_WINDOW:** To display caller information during incoming calls
-- **WAKE_LOCK:** To ensure the App responds to calls when the device is sleeping
-- **DISABLE_KEYGUARD:** To show caller information on the lock screen
+- **READ_PHONE_STATE:** To detect incoming and outgoing calls and the number calling
+- **READ_CALL_LOG:** Required by Android for the App to receive the number of an incoming call. The call log is not read
+- **SYSTEM_ALERT_WINDOW (Display over other apps):** To display caller information during calls
+- **WAKE_LOCK** and **DISABLE_KEYGUARD:** To show caller information when the screen is off or locked
+- **USE_BIOMETRIC:** For the optional fingerprint unlock of the app lock
 
-### Optional Permissions
+### Optional Role
 
-- **CAMERA:** To capture profile pictures for contacts (user-initiated only)
-- **READ_EXTERNAL_STORAGE:** To select existing photos for contact profiles (user-initiated only)
+- **Call screening (caller ID app) role:** Can be granted during setup so caller information appears more reliably. The App only reads the number and never blocks, silences or rejects calls
+
+### Not Requested
+
+The App does not request the Contacts, camera, storage, microphone, location or internet permissions. Profile pictures are chosen with Android's photo picker or your camera app.
 
 ### Permission Usage
 
-- All permissions are used exclusively for the App's caller identification functionality
-- No data accessed through permissions is transmitted outside your device
-- You may revoke permissions through your device settings, though this may limit functionality
+- All permissions are used exclusively for the App's caller identification and app lock functionality
+- The App does not transmit anything accessed through permissions outside your device
+- You may revoke permissions through your device settings, though this will stop the caller popup from working
 
 ## Intellectual Property
 
 ### Our Rights
 
-Alternate and all its content, features, and functionality are owned by the developers and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+The developers retain the copyright in Alternate, its name and its icon. The source code is licensed to everyone under the MIT License.
 
 ### Your Rights
 
@@ -153,7 +158,7 @@ You retain ownership of any personal information or content you store in the App
 
 ### Third-Party Content
 
-The App may include third-party libraries and components, each governed by their respective licenses. These components are used in compliance with their licensing terms.
+The App includes third-party libraries and components (such as AndroidX, Material Components and Coil), each governed by its own open-source license. A list is available in the App under Settings.
 
 ## Disclaimers and Limitations
 
@@ -170,7 +175,7 @@ To the maximum extent permitted by applicable law:
 
 - We shall not be liable for any indirect, incidental, special, consequential, or punitive damages
 - Our total liability shall not exceed the amount you paid for the App (which is free)
-- We are not responsible for any loss of data, though we provide tools for data management
+- We are not responsible for any loss of data. Since we hold no copy of your data, export your contacts to a vCard file if you want a backup
 - We are not liable for any damages resulting from your use or inability to use the App
 
 ### No Warranty
@@ -213,7 +218,7 @@ Upon termination:
 
 ### Governing Law
 
-These Terms shall be governed by and construed in accordance with the laws of [Your Jurisdiction], without regard to its conflict of law provisions.
+These Terms shall be governed by and construed in accordance with the laws of the country where the developer resides, without regard to its conflict of law provisions.
 
 ### Dispute Resolution
 
@@ -221,7 +226,7 @@ Any disputes arising from these Terms or your use of the App shall be resolved t
 
 1. **Informal Resolution:** First, contact us to attempt to resolve the dispute informally
 2. **Mediation:** If informal resolution fails, disputes may be submitted to mediation
-3. **Arbitration or Courts:** Final resolution through appropriate legal channels in [Your Jurisdiction]
+3. **Arbitration or Courts:** Final resolution through the competent courts of the country where the developer resides
 
 ## Compliance and Legal
 
@@ -235,14 +240,14 @@ Any disputes arising from these Terms or your use of the App shall be resolved t
 
 The App complies with:
 
-- Google Play Store Developer Program Policies
 - Android application development guidelines
+- The policies of the app stores it is distributed through (where applicable)
 - Applicable privacy and data protection regulations
 - Telecommunications and caller ID regulations where applicable
 
 ### International Use
 
-If you use the App outside of [Your Jurisdiction]:
+If you use the App outside the country where the developer resides:
 
 - You are responsible for compliance with local laws
 - These Terms remain in effect regardless of your location
@@ -253,7 +258,7 @@ If you use the App outside of [Your Jurisdiction]:
 ### App Updates
 
 - We may provide updates to improve functionality, security, or compatibility
-- Updates may be delivered through the Google Play Store
+- Updates may be delivered through Google Play, GitHub Releases or other places where you installed the App from
 - Some updates may require acceptance of revised Terms
 - You are responsible for installing updates to maintain security
 
