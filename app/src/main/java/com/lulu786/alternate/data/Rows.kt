@@ -1,12 +1,15 @@
 package com.lulu786.alternate.data
 
 import androidx.compose.runtime.Immutable
+import com.lulu786.alternate.util.displayName
 
 /** What lists need, and nothing more: no notes, no photo data. */
 @Immutable
 data class ContactRow(
     val id: Long,
     val name: String,
+    val prefix: String,
+    val suffix: String,
     val appointment: String,
     val location: String,
     val photoPath: String,
@@ -17,6 +20,10 @@ data class ContactRow(
     val countryCode: String?,
     val phoneLabel: String?,
 ) {
+    /** What lists show: "Mr Zaid, Khan". The avatar initial and sorting still use [name] alone. */
+    val displayName: String
+        get() = displayName(prefix, name, suffix)
+
     val subtitle: String
         get() = listOf(appointment, location).filter { it.isNotBlank() }.joinToString(" · ")
 }

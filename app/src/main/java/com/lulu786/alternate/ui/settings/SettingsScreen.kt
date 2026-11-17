@@ -16,7 +16,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -161,11 +165,14 @@ private fun Group(title: String, rows: List<Row0>) {
 
 @Composable
 private fun <T> ChoiceDialog(title: String, options: List<T>, selected: T, label: (T) -> String, onDismiss: () -> Unit, onPick: (T) -> Unit) {
-    AlertDialog(onDismiss, confirmButton = {}, dismissButton = { TextButton(onDismiss) { Text("Cancel") } }, title = { Text(title) }, text = {
-        Column {
+    AlertDialog(onDismiss, confirmButton = { TextButton(onDismiss) { Text("Cancel") } }, title = { Text(title) }, text = {
+        Column(Modifier.selectableGroup()) {
             options.forEach { o ->
-                Row(Modifier.fillMaxWidth().clickable { onPick(o) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(o == selected, null); Spacer(Modifier.width(12.dp)); Text(label(o))
+                Row(
+                    Modifier.fillMaxWidth().height(56.dp).selectable(o == selected, onClick = { onPick(o) }, role = Role.RadioButton),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(o == selected, null); Spacer(Modifier.width(16.dp)); Text(label(o), style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }

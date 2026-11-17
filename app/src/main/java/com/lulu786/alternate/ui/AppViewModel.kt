@@ -12,6 +12,7 @@ import com.lulu786.alternate.data.AppSettings
 import com.lulu786.alternate.data.AutoLock
 import com.lulu786.alternate.data.ContactRow
 import com.lulu786.alternate.data.LockState
+import com.lulu786.alternate.ui.components.STAR
 import com.lulu786.alternate.util.SearchIndex
 import com.lulu786.alternate.util.SearchResult
 import com.lulu786.alternate.util.Vcf
@@ -52,7 +53,9 @@ private fun buildModel(rows: List<ContactRow>): ContactListModel {
     // count line, then (favorites header + favorites grid) when there are favorites
     var index = if (favorites.isEmpty()) 1 else 3
     val starts = sections.map { (letter, list) -> (letter to index).also { index += 1 + list.size } }
-    return ContactListModel(favorites, sections, rows.size, starts)
+    // The star jumps to the Favorites header, which is item 1 (right after the count line).
+    val withStar = if (favorites.isEmpty()) starts else listOf(STAR to 1) + starts
+    return ContactListModel(favorites, sections, rows.size, withStar)
 }
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -63,7 +66,8 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
     val settings: StateFlow<AppSettings?> = prefs.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val list: StateFlow<ContactListModel?> = repo.rows.map(::buildModel).flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-    val rows: StateFlow<List<ContactRow>?> = repo.rows.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    // Eagerly: selectAll and copy read .value with no collector attached.
+    val rows: StateFlow<List<ContactRow>?> = repo.rows.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val groups = repo.groups.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val messages = Channel<String>(Channel.BUFFERED)
@@ -72,9 +76,12 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
 
     // --- selection (a Set so rows only ever receive `selected: Boolean`) ---------------------------------------
     var selected by mutableStateOf<Set<Long>>(emptySet()); private set
-    val selecting get() = selected.isNotEmpty()
+    /** Set by the overflow menu's "Select", so selection mode can start with nothing picked yet. */
+    private var selectMode by mutableStateOf(false)
+    val selecting get() = selectMode || selected.isNotEmpty()
+    fun startSelecting() { selectMode = true }
     fun toggle(id: Long) { selected = if (id in selected) selected - id else selected + id }
-    fun clearSelection() { selected = emptySet() }
+    fun clearSelection() { selected = emptySet(); selectMode = false }
     fun selectAll() { selected = rows.value.orEmpty().map { it.id }.toSet() }
 
     // --- search --------------------------------------------------------------------------------------------------

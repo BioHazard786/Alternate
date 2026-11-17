@@ -88,7 +88,7 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onCreate: (String?)
                 TopBar(vm, settings?.lock?.enabled == true, onOpen, onCreate, { importLauncher.launch(arrayOf("text/*", "application/octet-stream")) }, { exportLauncher.launch("contacts.vcf") })
                 Box(Modifier.weight(1f)) {
                     ContactList(vm, m, state, onOpen)
-                    if (m.total > 30) FastScroller(state, m.letterStarts, Modifier.align(Alignment.CenterEnd).padding(top = 8.dp, bottom = 88.dp))
+                    if (m.total > 30) FastScroller(state, m.letterStarts, Modifier.align(Alignment.CenterEnd), PaddingValues(top = 8.dp, bottom = 88.dp))
                 }
             }
         }
@@ -145,7 +145,7 @@ private fun TopBar(
                     Box {
                         IconButton({ menu = true }) { Icon(Sym.MoreVert, "More options") }
                         DropdownMenu(menu, { menu = false }) {
-                            DropdownMenuItem({ Text("Select") }, { menu = false; vm.rows.value?.firstOrNull()?.let { vm.toggle(it.id) } })
+                            DropdownMenuItem({ Text("Select") }, { menu = false; vm.startSelecting() })
                             DropdownMenuItem({ Text("Import from file") }, { menu = false; import() })
                             DropdownMenuItem({ Text("Export all") }, { menu = false; export() })
                         }
@@ -250,7 +250,7 @@ private fun SearchResults(vm: AppViewModel, query: String, onOpen: (Long) -> Uni
             ) {
                 ContactAvatar(row.avatarSeed, row.name, row.photoPath, 40.dp)
                 Column(Modifier.padding(start = 16.dp)) {
-                    Text(highlighted(row.name, r.nameRanges), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(highlighted(row.displayName, r.nameRanges), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (r.matchedField != null)
                         Text(buildLabel(r.matchedField, r.snippet, r.snippetRanges), style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)

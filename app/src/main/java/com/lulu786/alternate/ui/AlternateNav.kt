@@ -4,11 +4,15 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Box
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -92,16 +96,20 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                     when {
                         onTab && vm.selecting && dest?.hasRoute<Contacts>() == true -> {
                             val ids = vm.selected
-                            Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp), Alignment.Center) { HorizontalFloatingToolbar(expanded = true, content = {
-                                IconButton({ vm.share(context, ids) }) { Icon(Sym.Share, "Share selected") }
-                                IconButton({
-                                    context.copyToClipboard("Contacts", vm.rows.value.orEmpty().filter { it.id in ids }.joinToString("\n") { "${it.name} ${it.fullPhoneNumber?.let { n -> "+$n" }.orEmpty()}" })
-                                    vm.clearSelection(); vm.say("Copied")
-                                }) { Icon(Sym.ContentCopy, "Copy selected") }
-                                IconButton({ groupSheet = true }) { Icon(Sym.GroupAdd, "Add selected to group") }
-                                IconButton({ vm.star(ids, true) }) { Icon(Sym.Star, "Star selected") }
-                                IconButton({ confirmDelete = true }) { Icon(Sym.Delete, "Delete selected") }
-                            }) }
+                            // Full width, same surface as the navigation bar it replaces.
+                            Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
+                                Row(Modifier.fillMaxWidth().navigationBarsPadding().height(64.dp), Arrangement.SpaceEvenly, Alignment.CenterVertically) {
+                                    val any = ids.isNotEmpty()
+                                    IconButton({ vm.share(context, ids) }, enabled = any) { Icon(Sym.Share, "Share selected") }
+                                    IconButton({
+                                        context.copyToClipboard("Contacts", vm.rows.value.orEmpty().filter { it.id in ids }.joinToString("\n") { "${it.name} ${it.fullPhoneNumber?.let { n -> "+$n" }.orEmpty()}" })
+                                        vm.clearSelection(); vm.say("Copied")
+                                    }, enabled = any) { Icon(Sym.ContentCopy, "Copy selected") }
+                                    IconButton({ groupSheet = true }, enabled = any) { Icon(Sym.GroupAdd, "Add selected to group") }
+                                    IconButton({ vm.star(ids, true) }, enabled = any) { Icon(Sym.Star, "Star selected") }
+                                    IconButton({ confirmDelete = true }, enabled = any) { Icon(Sym.Delete, "Delete selected") }
+                                }
+                            }
                         }
                         onTab -> ShortNavigationBar {
                             tabs.forEach { t ->
@@ -147,6 +155,9 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
             }
         }
     }
+
+    // After NavHost so it wins over the nav back handler (e.g. selecting inside a group).
+    BackHandler(enabled = vm.selecting) { vm.clearSelection() }
 
     if (groupSheet) GroupPickerSheet(vm, emptySet(), { groupSheet = false }) { ids -> ids.forEach { vm.addToGroup(it, vm.selected) } }
     if (confirmDelete) ConfirmDialog("Delete ${vm.selected.size} contacts?", "They’ll be removed from Alternate.", "Delete", { vm.delete(vm.selected.toList()); confirmDelete = false }, { confirmDelete = false })

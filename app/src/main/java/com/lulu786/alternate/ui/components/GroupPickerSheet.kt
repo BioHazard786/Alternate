@@ -69,7 +69,7 @@ fun NameDialog(title: String, initial: String, confirm: String, onDismiss: () ->
     var text by remember { mutableStateOf(initial) }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss, title = { Text(title) },
-        text = { androidx.compose.material3.OutlinedTextField(text, { text = it }, singleLine = true, label = { Text("Group name") }) },
+        text = { androidx.compose.material3.OutlinedTextField(text, { text = it }, singleLine = true, label = { Text("Group name") }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)) },
         confirmButton = { TextButton({ if (text.isNotBlank()) onConfirm(text.trim()) }, enabled = text.isNotBlank()) { Text(confirm) } },
         dismissButton = { TextButton(onDismiss) { Text("Cancel") } },
     )

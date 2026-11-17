@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -187,9 +188,9 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                 ContactAvatar(seed, name, photo, 96.dp, expressive = true)
                 TextButton({ photoSheet = true }) { Text(if (photo.isEmpty()) "Add picture" else "Change picture") }
             }
-            FieldRow(Sym.Person) { OutlinedTextField(name, { name = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Name") }, singleLine = true) }
-            FieldRow(Sym.Work) { OutlinedTextField(appointment, { appointment = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Appointment") }, singleLine = true) }
-            FieldRow(Sym.LocationOn) { OutlinedTextField(location, { location = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Location") }, singleLine = true) }
+            FieldRow(Sym.Person) { OutlinedTextField(name, { name = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Name") }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true) }
+            FieldRow(Sym.Work) { OutlinedTextField(appointment, { appointment = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Appointment") }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true) }
+            FieldRow(Sym.LocationOn) { OutlinedTextField(location, { location = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text("Location") }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true) }
 
             phones.forEachIndexed { i, p -> androidx.compose.runtime.key(p.key) {
                 PhoneRow(
@@ -228,7 +229,10 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, onClose: () -> 
                         } else OutlinedTextField(
                             extras[key].orEmpty(), { extras[key] = it; dirty = true }, Modifier.fillMaxWidth(), label = { Text(key) },
                             singleLine = key != "Notes", minLines = if (key == "Notes") 3 else 1,
-                            keyboardOptions = KeyboardOptions(keyboardType = when (key) { "Email" -> KeyboardType.Email; "Website" -> KeyboardType.Uri; else -> KeyboardType.Text }),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = when (key) { "Email" -> KeyboardType.Email; "Website" -> KeyboardType.Uri; else -> KeyboardType.Text },
+                                capitalization = when (key) { "Email", "Website" -> KeyboardCapitalization.None; "Notes" -> KeyboardCapitalization.Sentences; else -> KeyboardCapitalization.Words },
+                            ),
                         )
                     }
                 }
@@ -323,7 +327,7 @@ private fun PhoneRow(
                     DropdownMenuItem({ Text("Custom…") }, { custom = true; labelMenu = false; if (p.label in builtInLabels) p.label = "" })
                 }
             }
-            if (custom) OutlinedTextField(p.label, { p.label = it; onChange() }, Modifier.weight(1f), label = { Text("Label") }, singleLine = true)
+            if (custom) OutlinedTextField(p.label, { p.label = it; onChange() }, Modifier.weight(1f), label = { Text("Label") }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), singleLine = true)
         }
     }
     if (picker) CountryPickerSheet(p.country, sim, { p.country = it.code; picker = false; onChange() }, { picker = false })

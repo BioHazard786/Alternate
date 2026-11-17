@@ -102,13 +102,13 @@ fun ContactListRow(
             .segment(index, count, if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer)
             .combinedClickable(interactionSource = source, indication = androidx.compose.material3.ripple(), onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .semantics(mergeDescendants = true) { contentDescription = "${row.name}, $subtitle" },
+            .semantics(mergeDescendants = true) { contentDescription = "${row.displayName}, $subtitle" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ContactAvatar(row.avatarSeed, row.name, row.photoPath, 40.dp, selected = selected)
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
-            Text(row.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(row.displayName, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (subtitle.isNotEmpty())
                 Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }

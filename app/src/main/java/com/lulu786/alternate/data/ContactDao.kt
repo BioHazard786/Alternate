@@ -9,7 +9,7 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 private const val ROW_SELECT = """
-    SELECT c.id, c.name, c.appointment, c.location, c.photoPath, c.starred, c.avatarSeed, c.sortKey,
+    SELECT c.id, c.name, c.prefix, c.suffix, c.appointment, c.location, c.photoPath, c.starred, c.avatarSeed, c.sortKey,
            p.fullPhoneNumber AS fullPhoneNumber, p.countryCode AS countryCode, p.label AS phoneLabel
     FROM contact c
     LEFT JOIN phone p ON p.contactId = c.id

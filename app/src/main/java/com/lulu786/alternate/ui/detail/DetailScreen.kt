@@ -82,11 +82,14 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
 
     val c = detail?.contact
     // Render instantly from the list row; the full record replaces it a frame later.
-    val name = c?.let { displayName(it.prefix, it.name, it.suffix) } ?: row?.name.orEmpty()
+    val name = c?.let { displayName(it.prefix, it.name, it.suffix) } ?: row?.displayName.orEmpty()
+    // Initial for the avatar comes from the bare name, not "Mr Zaid, Khan".
+    val bareName = c?.name ?: row?.name.orEmpty()
     val seed = c?.avatarSeed ?: row?.avatarSeed ?: 0
     val photo = c?.photoPath ?: row?.photoPath.orEmpty()
     val starred = c?.starred ?: row?.starred ?: false
     val subtitle = c?.let { listOf(it.appointment, it.location).filter(String::isNotBlank).joinToString(" · ") } ?: row?.subtitle.orEmpty()
+    val nickname = c?.nickname.orEmpty()
     val first = detail?.phones?.firstOrNull()
 
     Column(Modifier.fillMaxSize().sharedKey("contact-$id").background0()) {
@@ -115,10 +118,11 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            ContactAvatar(seed, name, photo, 112.dp, expressive = true, modifier = Modifier.clickable(enabled = photo.isNotEmpty()) { photoFull = true })
+            ContactAvatar(seed, bareName, photo, 112.dp, expressive = true, modifier = Modifier.clickable(enabled = photo.isNotEmpty()) { photoFull = true })
             Spacer(Modifier.height(16.dp))
             Text(name, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
             if (subtitle.isNotEmpty()) Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+            if (nickname.isNotEmpty()) Text(nickname, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
 
             if (first != null) {
@@ -162,18 +166,15 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
                         AssistChip({ groupSheet = true }, { Text("Add") }, leadingIcon = { Icon(Sym.Add, null, Modifier.size(18.dp)) })
                     }
                 }
-                if (d.contact.nickname.isNotEmpty() || d.contact.notes.isNotEmpty()) {
+                if (d.contact.notes.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     SectionCard {
-                        Text("About", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 4.dp))
-                        if (d.contact.nickname.isNotEmpty()) Text("Nickname: ${d.contact.nickname}", Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
-                        if (d.contact.notes.isNotEmpty()) {
-                            var expanded by remember { mutableStateOf(false) }
-                            Text(
-                                d.contact.notes, Modifier.clickable { expanded = !expanded }.padding(16.dp, 4.dp, 16.dp, 16.dp),
-                                maxLines = if (expanded) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis,
-                            )
-                        }
+                        Text("Notes", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 4.dp))
+                        var expanded by remember { mutableStateOf(false) }
+                        Text(
+                            d.contact.notes, Modifier.clickable { expanded = !expanded }.padding(16.dp, 4.dp, 16.dp, 16.dp),
+                            maxLines = if (expanded) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
             }
@@ -189,7 +190,7 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
         }
     }
     if (photoFull && photo.isNotEmpty()) Dialog({ photoFull = false }) {
-        ContactAvatar(seed, name, photo, 320.dp, expressive = true, modifier = Modifier.clickable { photoFull = false })
+        ContactAvatar(seed, bareName, photo, 320.dp, expressive = true, modifier = Modifier.clickable { photoFull = false })
     }
 }
 
