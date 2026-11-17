@@ -1,0 +1,7 @@
+v3.0.1 - Fixes and country updates
+ - Fixed a crash when scrolling the country list
+ - New "No country code" option to dial a number exactly as typed
+ - Added Hong Kong, Macao, DR Congo and 45 more regions
+ - US and Canada (and other shared codes) told apart correctly
+ - Status bar icons now follow the light/dark theme
+ - Edit screen: icons inside fields, red cross to remove a field

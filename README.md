@@ -51,7 +51,7 @@ A privacy-focused Android app that tells you who is calling without adding them 
 - **Caller ID popup**: a Material 3 card over incoming and outgoing calls with the contact's name, appointment, location and number. Drag it, minimise it to a chip, or dismiss it
 - **Private by design**: contacts live only in this app's database. They never reach the system contacts, messaging apps or the cloud
 - **Dialer integration**: shows your saved names in the Google Phone app's call screen where the system supports it
-- **Several numbers per contact**, each with a label (Mobile, Work, or your own) and a country
+- **Several numbers per contact**, each with a label (Mobile, Work, or your own) and a country, or saved as typed with no country code (toll-free numbers, STD landlines)
 - **Groups and favorites**: organise people into groups like Family or Work, and pin favorites to the top
 - **Fast search**: finds names, nicknames, numbers, notes and groups, with the match highlighted
 - **Quick scrolling**: a Niagara-style A-Z scrubber with a favorites shortcut

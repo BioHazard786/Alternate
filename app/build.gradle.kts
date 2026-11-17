@@ -31,8 +31,8 @@ android {
         applicationId = "com.lulu786.Alternate"
         minSdk = 24
         targetSdk = 36
-        versionCode = 16
-        versionName = "3.0.0"
+        versionCode = 17
+        versionName = "3.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
