@@ -1,102 +1,151 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Material 3 tonal card. Header row: shaped avatar, name + subtitle, two 40dp tonal icon buttons.
+  The number chip gets its own row under the text so it is never squeezed by the buttons.
+  Everything is pinned to the top so the avatar stays put while the card springs into the collapsed chip.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-  <LinearLayout
+  <com.google.android.material.card.MaterialCardView
       android:id="@+id/main_card"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginStart="12dp"
-      android:layout_marginEnd="12dp"
-      android:background="@drawable/overlay_card"
-      android:elevation="8dp"
-      android:orientation="vertical"
-      android:paddingStart="16dp"
-      android:paddingTop="8dp"
-      android:paddingEnd="4dp"
-      android:paddingBottom="8dp">
+      android:layout_gravity="end"
+      android:layout_margin="12dp"
+      app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
+      app:cardElevation="6dp"
+      app:shapeAppearance="@style/ShapeAppearance.Alternate.Overlay"
+      app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-      <FrameLayout
-          android:layout_width="48dp"
-          android:layout_height="48dp"
-          android:layout_marginEnd="12dp">
-
-        <TextView
-            android:id="@+id/avatarLetter"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/overlay_avatar"
-            android:gravity="center"
-            android:textAppearance="?attr/textAppearanceTitleMedium" />
-
-        <ImageView
-            android:id="@+id/callerPhoto"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToOutline="true"
-            android:background="@drawable/overlay_avatar"
-            android:contentDescription="@null"
-            android:scaleType="centerCrop"
-            android:visibility="gone" />
-      </FrameLayout>
+        android:orientation="vertical"
+        android:padding="12dp">
 
       <LinearLayout
-          android:layout_width="0dp"
+          android:layout_width="match_parent"
           android:layout_height="wrap_content"
-          android:layout_weight="1"
-          android:orientation="vertical">
+          android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/callerName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textColor="?attr/colorOnSurface" />
+        <com.lulu786.alternate.callerid.ShapedAvatarView
+            android:id="@+id/avatar"
+            android:layout_width="56dp"
+            android:layout_height="56dp">
 
-        <TextView
-            android:id="@+id/callerSubtitle"
-            android:layout_width="match_parent"
+          <TextView
+              android:id="@+id/avatarLetter"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:gravity="center"
+              android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+          <ImageView
+              android:id="@+id/callerPhoto"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:contentDescription="@null"
+              android:scaleType="centerCrop"
+              android:visibility="gone" />
+        </com.lulu786.alternate.callerid.ShapedAvatarView>
+
+        <!-- At least as tall as the avatar, so one-line text sits centred beside it. -->
+        <LinearLayout
+            android:id="@+id/details"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant" />
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:minHeight="56dp"
+            android:orientation="vertical">
+
+          <TextView
+              android:id="@+id/callerName"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:ellipsize="end"
+              android:maxLines="2"
+              android:textAppearance="?attr/textAppearanceTitleLarge"
+              android:textColor="?attr/colorOnSurface" />
+
+          <TextView
+              android:id="@+id/callerSubtitle"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="2dp"
+              android:ellipsize="end"
+              android:maxLines="2"
+              android:textAppearance="?attr/textAppearanceBodyMedium"
+              android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/actions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:orientation="horizontal">
+
+          <ImageButton
+              android:id="@+id/collapse_btn"
+              android:layout_width="40dp"
+              android:layout_height="40dp"
+              android:background="@drawable/overlay_icon_btn"
+              android:contentDescription="@string/overlay_minimize"
+              android:padding="10dp"
+              android:scaleType="fitCenter"
+              android:src="@drawable/ic_minimize_24"
+              app:tint="?attr/colorOnSurfaceVariant" />
+
+          <ImageButton
+              android:id="@+id/close_btn"
+              android:layout_width="40dp"
+              android:layout_height="40dp"
+              android:layout_marginStart="8dp"
+              android:background="@drawable/overlay_icon_btn"
+              android:contentDescription="@string/overlay_close"
+              android:padding="10dp"
+              android:scaleType="fitCenter"
+              android:src="@drawable/ic_close_24"
+              app:tint="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+      </LinearLayout>
+
+      <!-- Lines up with the name (avatar 56dp + 16dp gap). -->
+      <LinearLayout
+          android:id="@+id/numberChip"
+          android:layout_width="wrap_content"
+          android:layout_height="32dp"
+          android:layout_marginStart="72dp"
+          android:layout_marginTop="8dp"
+          android:background="@drawable/overlay_chip"
+          android:gravity="center_vertical"
+          android:orientation="horizontal"
+          android:paddingStart="10dp"
+          android:paddingEnd="12dp">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_call"
+            app:tint="?attr/colorOnSecondaryContainer" />
 
         <TextView
             android:id="@+id/callerNumber"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:ellipsize="end"
+            android:includeFontPadding="false"
             android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="?attr/colorOnSurfaceVariant" />
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorOnSecondaryContainer" />
       </LinearLayout>
-
-      <ImageButton
-          android:id="@+id/collapse_btn"
-          android:layout_width="44dp"
-          android:layout_height="44dp"
-          android:background="?android:attr/selectableItemBackgroundBorderless"
-          android:contentDescription="@string/overlay_minimize"
-          android:src="@drawable/ic_minimize_24" />
-
-      <ImageButton
-          android:id="@+id/close_btn"
-          android:layout_width="44dp"
-          android:layout_height="44dp"
-          android:background="?android:attr/selectableItemBackgroundBorderless"
-          android:contentDescription="@string/overlay_close"
-          android:src="@drawable/ic_close_24" />
     </LinearLayout>
-
-  </LinearLayout>
+  </com.google.android.material.card.MaterialCardView>
 </FrameLayout>

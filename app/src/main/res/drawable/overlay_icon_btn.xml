@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 40dp tonal circle with a bounded ripple; the icon is centred by the ImageButton itself. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="?attr/colorControlHighlight">
+  <item>
+    <shape android:shape="oval">
+      <solid android:color="?attr/colorSurfaceContainerHighest" />
+    </shape>
+  </item>
+</ripple>
