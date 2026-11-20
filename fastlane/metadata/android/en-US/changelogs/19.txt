@@ -1,0 +1,7 @@
+v3.2.0 - Filters, search tab and a fresh look
+ - Filter contacts by favorites, photo, group, country, location or work
+ - New Search tab; tap it again to bring the keyboard back
+ - Groups sheet for quick access to your groups
+ - Google Sans Flex font, new Settings design and icon switches
+ - Loading indicator while importing or exporting
+ - Fixes for older Android versions

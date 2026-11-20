@@ -215,8 +215,8 @@ fun EditScreen(vm: AppViewModel, id: Long, prefillName: String?, prefillNumber: 
             }
 
             val groups by vm.groups.collectAsStateWithLifecycle()
-            Row(Modifier.fillMaxWidth().padding(start = 28.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) {
-                Icon(Sym.Label, null, Modifier.padding(top = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth().padding(start = 28.dp, end = 16.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Sym.Label, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(16.dp))
                 FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     groups.orEmpty().filter { it.id in groupIds }.forEach { g ->

@@ -74,12 +74,12 @@ Install the 3.x APK over the old app. The package name and signing key are uncha
 
 ## Permissions
 
-| Permission | Why |
-| --- | --- |
-| Phone state, Call log | Notice when a call starts and which number is calling, and let you pick a recent caller to save |
-| Display over other apps | Draw the caller popup on top of the dialer |
-| Wake lock, Dismiss keyguard | Show the popup on a locked or sleeping screen |
-| Biometrics | Optional fingerprint unlock for the app lock |
+| Permission                  | Why                                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| Phone state, Call log       | Notice when a call starts and which number is calling, and let you pick a recent caller to save |
+| Display over other apps     | Draw the caller popup on top of the dialer                                                      |
+| Wake lock, Dismiss keyguard | Show the popup on a locked or sleeping screen                                                   |
+| Biometrics                  | Optional fingerprint unlock for the app lock                                                    |
 
 You can also give Alternate the call screening role during setup, which makes caller detection more reliable on recent Android versions. No contacts, location or network permissions are used.
 
@@ -179,7 +179,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Mohd Zaid - [Telegram](https://t.me/LuLu786) - <bzatch70@gmail.com>
+Mohd Zaid - [Telegram](https://t.me/LuLu786) - <mohdzaidmalik70@gmail.com>
 
 Project Link: [https://github.com/BioHazard786/Alternate](https://github.com/BioHazard786/Alternate)
 

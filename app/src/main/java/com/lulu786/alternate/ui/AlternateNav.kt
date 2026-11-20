@@ -11,7 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,12 +26,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -48,9 +52,9 @@ import com.lulu786.alternate.ui.contacts.ContactsScreen
 import com.lulu786.alternate.ui.detail.DetailScreen
 import com.lulu786.alternate.ui.edit.EditScreen
 import com.lulu786.alternate.ui.groups.GroupDetailScreen
-import com.lulu786.alternate.ui.groups.GroupsScreen
 import com.lulu786.alternate.ui.groups.MemberPickerScreen
 import com.lulu786.alternate.ui.lock.PinSetupScreen
+import com.lulu786.alternate.ui.search.SearchScreen
 import com.lulu786.alternate.ui.settings.SettingsScreen
 import com.lulu786.alternate.ui.setup.SetupScreen
 import com.lulu786.alternate.util.copyToClipboard
@@ -58,8 +62,8 @@ import com.lulu786.alternate.util.intl
 import kotlinx.serialization.Serializable
 
 @Serializable data object Contacts
-@Serializable data object Groups
 @Serializable data object Settings
+@Serializable data object Search
 @Serializable data class Detail(val id: Long)
 @Serializable data class Edit(val id: Long = 0, val name: String? = null, val number: String? = null)
 @Serializable data object RecentCalls
@@ -72,7 +76,7 @@ private class Tab(val route: Any, val label: String, val icon: @Composable (sele
 
 private val tabs = listOf(
     Tab(Contacts, "Contacts") { if (it) Sym.PersonFilled else Sym.Person },
-    Tab(Groups, "Groups") { if (it) Sym.GroupFilled else Sym.Group },
+    Tab(Search, "Search") { Sym.Search }, // a dedicated tab right under the thumb (groups live in a sheet on Contacts)
     Tab(Settings, "Settings") { if (it) Sym.SettingsFilled else Sym.Settings },
 )
 
@@ -119,7 +123,11 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                                 val selected = dest.hierarchy.any { it.hasRoute(t.route::class) }
                                 ShortNavigationBarItem(
                                     selected = selected,
-                                    onClick = { nav.navigate(t.route) { popUpTo(Contacts) { saveState = true }; launchSingleTop = true; restoreState = true } },
+                                    onClick = {
+                                        // Tapping Search again brings the keyboard back (no-op if it is already up).
+                                        if (selected && t.route == Search) vm.searchFocus++
+                                        else nav.navigate(t.route) { popUpTo(Contacts) { saveState = true }; launchSingleTop = true; restoreState = true }
+                                    },
                                     icon = { Icon(t.icon(selected), null) },
                                     label = { Text(t.label) },
                                 )
@@ -132,8 +140,8 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
                     nav, startDestination = start, modifier = Modifier.padding(bottom = pad.calculateBottomPadding()),
                     enterTransition = { fadeIn(tween(200)) }, exitTransition = { fadeOut(tween(120)) }, popEnterTransition = { fadeIn(tween(200)) }, popExitTransition = { fadeOut(tween(120)) },
                 ) {
-                    composable<Contacts> { Anim { ContactsScreen(vm, { nav.navigate(Detail(it)) }, { nav.navigate(Edit(0, it)) }, { nav.navigate(RecentCalls) }, { nav.navigate(Setup) }) } }
-                    composable<Groups> { Anim { GroupsScreen(vm) { nav.navigate(GroupDetail(it)) } } }
+                    composable<Contacts> { Anim { ContactsScreen(vm, { nav.navigate(Detail(it)) }, { nav.navigate(GroupDetail(it)) }, { nav.navigate(Edit(0, it)) }, { nav.navigate(RecentCalls) }) } }
+                    composable<Search> { Anim { SearchScreen(vm, { nav.navigate(Detail(it)) }, { nav.navigate(Edit(0, it)) }) } }
                     composable<Settings> { Anim { SettingsScreen(vm, { nav.navigate(Setup) }, { nav.navigate(PinSetup) }) } }
                     composable<Detail> { e ->
                         val id = e.toRoute<Detail>().id
@@ -169,6 +177,16 @@ fun AlternateNav(vm: AppViewModel, settings: AppSettings) {
     // After NavHost so it wins over the nav back handler (e.g. selecting inside a group).
     BackHandler(enabled = vm.selecting) { vm.clearSelection() }
 
+    vm.busy?.let { label ->
+        Dialog({}, DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {
+            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    ContainedLoadingIndicator()
+                    Text(label, Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleMediumEmphasized)
+                }
+            }
+        }
+    }
     if (groupSheet) GroupPickerSheet(vm, emptySet(), { groupSheet = false }) { ids -> ids.forEach { vm.addToGroup(it, vm.selected) } }
     if (confirmDelete) ConfirmDialog("Delete ${vm.selected.size} contacts?", "They’ll be removed from Alternate.", "Delete", { vm.delete(vm.selected.toList()); confirmDelete = false }, { confirmDelete = false })
 }

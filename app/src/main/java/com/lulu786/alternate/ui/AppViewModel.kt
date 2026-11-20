@@ -3,6 +3,7 @@ package com.lulu786.alternate.ui
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -42,20 +43,27 @@ import java.util.Locale
 data class ContactListModel(
     val favorites: List<ContactRow>,
     val sections: List<Pair<Char, List<ContactRow>>>,
+    /** Contacts shown (after the filter). */
     val total: Int,
+    /** Contacts saved, filter or not. */
+    val all: Int,
     /** Letter -> index of its sticky header in the LazyColumn, for the fast scroller. */
     val letterStarts: List<Pair<Char, Int>>,
+    val filter: ContactFilter,
 )
 
-private fun buildModel(rows: List<ContactRow>): ContactListModel {
-    val favorites = rows.filter { it.starred }
+internal fun buildModel(all: List<ContactRow>, filter: ContactFilter, groupsOf: Map<Long, Set<Long>>): ContactListModel {
+    val rows = if (filter.active) all.filter { filter.matches(it, groupsOf) } else all
+    // A filtered list is just results: no Favorites grid on top.
+    val favorites = if (filter.active) emptyList() else rows.filter { it.starred }
     val sections = rows.groupBy { sectionOf(it.sortKey) }.toSortedMap(compareBy { if (it == '#') '￿' else it }).map { it.key to it.value }
-    // count line, then (favorites header + favorites grid) when there are favorites
-    var index = if (favorites.isEmpty()) 1 else 3
+    // LazyColumn items before the first letter: the active-filter chip row, or the Favorites header + grid.
+    val lead = if (filter.active) 1 else if (favorites.isEmpty()) 0 else 2
+    var index = lead
     val starts = sections.map { (letter, list) -> (letter to index).also { index += 1 + list.size } }
-    // The star jumps to the Favorites header, which is item 1 (right after the count line).
-    val withStar = if (favorites.isEmpty()) starts else listOf(STAR to 1) + starts
-    return ContactListModel(favorites, sections, rows.size, withStar)
+    // The star jumps to the Favorites header, the first item.
+    val withStar = if (favorites.isEmpty()) starts else listOf(STAR to 0) + starts
+    return ContactListModel(favorites, sections, rows.size, all.size, withStar, filter)
 }
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -64,7 +72,10 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
     val prefs = c.prefs
 
     val settings: StateFlow<AppSettings?> = prefs.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val list: StateFlow<ContactListModel?> = repo.rows.map(::buildModel).flowOn(Dispatchers.Default)
+    val filter = MutableStateFlow(ContactFilter())
+    /** contactId -> its group ids, for the group filter. */
+    private val groupsOf = repo.members.map { m -> m.groupBy({ it.contactId }, { it.groupId }).mapValues { it.value.toSet() } }
+    val list: StateFlow<ContactListModel?> = combine(repo.rows, filter, groupsOf, ::buildModel).flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     // Eagerly: selectAll and copy read .value with no collector attached.
     val rows: StateFlow<List<ContactRow>?> = repo.rows.stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -82,10 +93,13 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
     fun startSelecting() { selectMode = true }
     fun toggle(id: Long) { selected = if (id in selected) selected - id else selected + id }
     fun clearSelection() { selected = emptySet(); selectMode = false }
-    fun selectAll() { selected = rows.value.orEmpty().map { it.id }.toSet() }
+    /** Everything currently shown, so "select all" respects the filter. */
+    fun selectAll() { selected = list.value?.sections.orEmpty().flatMap { it.second }.map { it.id }.toSet() }
 
     // --- search --------------------------------------------------------------------------------------------------
     val query = MutableStateFlow("")
+    /** Bumped when the Search tab is tapped again: refocus the field and bring the keyboard back. */
+    var searchFocus by mutableIntStateOf(0)
     private val index = repo.searchDocs().map(::SearchIndex).flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val results: StateFlow<List<SearchResult>> = combine(index, query.debounce(80)) { idx, q -> idx to q }
@@ -156,20 +170,28 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
         share(context, repo.memberIds(groupId)).join()
     }
 
+    /** Label of a long import/export in progress ("Importing…"), shown as a blocking loading indicator; null when idle. */
+    var busy by mutableStateOf<String?>(null)
+        private set
+
     fun exportTo(context: Context, uri: Uri) = viewModelScope.launch {
+        busy = "Exporting…"
         val ok = runCatching {
             val text = withContext(Dispatchers.Default) { Vcf.export(repo.exportData().contacts, repo.photos::readBase64) }
             withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri)!!.use { it.write(text.toByteArray()) } }
         }.isSuccess
+        busy = null
         say(if (ok) "Contacts exported" else "Export failed")
     }
 
     fun importFrom(context: Context, uri: Uri, simIso: String?) = viewModelScope.launch {
+        busy = "Importing…"
         val added = runCatching {
             val text = withContext(Dispatchers.IO) { context.contentResolver.openInputStream(uri)!!.use { String(it.readBytes()) } }
             val parsed = withContext(Dispatchers.Default) { Vcf.parse(text, simIso) }
             if (parsed.isEmpty()) -1 else repo.importContacts(parsed)
         }.getOrDefault(-2)
+        busy = null
         say(when { added == -1 -> "No contacts found in that file"; added < 0 -> "Import failed"; added == 0 -> "Nothing new to import"; else -> "$added contacts imported" })
     }
 

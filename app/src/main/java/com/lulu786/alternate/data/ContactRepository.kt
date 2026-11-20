@@ -12,6 +12,7 @@ class ContactRepository(private val db: AppDatabase, val photos: PhotoStore, pri
     val rows: Flow<List<ContactRow>> get() = dao.observeRows()
     val groups: Flow<List<GroupWithCount>> get() = dao.observeGroups()
     fun groupRows(groupId: Long) = dao.observeGroupRows(groupId)
+    val members get() = dao.observeMembers()
     fun searchDocs() = dao.observeSearchDocs()
 
     fun observeDetail(id: Long): Flow<ContactDetail?> =

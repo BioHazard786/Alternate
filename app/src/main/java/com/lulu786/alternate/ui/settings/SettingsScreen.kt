@@ -7,10 +7,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,24 +21,24 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -50,7 +47,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.core.net.toUri
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,7 +55,9 @@ import com.lulu786.alternate.data.AutoLock
 import com.lulu786.alternate.data.ThemeMode
 import com.lulu786.alternate.ui.AppViewModel
 import com.lulu786.alternate.ui.components.ConfirmDialog
-import com.lulu786.alternate.ui.components.segment
+import com.lulu786.alternate.ui.components.IconSwitch
+import com.lulu786.alternate.ui.components.RoundedTitle
+import com.lulu786.alternate.ui.components.segmentedRowColors
 import com.lulu786.alternate.ui.lock.biometricAvailable
 import com.lulu786.alternate.util.openWeb
 import com.lulu786.alternate.util.simCountry
@@ -85,15 +83,15 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/x-vcard")) { it?.let { u -> vm.exportTo(context, u) } }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let { u -> vm.importFrom(context, u, context.simCountry()) } }
 
-    Scaffold(Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = { LargeTopAppBar(title = { Text("Settings") }, scrollBehavior = scroll) }, containerColor = MaterialTheme.colorScheme.surface) { pad ->
+    Scaffold(Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = { LargeFlexibleTopAppBar(title = { RoundedTitle("Settings") }, scrollBehavior = scroll) }, containerColor = MaterialTheme.colorScheme.surface) { pad ->
         LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp, pad.calculateTopPadding(), 16.dp, 32.dp)) {
             if (settings.lockResetNotice) item {
                 Group("Action needed", listOf(Row0(Sym.Lock, "Re-set your app lock", "We couldn’t carry your PIN over from the old version.", onClick = { vm.dismissLockNotice(); onSetPin() })))
             }
             item {
                 Group("Caller ID", listOf(
-                    Row0(Sym.CallReceived, "Incoming call popup", null, trailing = { Switch(incoming, null) }, onClick = { incoming = !incoming; popups.edit { putBoolean("show_incoming_popup", incoming) } }),
-                    Row0(Sym.CallMade, "Outgoing call popup", null, trailing = { Switch(outgoing, null) }, onClick = { outgoing = !outgoing; popups.edit { putBoolean("show_outgoing_popup", outgoing) } }),
+                    Row0(Sym.CallReceived, "Incoming call popup", null, trailing = { IconSwitch(incoming) }, onClick = { incoming = !incoming; popups.edit { putBoolean("show_incoming_popup", incoming) } }),
+                    Row0(Sym.CallMade, "Outgoing call popup", null, trailing = { IconSwitch(outgoing) }, onClick = { outgoing = !outgoing; popups.edit { putBoolean("show_outgoing_popup", outgoing) } }),
                     Row0(Sym.Layers, "Display over other apps", if (overlay) "Allowed ✓" else "Not allowed — tap to fix", onClick = {
                         context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri()))
                     }),
@@ -103,9 +101,9 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
             item {
                 val bio = remember(refresh) { biometricAvailable(context) }
                 Group("Security", listOfNotNull(
-                    Row0(Sym.Lock, "App lock", if (settings.lock.enabled) "On" else "Off", trailing = { Switch(settings.lock.enabled, null) },
+                    Row0(Sym.Lock, "App lock", if (settings.lock.enabled) "On" else "Off", trailing = { IconSwitch(settings.lock.enabled) },
                         onClick = { if (settings.lock.enabled) dialog = "removeLock" else onSetPin() }),
-                    if (settings.lock.enabled && bio) Row0(Sym.Fingerprint, "Fingerprint unlock", null, trailing = { Switch(settings.lock.biometric, null) },
+                    if (settings.lock.enabled && bio) Row0(Sym.Fingerprint, "Fingerprint unlock", null, trailing = { IconSwitch(settings.lock.biometric) },
                         onClick = { scope.launch { vm.prefs.setBiometric(!settings.lock.biometric) } }) else null,
                     if (settings.lock.enabled) Row0(Sym.Timer, "Auto-lock after", settings.lock.autoLock.label, onClick = { dialog = "autoLock" }) else null,
                 ))
@@ -113,7 +111,7 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
             item {
                 Group("Appearance", listOfNotNull(
                     Row0(Sym.Brightness6, "Theme", settings.theme.label, onClick = { dialog = "theme" }),
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Row0(Sym.Palette, "Dynamic color", "Use your wallpaper colors", trailing = { Switch(settings.dynamicColor, null) },
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Row0(Sym.Palette, "Dynamic color", "Use your wallpaper colors", trailing = { IconSwitch(settings.dynamicColor) },
                         onClick = { scope.launch { vm.prefs.setDynamicColor(!settings.dynamicColor) } }) else null,
                 ))
             }
@@ -147,18 +145,15 @@ private class Row0(val icon: ImageVector, val title: String, val subtitle: Strin
 
 @Composable
 private fun Group(title: String, rows: List<Row0>) {
-    Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp))
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Text(title, style = MaterialTheme.typography.titleSmallEmphasized, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
         rows.forEachIndexed { i, r ->
-            Row(Modifier.fillMaxWidth().segment(i, rows.size).clickable(onClick = r.onClick).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(r.icon, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.width(24.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(r.title, style = MaterialTheme.typography.bodyLarge)
-                    if (r.subtitle != null) Text(r.subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                r.trailing?.invoke()
-            }
+            SegmentedListItem(
+                onClick = r.onClick, shapes = ListItemDefaults.segmentedShapes(i, rows.size), colors = segmentedRowColors(),
+                leadingContent = { Icon(r.icon, null) },
+                supportingContent = r.subtitle?.let { { Text(it) } },
+                trailingContent = r.trailing,
+            ) { Text(r.title) }
         }
     }
 }

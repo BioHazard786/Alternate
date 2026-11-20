@@ -103,7 +103,7 @@ object Vcf {
             } else { bytes.write(c.toString().toByteArray(Charsets.UTF_8)); i++ }
         }
         val cs = runCatching { charset?.let { java.nio.charset.Charset.forName(it) } }.getOrNull() ?: Charsets.UTF_8
-        return bytes.toString(cs)
+        return String(bytes.toByteArray(), cs)
     }
 
     private class RawPhone(val group: String?, val value: String, val types: Set<String>)

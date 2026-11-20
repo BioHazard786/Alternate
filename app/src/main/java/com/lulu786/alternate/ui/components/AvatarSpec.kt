@@ -23,9 +23,12 @@ object AvatarSpec {
         0xFFFFC53D.toInt(), 0xFFF76B15.toInt(), 0xFFE5484D.toInt(), 0xFFD6409F.toInt(), 0xFF8E4EC6.toInt(),
     )
 
-    /** Container/on-container colours for palette [index], nudged toward [primary] (the wallpaper colour with dynamic theming). */
+    /**
+     * Fill/letter colours for palette [index], nudged toward [primary] (the wallpaper colour with dynamic theming).
+     * Always a light pastel with a dark letter, like the M3 list sample: in dark theme that is accent/onAccent.
+     */
     fun roles(index: Int, primary: Int, light: Boolean): Pair<Int, Int> {
         val r = MaterialColors.getColorRoles(MaterialColors.harmonize(hues[index], primary), light)
-        return r.accentContainer to r.onAccentContainer
+        return if (light) r.accentContainer to r.onAccentContainer else r.accent to r.onAccent
     }
 }

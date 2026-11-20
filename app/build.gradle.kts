@@ -31,8 +31,8 @@ android {
         applicationId = "com.lulu786.Alternate"
         minSdk = 24
         targetSdk = 36
-        versionCode = 18
-        versionName = "3.1.0"
+        versionCode = 19
+        versionName = "3.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -67,6 +67,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true // java.time on minSdk 24-25
     }
 
     // Keeps the APK free of Play/F-Droid-incompatible dependency metadata.
@@ -96,7 +97,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.text.google.fonts)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.navigation.compose)

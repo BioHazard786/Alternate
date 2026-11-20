@@ -109,6 +109,7 @@ interface ContactDao {
     @Query("UPDATE contact_group SET name = :name WHERE id = :id") suspend fun renameGroup(id: Long, name: String)
     @Query("DELETE FROM contact_group WHERE id = :id") suspend fun deleteGroup(id: Long)
     @Query("SELECT contactId FROM group_member WHERE groupId = :id") suspend fun memberIds(id: Long): List<Long>
+    @Query("SELECT contactId, groupId FROM group_member") fun observeMembers(): Flow<List<GroupMember>>
     @Query("DELETE FROM group_member WHERE groupId = :groupId AND contactId IN (:ids)") suspend fun removeMembers(groupId: Long, ids: List<Long>)
 
     // 2.x photo backfill

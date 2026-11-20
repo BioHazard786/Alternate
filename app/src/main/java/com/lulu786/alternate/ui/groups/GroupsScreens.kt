@@ -1,5 +1,6 @@
 package com.lulu786.alternate.ui.groups
 
+import com.lulu786.alternate.ui.components.RoundedTitle
 import com.lulu786.alternate.ui.Sym
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +24,7 @@ import androidx.compose.material3.DropdownMenuItem
 import com.lulu786.alternate.ui.components.AppFab
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,12 +32,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -53,69 +54,16 @@ import com.lulu786.alternate.ui.components.segment
 import kotlinx.coroutines.launch
 
 @Composable
-fun GroupsScreen(vm: AppViewModel, onOpen: (Long) -> Unit) {
-    val groups by vm.groups.collectAsStateWithLifecycle()
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    var creating by remember { mutableStateOf(false) }
-    var renaming by remember { mutableStateOf<GroupWithCount?>(null) }
-    var deleting by remember { mutableStateOf<GroupWithCount?>(null) }
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
-    Scaffold(
-        Modifier.nestedScroll(scroll.nestedScrollConnection),
-        topBar = { LargeTopAppBar(title = { Text("Groups") }, scrollBehavior = scroll) },
-        floatingActionButton = { AppFab(Sym.Add, "Create group", { creating = true }) },
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0), // the tab bar already consumed the nav-bar inset
-        containerColor = MaterialTheme.colorScheme.surface,
-    ) { pad ->
-        val list = groups
-        when {
-            list == null -> Unit
-            list.isEmpty() -> Box(Modifier.padding(pad)) {
-                EmptyState(Sym.Label, "Organise contacts into groups like Family or Work") { Button({ creating = true }) { Text("Create group") } }
-            }
-            else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = pad, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                items(list.size, key = { list[it].id }) { i ->
-                    val g = list[i]
-                    var menu by remember { mutableStateOf(false) }
-                    Row(
-                        Modifier.padding(horizontal = 16.dp).fillMaxWidth().segment(i, list.size).clickable { onOpen(g.id) }.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape), Alignment.Center) {
-                            Icon(Sym.Label, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(g.name, style = MaterialTheme.typography.bodyLarge)
-                            Text("${g.count} ${if (g.count == 1) "contact" else "contacts"}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Box {
-                            IconButton({ menu = true }) { Icon(Sym.MoreVert, "More options for ${g.name}") }
-                            DropdownMenu(menu, { menu = false }) {
-                                DropdownMenuItem({ Text("Rename") }, { menu = false; renaming = g })
-                                DropdownMenuItem({ Text("Share group as VCF") }, { menu = false; vm.shareGroup(context, g.id) })
-                                DropdownMenuItem({ Text("Delete group") }, { menu = false; deleting = g })
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if (creating) NameDialog("New group", "", "Create", { creating = false }) { n -> creating = false; vm.createGroup(n) }
-    renaming?.let { g -> NameDialog("Rename group", g.name, "Rename", { renaming = null }) { n -> renaming = null; scope.launch { vm.repo.renameGroup(g.id, n) } } }
-    deleting?.let { g -> ConfirmDialog("Delete “${g.name}”?", "The group is removed. Its contacts stay in Alternate.", "Delete", { deleting = null; scope.launch { vm.repo.deleteGroup(g.id) } }, { deleting = null }) }
-}
-
-@Composable
 fun GroupDetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onOpen: (Long) -> Unit, onAddPeople: () -> Unit) {
     val rows by remember(id) { vm.repo.groupRows(id) }.collectAsStateWithLifecycle(null)
     val groups by vm.groups.collectAsStateWithLifecycle()
     val name = groups.orEmpty().firstOrNull { it.id == id }?.name.orEmpty()
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var menu by remember { mutableStateOf(false) }
+    var renaming by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.clearSelection() }
 
     Scaffold(
@@ -125,7 +73,20 @@ fun GroupDetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onOpen: (L
                 title = { Text("${vm.selected.size} selected") },
                 navigationIcon = { IconButton(vm::clearSelection) { Icon(Sym.Close, "Cancel selection") } },
                 actions = { TextButton({ val ids = vm.selected.toList(); scope.launch { vm.repo.removeFromGroup(id, ids); vm.clearSelection() } }) { Text("Remove from group") } },
-            ) else LargeTopAppBar(title = { Text(name) }, navigationIcon = { IconButton(onBack) { Icon(Sym.ArrowBack, "Back") } }, scrollBehavior = scroll)
+            ) else LargeFlexibleTopAppBar(
+                title = { RoundedTitle(name) }, navigationIcon = { IconButton(onBack) { Icon(Sym.ArrowBack, "Back") } }, scrollBehavior = scroll,
+                actions = {
+                    Box {
+                        IconButton({ menu = true }) { Icon(Sym.MoreVert, "More options for $name") }
+                        DropdownMenu(menu, { menu = false }) {
+                            DropdownMenuItem({ Text("Rename") }, { menu = false; renaming = true })
+                            DropdownMenuItem({ Text("Share group as VCF") }, { menu = false; vm.shareGroup(context, id) })
+                            DropdownMenuItem({ Text("Delete group") }, { menu = false; deleting = true })
+                        }
+                    }
+                },
+                subtitle = rows?.size?.let { n -> { Text(if (n == 1) "1 contact" else "$n contacts") } },
+            )
         },
         floatingActionButton = { if (!vm.selecting) AppFab(Sym.PersonAdd, "Add people", onAddPeople) },
         containerColor = MaterialTheme.colorScheme.surface,
@@ -139,6 +100,14 @@ fun GroupDetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onOpen: (L
             }
         }
     }
+    GroupDialogs(vm, id, name, renaming, deleting, { renaming = false; deleting = false }, onBack)
+}
+
+@Composable
+private fun GroupDialogs(vm: AppViewModel, id: Long, name: String, renaming: Boolean, deleting: Boolean, onDone: () -> Unit, onDeleted: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    if (renaming) NameDialog("Rename group", name, "Rename", onDone) { n -> onDone(); scope.launch { vm.repo.renameGroup(id, n) } }
+    if (deleting) ConfirmDialog("Delete “$name”?", "The group is removed. Its contacts stay in Alternate.", "Delete", { onDone(); scope.launch { vm.repo.deleteGroup(id) }; onDeleted() }, onDone)
 }
 
 /** "Add people": every contact with a checkbox, current members pre-checked. */

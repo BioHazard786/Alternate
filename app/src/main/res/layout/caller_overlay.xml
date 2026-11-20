@@ -41,7 +41,9 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:gravity="center"
-              android:textAppearance="?attr/textAppearanceTitleLarge" />
+              android:fontFamily="@font/google_sans_flex"
+              android:fontVariationSettings="'wght' 900, 'wdth' 150, 'ROND' 100"
+              android:textSize="24sp" />
 
           <ImageView
               android:id="@+id/callerPhoto"

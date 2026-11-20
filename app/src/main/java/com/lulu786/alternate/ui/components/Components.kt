@@ -1,21 +1,12 @@
 package com.lulu786.alternate.ui.components
 
 import com.lulu786.alternate.ui.Sym
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,11 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -37,19 +27,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -61,7 +46,6 @@ import com.lulu786.alternate.data.ContactRow
 import com.lulu786.alternate.util.Countries
 import com.lulu786.alternate.util.Country
 import com.lulu786.alternate.util.formatPhone
-import kotlinx.coroutines.launch
 
 /** Applies the Google-Contacts grouped look to one row of a list: rounded outer corners, 4dp inner corners. */
 @Composable
@@ -78,7 +62,7 @@ fun SectionCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) 
     ) { content() }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+/** M3 1.5 expressive segmented list item (the one on m3.material.io); it morphs its corners when pressed or selected. */
 @Composable
 fun ContactListRow(
     row: ContactRow,
@@ -89,46 +73,39 @@ fun ContactListRow(
     index: Int = 0,
     count: Int = 1,
 ) {
-    val source = remember { MutableInteractionSource() }
-    val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.5f, stiffness = 500f), label = "press")
     val subtitle = remember(row.subtitle, row.fullPhoneNumber) {
         row.subtitle.ifEmpty { row.fullPhoneNumber?.let { formatPhone(it, row.countryCode) }.orEmpty() }
     }
-    Row(
-        modifier
-            .fillMaxWidth()
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .segment(index, count, if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer)
-            .combinedClickable(interactionSource = source, indication = androidx.compose.material3.ripple(), onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .semantics(mergeDescendants = true) { contentDescription = "${row.displayName}, $subtitle" },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ContactAvatar(row.avatarSeed, row.name, row.photoPath, 40.dp, selected = selected)
-        Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) {
-            Text(row.displayName, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (subtitle.isNotEmpty())
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
+    SegmentedListItem(
+        selected = selected, onClick = onClick, onLongClick = onLongClick,
+        shapes = ListItemDefaults.segmentedShapes(index, count),
+        colors = segmentedRowColors(),
+        modifier = modifier,
+        leadingContent = { ContactAvatar(row.avatarSeed, row.name, row.photoPath, 40.dp, expressive = true, selected = selected) },
+        supportingContent = if (subtitle.isEmpty()) null else { { Text(subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
+    ) { Text(row.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
 
-/** Circular tonal action with a label under it; bounces when pressed. */
+/** App-bar title in the rounded face; LocalTextStyle keeps the bar's own expanded and collapsed sizes. */
 @Composable
-fun CircleAction(label: String, onClick: () -> Unit, icon: @Composable () -> Unit) {
-    val source = remember { MutableInteractionSource() }
-    val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.85f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f), label = "bounce")
-    Column(Modifier.width(72.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        FilledTonalIconButton(onClick, Modifier.size(56.dp).graphicsLayer { scaleX = scale; scaleY = scale }, interactionSource = source) {
-            icon()
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-    }
-}
+fun RoundedTitle(text: String) = Text(
+    text, style = androidx.compose.material3.LocalTextStyle.current.copy(fontFamily = com.lulu786.alternate.ui.theme.RoundedFontFamily),
+    maxLines = 1, overflow = TextOverflow.Ellipsis,
+)
+
+/** M3 defaults to surface items on a tinted page; this app's pages are surface, so the items take the tint. */
+@Composable
+fun segmentedRowColors() = ListItemDefaults.segmentedColors(
+    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+)
+
+/** Display-only expressive switch (the row handles the click) with a check / cross on the thumb. */
+@Composable
+fun IconSwitch(checked: Boolean) = androidx.compose.material3.Switch(
+    checked, null,
+    thumbContent = { Icon(if (checked) Sym.Check else Sym.Close, null, Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize)) },
+)
 
 @Composable
 fun EmptyState(icon: ImageVector, title: String, body: String? = null, actions: @Composable () -> Unit = {}) {

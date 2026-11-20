@@ -57,8 +57,8 @@ fun SetupScreen(vm: AppViewModel, onDone: () -> Unit) {
     val overlay = remember(refresh) { Settings.canDrawOverlays(context) }
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
     val roleManager = remember { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) context.getSystemService(RoleManager::class.java) else null }
-    val canScreen = roleManager?.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) == true
-    val screening = remember(refresh) { roleManager?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true }
+    val canScreen = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && roleManager?.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) == true
+    val screening = remember(refresh) { Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && roleManager?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true }
     val askRole = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { refresh++ }
     var disclosure by remember { mutableStateOf(false) }
 
@@ -68,7 +68,7 @@ fun SetupScreen(vm: AppViewModel, onDone: () -> Unit) {
         Text("Alternate needs a few permissions to show who’s calling. You can change these later in Settings.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
         Spacer(Modifier.height(16.dp))
         PermissionCard("Phone & call log", "So Alternate can see who’s calling.", phone, "Allow") { disclosure = true }
-        if (canScreen) {
+        if (canScreen && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Spacer(Modifier.height(12.dp))
             PermissionCard("Caller ID app", "Make Alternate your phone’s caller ID app so the popup appears reliably for incoming calls.", screening, "Set") {
                 askRole.launch(roleManager!!.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))

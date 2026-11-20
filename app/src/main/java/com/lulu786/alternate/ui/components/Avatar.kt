@@ -31,11 +31,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.text.font.FontWeight
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.lulu786.alternate.LocalContainer
+import com.lulu786.alternate.ui.theme.AvatarLetterFont
 import com.lulu786.alternate.ui.theme.LocalAvatarColors
 import androidx.graphics.shapes.RoundedPolygon
 
@@ -51,9 +51,10 @@ object AvatarShapes {
     @Composable fun shapeFor(seed: Int): Shape = polygons[AvatarSpec.shape(seed)].toShape()
 }
 
+
 /**
- * Contact avatar. Lists pass [expressive] = false (circles, like Google Contacts); the detail header and
- * editor pass true to get the contact's own shape. A photo replaces colour and pattern but keeps the shape.
+ * Contact avatar, styled like the M3 list sample: the contact's own shape (pass [expressive]) and a heavy, wide,
+ * fully rounded Google Sans Flex initial. A photo replaces colour and pattern but keeps the shape.
  */
 @Composable
 fun ContactAvatar(
@@ -101,8 +102,8 @@ fun ContactAvatar(
             Text(
                 name.trim().let { if (it.isEmpty()) "#" else String(Character.toChars(it.codePointAt(0))).uppercase() },
                 color = onContainer,
-                fontWeight = FontWeight.Medium,
-                fontSize = (size.value * 0.4f).sp,
+                fontFamily = AvatarLetterFont,
+                fontSize = (size.value * 0.44f).sp, // the wide face fills more width than height
                 modifier = Modifier.clearAndSetSemantics { },
             )
         }

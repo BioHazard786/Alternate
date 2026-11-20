@@ -1,24 +1,30 @@
 package com.lulu786.alternate.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.GoogleFont
-import androidx.compose.ui.text.googlefonts.Font as GFont
-import androidx.compose.ui.text.googlefonts.R as FontsR
+import com.lulu786.alternate.R
 
-private val provider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = FontsR.array.com_google_android_gms_fonts_certs,
-)
+/*
+ * Google Sans Flex (OFL, licenses/GoogleSansFlex-OFL.txt), bundled as one variable font: wght 1-1000, ROND 0-100,
+ * wdth 100-150; opsz pinned to 18 and slnt to 0 to cut it from 3.9 MB to ~435 KB.
+ * shortcut: Android 7 (API 24-25) ignores variation settings and draws every weight at the default 400; bundle static instances if that matters.
+ */
+private fun flex(weight: Int, vararg extra: FontVariation.Setting) =
+    Font(R.font.google_sans_flex, FontWeight(weight), variationSettings = FontVariation.Settings(FontVariation.weight(weight), *extra))
 
-// Falls back to the system font on its own when Play Services (and so the provider) is missing.
-private val sansFlex = GoogleFont("Google Sans Flex")
-private val family = FontFamily(
-    listOf(FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold)
-        .map { GFont(googleFont = sansFlex, fontProvider = provider, weight = it) }
-)
+private val weights = listOf(400, 500, 600, 700, 800)
+private val family = FontFamily(weights.map { flex(it) })
+// Emphasized headings get the same full roundness as the avatar letters.
+val RoundedFontFamily = FontFamily(weights.map { flex(it, FontVariation.Setting("ROND", 100f)) })
+
+/** Fast-scroller letters: rounded and a little wide, regular and highlighted weights. */
+val ScrubberFontFamily = FontFamily(listOf(500, 700).map { flex(it, FontVariation.width(125f), FontVariation.Setting("ROND", 100f)) })
+
+/** Avatar initial, as in the M3 list sample: heaviest, widest, fully rounded. */
+val AvatarLetterFont = FontFamily(flex(900, FontVariation.width(150f), FontVariation.Setting("ROND", 100f)))
 
 private val base = Typography()
 val AlternateTypography = Typography(
@@ -37,4 +43,19 @@ val AlternateTypography = Typography(
     labelLarge = base.labelLarge.copy(fontFamily = family),
     labelMedium = base.labelMedium.copy(fontFamily = family),
     labelSmall = base.labelSmall.copy(fontFamily = family),
+    displayLargeEmphasized = base.displayLargeEmphasized.copy(fontFamily = RoundedFontFamily),
+    displayMediumEmphasized = base.displayMediumEmphasized.copy(fontFamily = RoundedFontFamily),
+    displaySmallEmphasized = base.displaySmallEmphasized.copy(fontFamily = RoundedFontFamily),
+    headlineLargeEmphasized = base.headlineLargeEmphasized.copy(fontFamily = RoundedFontFamily),
+    headlineMediumEmphasized = base.headlineMediumEmphasized.copy(fontFamily = RoundedFontFamily),
+    headlineSmallEmphasized = base.headlineSmallEmphasized.copy(fontFamily = RoundedFontFamily),
+    titleLargeEmphasized = base.titleLargeEmphasized.copy(fontFamily = RoundedFontFamily),
+    titleMediumEmphasized = base.titleMediumEmphasized.copy(fontFamily = RoundedFontFamily),
+    titleSmallEmphasized = base.titleSmallEmphasized.copy(fontFamily = RoundedFontFamily),
+    bodyLargeEmphasized = base.bodyLargeEmphasized.copy(fontFamily = family),
+    bodyMediumEmphasized = base.bodyMediumEmphasized.copy(fontFamily = family),
+    bodySmallEmphasized = base.bodySmallEmphasized.copy(fontFamily = family),
+    labelLargeEmphasized = base.labelLargeEmphasized.copy(fontFamily = family),
+    labelMediumEmphasized = base.labelMediumEmphasized.copy(fontFamily = family),
+    labelSmallEmphasized = base.labelSmallEmphasized.copy(fontFamily = family),
 )

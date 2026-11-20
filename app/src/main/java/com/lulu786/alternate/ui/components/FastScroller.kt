@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import com.lulu786.alternate.ui.Sym
+import com.lulu786.alternate.ui.theme.ScrubberFontFamily
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.exp
@@ -53,7 +54,8 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 private val EDGE_INSET = 8.dp      // letters rest this far from the screen edge
-private val LETTER_W = 20.dp
+private val LETTER_W = 24.dp
+private val ITEM_H = 22.dp         // fixed letter pitch: few letters make a short column, not a stretched one
 private val BELL = 56.dp           // how far the column bows out at its peak
 private val BUBBLE = 44.dp
 private const val SIGMA_LETTERS = 2.2f   // width of the bell, in letter heights
@@ -67,6 +69,8 @@ const val STAR = '★'
  * At rest only a thin thumb shows while scrolling. Touch the right edge and the letters appear; the glyphs are never scaled,
  * the *column* bows toward the finger on a gaussian. Dragging further inward pulls the bow with it and it springs back on release.
  * A bubble beyond the bell names the letter. [starts] maps each letter to the index of its header in the list.
+ * Like Niagara, letters keep a fixed pitch and the column is centred, shrinking when there are few letters
+ * (it only squeezes when they would not fit).
  */
 @Composable
 fun FastScroller(state: LazyListState, starts: List<Pair<Char, Int>>, modifier: Modifier = Modifier, contentPadding: PaddingValues = PaddingValues()) {
@@ -82,7 +86,11 @@ fun FastScroller(state: LazyListState, starts: List<Pair<Char, Int>>, modifier: 
     val reveal by animateFloatAsState(if (active) 1f else 0f, spring(dampingRatio = 0.8f, stiffness = 500f), label = "reveal")
     val scrolling = state.isScrollInProgress && !active
     val thumbAlpha by animateFloatAsState(if (scrolling) 1f else 0f, if (scrolling) tween(120) else tween(400, delayMillis = 900), label = "thumb")
-    val current by remember(starts) { derivedStateOf { (touchY / heightPx * starts.size).toInt().coerceIn(0, starts.lastIndex) } }
+    val itemPx = with(density) { ITEM_H.toPx() }
+    val columnPx = minOf(itemPx * starts.size, heightPx)
+    val columnTop = (heightPx - columnPx) / 2
+    // touchY is measured from the column's top; the letter pitch is columnPx / size.
+    val current by remember(starts, columnPx) { derivedStateOf { (touchY / columnPx * starts.size).toInt().coerceIn(0, starts.lastIndex) } }
 
     val surface = MaterialTheme.colorScheme.surface
     val primary = MaterialTheme.colorScheme.primary
@@ -103,11 +111,12 @@ fun FastScroller(state: LazyListState, starts: List<Pair<Char, Int>>, modifier: 
                 .background(muted.copy(alpha = 0.55f), CircleShape),
         )
 
-        Column(Modifier.align(Alignment.CenterEnd).padding(end = EDGE_INSET).fillMaxHeight().width(LETTER_W)) {
+        val columnDp = with(density) { columnPx.toDp() }
+        Column(Modifier.align(Alignment.CenterEnd).padding(end = EDGE_INSET).height(columnDp).width(LETTER_W)) {
             starts.forEachIndexed { i, (letter, _) ->
                 Box(
                     Modifier.weight(1f).fillMaxWidth().graphicsLayer {
-                        val spacing = heightPx / starts.size
+                        val spacing = columnPx / starts.size
                         val d = touchY - (i + 0.5f) * spacing
                         val sigma = SIGMA_LETTERS * spacing
                         val gain = exp(-d * d / (2 * sigma * sigma)) * reveal
@@ -119,7 +128,7 @@ fun FastScroller(state: LazyListState, starts: List<Pair<Char, Int>>, modifier: 
                     val near = i == current
                     val tint = if (near) primary else muted
                     if (letter == STAR) Icon(Sym.Star, "Favorites", Modifier.size(14.dp), tint = tint)
-                    else Text(letter.toString(), style = MaterialTheme.typography.labelMedium, color = tint, fontWeight = if (near) FontWeight.Bold else FontWeight.Medium)
+                    else Text(letter.toString(), style = MaterialTheme.typography.labelMedium, color = tint, fontFamily = ScrubberFontFamily, fontWeight = if (near) FontWeight.Bold else FontWeight.Medium)
                 }
             }
         }
@@ -127,7 +136,7 @@ fun FastScroller(state: LazyListState, starts: List<Pair<Char, Int>>, modifier: 
         Box(
             Modifier.align(Alignment.TopEnd).padding(end = EDGE_INSET + LETTER_W + BELL + 12.dp).size(BUBBLE)
                 .graphicsLayer {
-                    translationY = touchY - BUBBLE.toPx() / 2
+                    translationY = columnTop + touchY - BUBBLE.toPx() / 2
                     translationX = -pull * reveal
                     alpha = reveal; scaleX = 0.6f + 0.4f * reveal; scaleY = scaleX
                 }
@@ -136,20 +145,20 @@ fun FastScroller(state: LazyListState, starts: List<Pair<Char, Int>>, modifier: 
         ) {
             val c = starts[current].first
             if (c == STAR) Icon(Sym.Star, "Favorites", Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-            else Text(c.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            else Text(c.toString(), style = MaterialTheme.typography.titleLarge, fontFamily = ScrubberFontFamily, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
 
-        // Only this 40dp strip takes touches, so the rest of the list keeps scrolling normally.
+        // Only this 40dp strip over the letters takes touches, so the rest of the list keeps scrolling normally.
         Box(
-            Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(40.dp).semantics { contentDescription = "Fast scroller" }
-                .pointerInput(starts) {
+            Modifier.align(Alignment.CenterEnd).height(columnDp).width(40.dp).semantics { contentDescription = "Fast scroller" }
+                .pointerInput(starts, columnPx) { // restart when the column resizes: move() reads columnPx
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         var last = -1
                         fun move(x: Float, y: Float) {
-                            touchY = y.coerceIn(0f, heightPx - 1f)
+                            touchY = y.coerceIn(0f, columnPx - 1f)
                             pull = (-x).coerceIn(0f, maxPullPx)
-                            val i = (touchY / heightPx * starts.size).toInt().coerceIn(0, starts.lastIndex)
+                            val i = (touchY / columnPx * starts.size).toInt().coerceIn(0, starts.lastIndex)
                             if (i != last) { last = i; haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); scope.launch { state.scrollToItem(starts[i].second) } }
                         }
                         spring.value?.cancel()
