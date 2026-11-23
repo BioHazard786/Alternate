@@ -1,0 +1,6 @@
+v3.3.0 - Backups, sorting and CSV
+ - Encrypted backups to a folder you choose, daily or weekly, locked with a password or a recovery key
+ - Restore contacts from a backup file
+ - Sort contacts by name, date added, last modified, phone number or country
+ - Contacts now remember when they were added and last edited
+ - Export contacts as CSV to edit in a spreadsheet, then import them back
