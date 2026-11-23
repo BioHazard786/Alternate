@@ -1,5 +1,6 @@
 package com.lulu786.alternate.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -28,6 +29,9 @@ data class ContactEntity(
     val sortKey: String = "",
     /** 2.x base64 photo, cleared by the one-time backfill. Never selected in list queries. */
     val legacyPhoto: String = "",
+    /** Epoch millis; 0 = unknown (contact predates the column). */
+    @ColumnInfo(defaultValue = "0") val createdAt: Long = 0,
+    @ColumnInfo(defaultValue = "0") val updatedAt: Long = 0,
 )
 
 @Entity(

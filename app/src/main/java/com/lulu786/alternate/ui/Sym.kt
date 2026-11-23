@@ -30,6 +30,7 @@ object Sym {
     val GroupAdd: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_group_add)
     val Info: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_info)
     val Label: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_label)
+    val Sort: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_sort)
     val FilterList: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_filter_list)
     val Layers: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_layers)
     val Link: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_link)

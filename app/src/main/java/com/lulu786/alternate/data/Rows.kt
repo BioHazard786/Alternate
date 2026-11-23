@@ -19,6 +19,8 @@ data class ContactRow(
     val fullPhoneNumber: String?,
     val countryCode: String?,
     val phoneLabel: String?,
+    val createdAt: Long = 0,
+    val updatedAt: Long = 0,
 ) {
     /** What lists show: "Mr Zaid, Khan". The avatar initial and sorting still use [name] alone. */
     val displayName: String

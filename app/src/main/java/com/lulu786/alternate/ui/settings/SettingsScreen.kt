@@ -81,6 +81,7 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
     var dialog by remember { mutableStateOf<String?>(null) }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/x-vcard")) { it?.let { u -> vm.exportTo(context, u) } }
+    val exportCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { it?.let { u -> vm.exportTo(context, u, csv = true) } }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let { u -> vm.importFrom(context, u, context.simCountry()) } }
 
     Scaffold(Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = { LargeFlexibleTopAppBar(title = { RoundedTitle("Settings") }, scrollBehavior = scroll) }, containerColor = MaterialTheme.colorScheme.surface) { pad ->
@@ -117,8 +118,9 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
             }
             item {
                 Group("Data", listOf(
-                    Row0(Sym.Download, "Import from VCF file", null, onClick = { importLauncher.launch(arrayOf("text/*", "application/octet-stream")) }),
-                    Row0(Sym.Upload, "Export all contacts", null, onClick = { exportLauncher.launch("contacts.vcf") }),
+                    Row0(Sym.Download, "Import from file", "VCF or CSV", onClick = { importLauncher.launch(arrayOf("text/*", "application/octet-stream", "application/vnd.ms-excel")) }),
+                    Row0(Sym.Upload, "Export as VCF", "Contacts with photos", onClick = { exportLauncher.launch("contacts.vcf") }),
+                    Row0(Sym.Upload, "Export as CSV", "For editing in a spreadsheet", onClick = { exportCsvLauncher.launch("contacts.csv") }),
                 ))
             }
             item {

@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.lulu786.alternate.data.AppDatabase
 import com.lulu786.alternate.data.MIGRATION_4_5
+import com.lulu786.alternate.data.MIGRATION_5_6
 import com.lulu786.alternate.data.MIGRATION_2_3
 import com.lulu786.alternate.data.MIGRATION_3_4
 import kotlinx.coroutines.runBlocking
@@ -15,7 +16,7 @@ import org.junit.runner.RunWith
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** Builds a real 2.4.7-shaped v4 file with raw SQL, then lets Room run MIGRATION_4_5 and validate the result. */
+/** Builds a real 2.4.7-shaped v4 file with raw SQL, then lets Room run MIGRATION_4_5 and 5_6 and validate the result. */
 @RunWith(AndroidJUnit4::class)
 class MigrationTest {
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
@@ -31,7 +32,7 @@ class MigrationTest {
     }
 
     @Test
-    fun migratesCallerInfoToContactsAndPhones() = runBlocking {
+    fun migratesCallerInfoToContactsAndPhones() = runBlocking<Unit> {
         context.deleteDatabase(name)
         val path = context.getDatabasePath(name)
         SQLiteDatabase.openOrCreateDatabase(path, null).use { db ->
@@ -44,7 +45,7 @@ class MigrationTest {
         }
 
         val room = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
         val dao = room.dao()
         val contacts = dao.allContacts()
         assertEquals(2, contacts.size)
@@ -56,6 +57,7 @@ class MigrationTest {
         val phone = dao.lookup("9876543210")!!
         assertEquals("Mobile", phone.label); assertEquals("919876543210", phone.fullPhoneNumber)
         assertEquals(ravi.id, phone.contactId)
+        assertTrue(contacts.all { it.createdAt == 0L && it.updatedAt == 0L }, "old contacts have unknown dates")
         room.close(); context.deleteDatabase(name)
     }
 }

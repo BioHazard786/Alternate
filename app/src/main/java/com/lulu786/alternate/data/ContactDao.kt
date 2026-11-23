@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.Flow
 
 private const val ROW_SELECT = """
     SELECT c.id, c.name, c.prefix, c.suffix, c.appointment, c.location, c.photoPath, c.starred, c.avatarSeed, c.sortKey,
-           p.fullPhoneNumber AS fullPhoneNumber, p.countryCode AS countryCode, p.label AS phoneLabel
+           p.fullPhoneNumber AS fullPhoneNumber, p.countryCode AS countryCode, p.label AS phoneLabel,
+           c.createdAt AS createdAt, c.updatedAt AS updatedAt
     FROM contact c
     LEFT JOIN phone p ON p.contactId = c.id
       AND p.position = (SELECT MIN(position) FROM phone WHERE contactId = c.id)

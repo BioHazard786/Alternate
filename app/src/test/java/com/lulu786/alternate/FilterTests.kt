@@ -2,6 +2,8 @@ package com.lulu786.alternate
 
 import com.lulu786.alternate.data.ContactRow
 import com.lulu786.alternate.ui.ContactFilter
+import com.lulu786.alternate.ui.ContactSort
+import com.lulu786.alternate.ui.FLAT
 import com.lulu786.alternate.ui.buildModel
 import com.lulu786.alternate.ui.facet
 import org.junit.Assert.assertEquals
@@ -43,5 +45,34 @@ class FilterTests {
         val filtered = buildModel(rows, ContactFilter(locations = setOf("Delhi")), groupsOf)
         assertEquals(listOf('A' to 1, 'C' to 3), filtered.letterStarts)
         assertEquals(2, filtered.total); assertEquals(4, filtered.all)
+    }
+
+    private fun sortedIds(sort: ContactSort, list: List<ContactRow>) = buildModel(list, ContactFilter(), emptyMap(), sort).sections.flatMap { it.second }.map { it.id }
+
+    @Test fun nameDescReversesSectionsAndRows() {
+        val m = buildModel(rows, ContactFilter(), groupsOf, ContactSort.NameDesc)
+        assertEquals(listOf('D', 'C', 'B', 'A'), m.sections.map { it.first })
+        assertEquals(listOf(4L, 3L, 2L, 1L), sortedIds(ContactSort.NameDesc, rows))
+    }
+
+    @Test fun dateSortsAreFlatAndUnknownDatesSinkToTheBottom() {
+        val dated = listOf(
+            row(1, "Asha").copy(createdAt = 0, updatedAt = 50),
+            row(2, "Bilal").copy(createdAt = 300, updatedAt = 100),
+            row(3, "Chetan").copy(createdAt = 100, updatedAt = 400),
+            row(4, "Dev").copy(createdAt = 0, updatedAt = 0),
+        )
+        assertEquals(listOf(2L, 3L, 1L, 4L), sortedIds(ContactSort.Newest, dated))
+        assertEquals(listOf(3L, 2L, 1L, 4L), sortedIds(ContactSort.Oldest, dated))
+        assertEquals(listOf(3L, 2L, 1L, 4L), sortedIds(ContactSort.Modified, dated))
+        val m = buildModel(dated, ContactFilter(), emptyMap(), ContactSort.Newest)
+        assertEquals(listOf(FLAT), m.sections.map { it.first })
+        assertEquals(emptyList<Pair<Char, Int>>(), m.letterStarts) // no fast scroller on a flat list
+    }
+
+    @Test fun phoneAndCountrySortsPutMissingValuesLast() {
+        val list = listOf(row(2, "Bilal", cc = "AE"), row(4, "Dev", cc = null).copy(fullPhoneNumber = null), row(1, "Asha"))
+        assertEquals(listOf(1L, 2L, 4L), sortedIds(ContactSort.Phone, list)) // 911 < 912, null last
+        assertEquals(listOf(2L, 1L, 4L), sortedIds(ContactSort.Country, list)) // AE < IN, null last
     }
 }

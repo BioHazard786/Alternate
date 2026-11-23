@@ -63,6 +63,7 @@ import com.lulu786.alternate.ui.ContactListModel
 import com.lulu786.alternate.ui.components.ContactAvatar
 import com.lulu786.alternate.ui.components.ContactListRow
 import com.lulu786.alternate.ui.components.EmptyState
+import com.lulu786.alternate.ui.FLAT
 import com.lulu786.alternate.ui.components.FastScroller
 import com.lulu786.alternate.ui.components.RoundedTitle
 import com.lulu786.alternate.ui.sharedKey
@@ -77,8 +78,9 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onOpenGroup: (Long)
     val context = LocalContext.current
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/x-vcard")) { it?.let { u -> vm.exportTo(context, u) } }
+    val exportCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { it?.let { u -> vm.exportTo(context, u, csv = true) } }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let { u -> vm.importFrom(context, u, context.simCountry()) } }
-    val import = { importLauncher.launch(arrayOf("text/*", "application/octet-stream")) }
+    val import = { importLauncher.launch(arrayOf("text/*", "application/octet-stream", "application/vnd.ms-excel")) }
     var sheet by rememberSaveable { mutableStateOf<String?>(null) }
 
     Box(Modifier.fillMaxSize()) {
@@ -88,13 +90,13 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onOpenGroup: (Long)
             m.all == 0 -> EmptyContacts(onCreate, import)
             else -> Scaffold(
                 Modifier.nestedScroll(scroll.nestedScrollConnection),
-                topBar = { TopBar(vm, m, settings?.lock?.enabled == true, scroll, { sheet = it }, import) { exportLauncher.launch("contacts.vcf") } },
+                topBar = { TopBar(vm, m, settings?.lock?.enabled == true, scroll, { sheet = it }, import) { csv -> if (csv) exportCsvLauncher.launch("contacts.csv") else exportLauncher.launch("contacts.vcf") } },
                 contentWindowInsets = WindowInsets(0, 0, 0, 0), // the tab bar already consumed the nav-bar inset
                 containerColor = MaterialTheme.colorScheme.surface,
             ) { pad ->
                 Box(Modifier.fillMaxSize().padding(top = pad.calculateTopPadding())) {
                     ContactList(vm, m, state, onOpen)
-                    if (m.total > 30) FastScroller(state, m.letterStarts, Modifier.align(Alignment.CenterEnd), PaddingValues(top = 8.dp, bottom = 88.dp))
+                    if (m.total > 30 && m.letterStarts.isNotEmpty()) FastScroller(state, m.letterStarts, Modifier.align(Alignment.CenterEnd), PaddingValues(top = 8.dp, bottom = 88.dp))
                 }
             }
         }
@@ -105,6 +107,7 @@ fun ContactsScreen(vm: AppViewModel, onOpen: (Long) -> Unit, onOpenGroup: (Long)
     when (sheet) {
         "groups" -> GroupsSheet(vm, onOpenGroup) { sheet = null }
         "filter" -> FilterSheet(vm) { sheet = null }
+        "sort" -> SortSheet(vm) { sheet = null }
     }
 }
 
@@ -147,7 +150,7 @@ private fun EmptyContacts(onCreate: (String?) -> Unit, import: () -> Unit) {
 @Composable
 private fun TopBar(
     vm: AppViewModel, m: ContactListModel, lockOn: Boolean, scroll: TopAppBarScrollBehavior,
-    openSheet: (String) -> Unit, import: () -> Unit, export: () -> Unit,
+    openSheet: (String) -> Unit, import: () -> Unit, export: (csv: Boolean) -> Unit,
 ) {
     if (vm.selecting) {
         TopAppBar(
@@ -167,6 +170,7 @@ private fun TopBar(
         scrollBehavior = scroll,
         actions = {
             IconButton({ openSheet("groups") }) { Icon(Sym.Label, "Groups") }
+            IconButton({ openSheet("sort") }) { Icon(Sym.Sort, "Sort") }
             // Filled while a filter is on, so a shortened list is never a mystery.
             if (m.filter.active) FilledTonalIconButton({ openSheet("filter") }) { Icon(Sym.FilterList, "Filter (on)") }
             else IconButton({ openSheet("filter") }) { Icon(Sym.FilterList, "Filter") }
@@ -176,7 +180,8 @@ private fun TopBar(
                 DropdownMenu(menu, { menu = false }) {
                     DropdownMenuItem({ Text("Select") }, { menu = false; vm.startSelecting() })
                     DropdownMenuItem({ Text("Import from file") }, { menu = false; import() })
-                    DropdownMenuItem({ Text("Export all") }, { menu = false; export() })
+                    DropdownMenuItem({ Text("Export as VCF") }, { menu = false; export(false) })
+                    DropdownMenuItem({ Text("Export as CSV") }, { menu = false; export(true) })
                 }
             }
         },
@@ -209,7 +214,7 @@ private fun ContactList(vm: AppViewModel, m: ContactListModel, state: LazyListSt
             }
         }
         m.sections.forEach { (letter, list) ->
-            stickyHeader(key = "h$letter", contentType = "header") { SectionLabel(letter.toString(), sticky = true) }
+            if (letter != FLAT) stickyHeader(key = "h$letter", contentType = "header") { SectionLabel(letter.toString(), sticky = true) }
             rows(list, "c", vm, selected, onOpen)
         }
     }

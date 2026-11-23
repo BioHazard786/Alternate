@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.lulu786.alternate.ui.ContactSort
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -39,6 +40,7 @@ data class AppSettings(
     val setupDone: Boolean = false,
     val lockResetNotice: Boolean = false,
     val lock: LockState = LockState(),
+    val sort: ContactSort = ContactSort.NameAsc,
 )
 
 /**
@@ -61,6 +63,7 @@ class Prefs(private val context: Context) {
         val lockout = longPreferencesKey("lockout_until")
         val lastLock = longPreferencesKey("last_lock_time")
         val forceLocked = booleanPreferencesKey("force_locked")
+        val sort = stringPreferencesKey("contact_sort")
         val legacyImported = booleanPreferencesKey("legacy_imported")
         val legacyPostDone = booleanPreferencesKey("legacy_post_done")
     }
@@ -71,15 +74,7 @@ class Prefs(private val context: Context) {
             dynamicColor = p[K.dynamic] ?: true,
             setupDone = p[K.setupDone] ?: false,
             lockResetNotice = p[K.lockReset] ?: false,
-            lock = LockState(
-                enabled = p[K.hash] != null,
-                biometric = p[K.biometric] ?: false,
-                autoLock = p[K.autoLock]?.let { runCatching { AutoLock.valueOf(it) }.getOrNull() } ?: AutoLock.M5,
-                failedAttempts = p[K.failed] ?: 0,
-                lockoutUntil = p[K.lockout] ?: 0,
-                lastLockTime = p[K.lastLock] ?: 0,
-                forceLocked = p[K.forceLocked] ?: false,
-            ),
+            sort = p[K.sort]?.let { runCatching { ContactSort.valueOf(it) }.getOrNull() } ?: ContactSort.NameAsc,
         )
     }
 
@@ -87,6 +82,7 @@ class Prefs(private val context: Context) {
 
     suspend fun setTheme(t: ThemeMode) = ds.edit { it[K.theme] = t.name }
     suspend fun setDynamicColor(v: Boolean) = ds.edit { it[K.dynamic] = v }
+    suspend fun setSort(v: ContactSort) = ds.edit { it[K.sort] = v.name }
     suspend fun setSetupDone() = ds.edit { it[K.setupDone] = true }
     suspend fun dismissLockResetNotice() = ds.edit { it[K.lockReset] = false }
     suspend fun setBiometric(v: Boolean) = ds.edit { it[K.biometric] = v }

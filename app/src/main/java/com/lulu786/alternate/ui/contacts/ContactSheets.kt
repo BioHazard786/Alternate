@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -22,6 +23,7 @@ import androidx.compose.material3.InputChip
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,10 +34,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lulu786.alternate.ui.AppViewModel
 import com.lulu786.alternate.ui.ContactFilter
+import com.lulu786.alternate.ui.ContactSort
 import com.lulu786.alternate.ui.Sym
 import com.lulu786.alternate.ui.components.NameDialog
 import com.lulu786.alternate.ui.components.segmentedRowColors
@@ -114,6 +118,26 @@ fun FilterSheet(vm: AppViewModel, onDismiss: () -> Unit) {
             Spacer(Modifier.height(24.dp))
             val shown = model?.total ?: 0
             Button(onDismiss, Modifier.fillMaxWidth()) { Text(if (shown == 1) "Show 1 contact" else "Show $shown contacts") }
+        }
+    }
+}
+
+/** One radio row per [ContactSort]; picking one applies it and closes the sheet. */
+@Composable
+fun SortSheet(vm: AppViewModel, onDismiss: () -> Unit) {
+    val current by vm.sort.collectAsStateWithLifecycle(ContactSort.NameAsc)
+    ModalBottomSheet(onDismiss) {
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp)) {
+            Text("Sort by", style = MaterialTheme.typography.titleLargeEmphasized, modifier = Modifier.padding(bottom = 8.dp))
+            ContactSort.entries.forEach { s ->
+                Row(
+                    Modifier.fillMaxWidth().selectable(s == current, onClick = { vm.setSort(s); onDismiss() }, role = Role.RadioButton).padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(s == current, null)
+                    Text(s.label, Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
         }
     }
 }

@@ -54,6 +54,7 @@ android {
     }
 
     buildTypes {
+        debug { applicationIdSuffix = ".debug" } // installs beside the release app instead of clashing with its signature
         release {
             isMinifyEnabled = true
             isShrinkResources = true

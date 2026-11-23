@@ -33,3 +33,11 @@ data class ContactFilter(
 fun facet(rows: List<ContactRow>, key: (ContactRow) -> String?): List<Pair<String, Int>> =
     rows.mapNotNull { key(it)?.trim()?.takeIf(String::isNotEmpty) }.groupingBy { it }.eachCount()
         .entries.sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key }).map { it.key to it.value }
+
+enum class ContactSort(val label: String) {
+    NameAsc("Name A–Z"), NameDesc("Name Z–A"), Newest("Date added, newest"), Oldest("Date added, oldest"),
+    Modified("Last modified"), Phone("Phone number"), Country("Country");
+
+    /** Name sorts keep the lettered sections and fast scroller; the rest are one flat list. */
+    val lettered get() = this == NameAsc || this == NameDesc
+}

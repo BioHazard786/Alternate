@@ -1,5 +1,8 @@
 package com.lulu786.alternate.data
 
+import com.lulu786.alternate.util.Csv
+import com.lulu786.alternate.util.CsvRow
+import com.lulu786.alternate.util.intl
 import com.lulu786.alternate.util.sortKeyOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -39,8 +42,11 @@ class ContactRepository(private val db: AppDatabase, val photos: PhotoStore, pri
      * Creates or updates a contact with all of its numbers and groups in one transaction.
      * New contacts need an [avatarSeed] picked by the form so the preview matches what is saved.
      */
-    suspend fun save(contact: ContactEntity, phones: List<PhoneEntity>, groupIds: List<Long>): Long =
-        dao.saveContact(contact.copy(sortKey = sortKeyOf(contact.name)), phones, groupIds)
+    suspend fun save(contact: ContactEntity, phones: List<PhoneEntity>, groupIds: List<Long>): Long {
+        val now = System.currentTimeMillis()
+        val created = if (contact.id == 0L) now else contact.createdAt
+        return dao.saveContact(contact.copy(sortKey = sortKeyOf(contact.name), createdAt = created, updatedAt = now), phones, groupIds)
+    }
 
     suspend fun delete(ids: List<Long>) {
         if (ids.isEmpty()) return
@@ -92,6 +98,39 @@ class ContactRepository(private val db: AppDatabase, val photos: PhotoStore, pri
         return added
     }
 
+    /**
+     * Spreadsheet round trip. A row whose id matches a contact edits it (only saved when something changed, so an
+     * untouched re-import leaves "last modified" alone); any other row is added like a VCF import. A number that
+     * belongs to a different contact is dropped from the row, because numbers are unique.
+     */
+    suspend fun importCsv(rows: List<CsvRow>, simIso: String?): CsvResult {
+        var updated = 0; var skipped = 0
+        val fresh = ArrayList<ImportedContact>()
+        for (row in rows) {
+            val existing = row.id?.let { dao.contact(it) }
+            if (existing == null) {
+                val phones = row.phones.orEmpty().mapNotNull { (raw, label) -> Csv.phone(raw, label, simIso) }
+                val contact = Csv.apply(ContactEntity(name = ""), row.fields)
+                if (contact.name.isEmpty() || phones.isEmpty()) skipped++ else fresh += ImportedContact(contact, phones, row.groups.orEmpty())
+                continue
+            }
+            val current = dao.phones(existing.id)
+            // Numbers saved "as typed" print without a '+'; matching the printed text keeps them from being re-read as SIM-country numbers.
+            val printed = current.associateBy { intl(it.fullPhoneNumber, it.countryCode) }
+            val wanted = row.phones?.mapNotNull { (raw, label) -> printed[raw]?.copy(label = label) ?: Csv.phone(raw, label, simIso) } ?: current
+            val phones = wanted.distinctBy { it.fullPhoneNumber }.filter { p -> dao.ownerOf(p.fullPhoneNumber).let { it == null || it == existing.id } }
+            val merged = Csv.apply(existing, row.fields)
+            if (merged.name.isEmpty() || phones.isEmpty()) { skipped++; continue }
+            val currentGroups = dao.groupsOf(existing.id).map { it.id }
+            val groupIds = row.groups?.map { createGroup(it) } ?: currentGroups
+            fun key(p: List<PhoneEntity>) = p.map { Triple(it.fullPhoneNumber, it.label, it.countryCode) }
+            if (merged == existing && key(phones) == key(current) && groupIds.toSet() == currentGroups.toSet()) continue
+            save(merged, phones, groupIds); updated++
+        }
+        val added = if (fresh.isEmpty()) 0 else importContacts(fresh)
+        return CsvResult(added, updated, skipped + fresh.size - added)
+    }
+
     // --- 2.x -> 3.0 one-time work after MIGRATION_4_5 -----------------------------------------------------------
     suspend fun finishLegacyMigration() {
         if (prefs.legacyPostDone()) return
@@ -106,6 +145,7 @@ class ContactRepository(private val db: AppDatabase, val photos: PhotoStore, pri
     }
 }
 
+data class CsvResult(val added: Int, val updated: Int, val skipped: Int)
 data class ExportContact(val contact: ContactEntity, val phones: List<PhoneEntity>, val groups: List<String>)
 data class ExportData(val contacts: List<ExportContact>)
 data class ImportedContact(

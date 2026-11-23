@@ -54,6 +54,7 @@ object Vcf {
 
     private val bdayFull = Regex("""^\d{4}-\d{2}-\d{2}$""")
     private val bdayPartial = Regex("""^--\d{2}-\d{2}$""")
+    internal fun validBirthday(v: String) = bdayFull.matches(v) || bdayPartial.matches(v)
 
     /** Splits "a,b\,c" on unescaped commas. */
     private fun splitList(v: String): List<String> {
@@ -147,7 +148,7 @@ object Vcf {
                 prop == "ORG" -> org = splitFields(rawValue).map { it.trim() }.filter { it.isNotEmpty() }.joinToString(", ")
                 prop == "NOTE" -> notes = value
                 prop == "NICKNAME" -> nickname = value
-                prop == "BDAY" -> if (bdayFull.matches(value) || bdayPartial.matches(value)) birthday = value
+                prop == "BDAY" -> if (validBirthday(value)) birthday = value
                 prop == "X-ANDROID-CUSTOM" && value.startsWith("vnd.android.cursor.item/nickname;") -> nickname = value.split(";").getOrElse(1) { "" }
                 prop == "PHOTO" && params.any { it.contains("ENCODING=B") || it.contains("BASE64") || it == "B" } ->
                     photo = rawValue.filterNot(Char::isWhitespace)
@@ -177,7 +178,7 @@ object Vcf {
     private fun cleanLabel(v: String) = v.removePrefix("_\$!<").removeSuffix(">!\$_")
 
     /** Returns (countryIso, nationalDigits, fullDigits). Numbers without '+' are taken to be in the SIM country. */
-    private fun parsePhone(raw: String, simIso: String?): Triple<String, String, String>? {
+    internal fun parsePhone(raw: String, simIso: String?): Triple<String, String, String>? {
         val digits = raw.filter { it.isDigit() }
         if (digits.isEmpty()) return null
         val international = raw.trim().startsWith("+") || digits.startsWith("00")

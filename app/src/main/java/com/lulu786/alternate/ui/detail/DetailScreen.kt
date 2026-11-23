@@ -192,6 +192,10 @@ fun DetailScreen(vm: AppViewModel, id: Long, onBack: () -> Unit, onEdit: () -> U
                         )
                     }
                 }
+                stampsLine(d.contact.createdAt, d.contact.updatedAt)?.let {
+                    Text(it, Modifier.fillMaxWidth().padding(top = 16.dp), style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                }
             }
             Spacer(Modifier.height(32.dp))
         }
@@ -265,3 +269,13 @@ private fun summary(d: ContactDetail): String = buildString {
     if (d.contact.email.isNotEmpty()) appendLine(d.contact.email)
     if (d.contact.location.isNotEmpty()) appendLine(d.contact.location)
 }.trim()
+
+/** "Added 3 Nov 2026 · Edited 20 Nov 2026"; a part with an unknown (0) date is left out. */
+internal fun stampsLine(created: Long, updated: Long): String? {
+    val fmt = java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+    fun at(ms: Long) = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.systemDefault()).toLocalDate().format(fmt)
+    return listOfNotNull(
+        created.takeIf { it > 0 }?.let { "Added ${at(it)}" },
+        updated.takeIf { it > 0 && it != created }?.let { "Edited ${at(it)}" },
+    ).joinToString(" · ").ifEmpty { null }
+}

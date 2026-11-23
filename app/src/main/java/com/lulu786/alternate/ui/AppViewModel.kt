@@ -12,8 +12,10 @@ import com.lulu786.alternate.AppContainer
 import com.lulu786.alternate.data.AppSettings
 import com.lulu786.alternate.data.AutoLock
 import com.lulu786.alternate.data.ContactRow
+import com.lulu786.alternate.data.CsvResult
 import com.lulu786.alternate.data.LockState
 import com.lulu786.alternate.ui.components.STAR
+import com.lulu786.alternate.util.Csv
 import com.lulu786.alternate.util.SearchIndex
 import com.lulu786.alternate.util.SearchResult
 import com.lulu786.alternate.util.Vcf
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
@@ -52,17 +55,39 @@ data class ContactListModel(
     val filter: ContactFilter,
 )
 
-internal fun buildModel(all: List<ContactRow>, filter: ContactFilter, groupsOf: Map<Long, Set<Long>>): ContactListModel {
+/** Section key of the single header-less list that non-name sorts use. */
+internal const val FLAT = '\u0000'
+
+private fun comparatorOf(sort: ContactSort): Comparator<ContactRow> {
+    val byName = compareBy<ContactRow>({ it.sortKey }, { it.id })
+    // Unknown (0) dates and missing numbers always sink to the bottom.
+    fun newestFirst(key: (ContactRow) -> Long) = compareByDescending<ContactRow> { key(it) > 0 }.thenByDescending(key).then(byName)
+    return when (sort) {
+        ContactSort.NameAsc, ContactSort.NameDesc -> byName
+        ContactSort.Newest -> newestFirst { it.createdAt }
+        ContactSort.Oldest -> compareByDescending<ContactRow> { it.createdAt > 0 }.thenBy { it.createdAt }.then(byName)
+        ContactSort.Modified -> newestFirst { it.updatedAt }
+        ContactSort.Phone -> compareBy<ContactRow, String?>(nullsLast()) { it.fullPhoneNumber }.then(byName)
+        ContactSort.Country -> compareBy<ContactRow, String?>(nullsLast()) { it.countryCode }.then(byName)
+    }
+}
+
+internal fun buildModel(
+    all: List<ContactRow>, filter: ContactFilter, groupsOf: Map<Long, Set<Long>>, sort: ContactSort = ContactSort.NameAsc,
+): ContactListModel {
     val rows = if (filter.active) all.filter { filter.matches(it, groupsOf) } else all
     // A filtered list is just results: no Favorites grid on top.
     val favorites = if (filter.active) emptyList() else rows.filter { it.starred }
-    val sections = rows.groupBy { sectionOf(it.sortKey) }.toSortedMap(compareBy { if (it == '#') '￿' else it }).map { it.key to it.value }
+    val sections = if (sort.lettered) {
+        val lettered = rows.groupBy { sectionOf(it.sortKey) }.toSortedMap(compareBy { if (it == '#') '\uFFFF' else it }).map { it.key to it.value }
+        if (sort == ContactSort.NameDesc) lettered.reversed().map { (k, v) -> k to v.reversed() } else lettered
+    } else listOf(FLAT to rows.sortedWith(comparatorOf(sort)))
     // LazyColumn items before the first letter: the active-filter chip row, or the Favorites header + grid.
     val lead = if (filter.active) 1 else if (favorites.isEmpty()) 0 else 2
     var index = lead
-    val starts = sections.map { (letter, list) -> (letter to index).also { index += 1 + list.size } }
+    val starts = if (sort.lettered) sections.map { (letter, list) -> (letter to index).also { index += 1 + list.size } } else emptyList()
     // The star jumps to the Favorites header, the first item.
-    val withStar = if (favorites.isEmpty()) starts else listOf(STAR to 0) + starts
+    val withStar = if (favorites.isEmpty() || !sort.lettered) starts else listOf(STAR to 0) + starts
     return ContactListModel(favorites, sections, rows.size, all.size, withStar, filter)
 }
 
@@ -73,9 +98,11 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
 
     val settings: StateFlow<AppSettings?> = prefs.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val filter = MutableStateFlow(ContactFilter())
+    val sort = prefs.settings.map { it.sort }.distinctUntilChanged()
+    fun setSort(v: ContactSort) { viewModelScope.launch { prefs.setSort(v) } }
     /** contactId -> its group ids, for the group filter. */
     private val groupsOf = repo.members.map { m -> m.groupBy({ it.contactId }, { it.groupId }).mapValues { it.value.toSet() } }
-    val list: StateFlow<ContactListModel?> = combine(repo.rows, filter, groupsOf, ::buildModel).flowOn(Dispatchers.Default)
+    val list: StateFlow<ContactListModel?> = combine(repo.rows, filter, groupsOf, sort, ::buildModel).flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     // Eagerly: selectAll and copy read .value with no collector attached.
     val rows: StateFlow<List<ContactRow>?> = repo.rows.stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -174,26 +201,39 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
     var busy by mutableStateOf<String?>(null)
         private set
 
-    fun exportTo(context: Context, uri: Uri) = viewModelScope.launch {
+    fun exportTo(context: Context, uri: Uri, csv: Boolean = false) = viewModelScope.launch {
         busy = "Exporting…"
         val ok = runCatching {
-            val text = withContext(Dispatchers.Default) { Vcf.export(repo.exportData().contacts, repo.photos::readBase64) }
+            val text = withContext(Dispatchers.Default) {
+                val data = repo.exportData().contacts
+                if (csv) Csv.export(data) else Vcf.export(data, repo.photos::readBase64)
+            }
             withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri)!!.use { it.write(text.toByteArray()) } }
         }.isSuccess
         busy = null
         say(if (ok) "Contacts exported" else "Export failed")
     }
 
+    /** One entry for both formats: a file mentioning BEGIN:VCARD near the top is a vCard, anything else is read as CSV. */
     fun importFrom(context: Context, uri: Uri, simIso: String?) = viewModelScope.launch {
         busy = "Importing…"
-        val added = runCatching {
+        val message = runCatching {
             val text = withContext(Dispatchers.IO) { context.contentResolver.openInputStream(uri)!!.use { String(it.readBytes()) } }
-            val parsed = withContext(Dispatchers.Default) { Vcf.parse(text, simIso) }
-            if (parsed.isEmpty()) -1 else repo.importContacts(parsed)
-        }.getOrDefault(-2)
+            if (text.take(4096).contains("BEGIN:VCARD", ignoreCase = true)) {
+                val parsed = withContext(Dispatchers.Default) { Vcf.parse(text, simIso) }
+                if (parsed.isEmpty()) "No contacts found in that file" else repo.importContacts(parsed).let { if (it == 0) "Nothing new to import" else "$it contacts imported" }
+            } else {
+                val rows = withContext(Dispatchers.Default) { Csv.parse(text) }
+                if (rows.isEmpty()) "No contacts found in that file" else repo.importCsv(rows, simIso).summary()
+            }
+        }.getOrDefault("Import failed")
         busy = null
-        say(when { added == -1 -> "No contacts found in that file"; added < 0 -> "Import failed"; added == 0 -> "Nothing new to import"; else -> "$added contacts imported" })
+        say(message)
     }
+
+    private fun CsvResult.summary() = listOfNotNull(
+        added.takeIf { it > 0 }?.let { "$it added" }, updated.takeIf { it > 0 }?.let { "$it updated" }, skipped.takeIf { it > 0 }?.let { "$it skipped" },
+    ).joinToString(" · ").ifEmpty { "Nothing new to import" }
 
     private fun stamp() = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
 }

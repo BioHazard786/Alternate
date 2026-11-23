@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [ContactEntity::class, PhoneEntity::class, GroupEntity::class, GroupMember::class],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -22,7 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun get(context: Context): AppDatabase = instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, NAME)
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .build()
                 .also { instance = it }
         }
@@ -187,5 +187,12 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
                SELECT rowid, fullPhoneNumber, phoneNumber, countryCode, 'Mobile', 0 FROM caller_info"""
         )
         db.execSQL("DROP TABLE caller_info")
+    }
+}
+
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `contact` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `contact` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
     }
 }
