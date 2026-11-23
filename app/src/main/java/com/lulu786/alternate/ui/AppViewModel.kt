@@ -1,20 +1,26 @@
 package com.lulu786.alternate.ui
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lulu786.alternate.AppContainer
 import com.lulu786.alternate.data.AppSettings
 import com.lulu786.alternate.data.AutoLock
+import com.lulu786.alternate.data.BackupException
+import com.lulu786.alternate.data.BackupFrequency
+import com.lulu786.alternate.data.BackupScheduler
 import com.lulu786.alternate.data.ContactRow
 import com.lulu786.alternate.data.CsvResult
 import com.lulu786.alternate.data.LockState
 import com.lulu786.alternate.ui.components.STAR
+import com.lulu786.alternate.util.BackupCrypto
 import com.lulu786.alternate.util.Csv
 import com.lulu786.alternate.util.SearchIndex
 import com.lulu786.alternate.util.SearchResult
@@ -234,6 +240,66 @@ class AppViewModel(private val c: AppContainer) : ViewModel() {
     private fun CsvResult.summary() = listOfNotNull(
         added.takeIf { it > 0 }?.let { "$it added" }, updated.takeIf { it > 0 }?.let { "$it updated" }, skipped.takeIf { it > 0 }?.let { "$it skipped" },
     ).joinToString(" · ").ifEmpty { "Nothing new to import" }
+
+    // --- backup ----------------------------------------------------------------------------------------------------
+    /** Header of the backup file being restored; non-null while the "enter your password" dialog is up. */
+    var restoring by mutableStateOf<BackupCrypto.Params?>(null)
+        private set
+    private var restoreFile: ByteArray? = null
+
+    fun setBackupFolder(context: Context, uri: Uri) = viewModelScope.launch {
+        val rw = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val old = settings.value?.backup?.folder.orEmpty()
+        context.contentResolver.takePersistableUriPermission(uri, rw)
+        if (old.isNotEmpty() && old != uri.toString()) runCatching { context.contentResolver.releasePersistableUriPermission(old.toUri(), rw) }
+        prefs.setBackupFolder(uri.toString())
+    }
+
+    fun setBackupKey(mode: Int, secret: String) = viewModelScope.launch {
+        busy = "Securing backups…"
+        val ok = runCatching { c.backups.setUpKey(mode, secret) }.isSuccess
+        busy = null
+        say(if (ok) "Backup encryption is on" else "Couldn't set up encryption")
+    }
+
+    fun setBackupFrequency(context: Context, f: BackupFrequency) {
+        val b = settings.value?.backup
+        if (f != BackupFrequency.Off && (b?.folder.isNullOrEmpty() || b?.key == null)) { say("Choose a folder and set up encryption first"); return }
+        viewModelScope.launch { prefs.setBackupFrequency(f) }
+        BackupScheduler.apply(context, f)
+    }
+
+    fun backupNow() = viewModelScope.launch {
+        busy = "Backing up…"
+        val r = c.backups.backupNow()
+        busy = null
+        say(r.exceptionOrNull()?.let { c.backups.explain(it) } ?: "Backup saved")
+    }
+
+    fun openBackup(uri: Uri) = viewModelScope.launch {
+        busy = "Reading backup…"
+        val opened = runCatching { c.backups.open(uri) }.getOrNull()
+        busy = null
+        if (opened == null) say("That isn’t an Alternate backup") else { restoreFile = opened.first; restoring = opened.second }
+    }
+
+    fun cancelRestore() { restoring = null; restoreFile = null }
+
+    fun restore(secret: String) = viewModelScope.launch {
+        val file = restoreFile ?: return@launch
+        val params = restoring ?: return@launch
+        busy = "Restoring…"
+        val result = runCatching { c.backups.restore(file, params, secret) }
+        busy = null
+        val error = result.exceptionOrNull()
+        say(when {
+            error is BackupException -> error.message!!
+            error != null -> "Restore failed"
+            result.getOrThrow() == 0 -> "Nothing new to restore"
+            else -> "${result.getOrThrow()} contacts restored"
+        })
+        if (error !is BackupException) cancelRestore() // a wrong secret keeps the dialog open to retype
+    }
 
     private fun stamp() = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
 }

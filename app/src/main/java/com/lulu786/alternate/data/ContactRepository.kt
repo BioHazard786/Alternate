@@ -42,10 +42,11 @@ class ContactRepository(private val db: AppDatabase, val photos: PhotoStore, pri
      * Creates or updates a contact with all of its numbers and groups in one transaction.
      * New contacts need an [avatarSeed] picked by the form so the preview matches what is saved.
      */
-    suspend fun save(contact: ContactEntity, phones: List<PhoneEntity>, groupIds: List<Long>): Long {
+    suspend fun save(contact: ContactEntity, phones: List<PhoneEntity>, groupIds: List<Long>, stamp: Boolean = true): Long {
         val now = System.currentTimeMillis()
-        val created = if (contact.id == 0L) now else contact.createdAt
-        return dao.saveContact(contact.copy(sortKey = sortKeyOf(contact.name), createdAt = created, updatedAt = now), phones, groupIds)
+        // A restore keeps the dates it was given; every other save is an add or an edit happening now.
+        val stamped = if (!stamp) contact else contact.copy(createdAt = if (contact.id == 0L) now else contact.createdAt, updatedAt = now)
+        return dao.saveContact(stamped.copy(sortKey = sortKeyOf(contact.name)), phones, groupIds)
     }
 
     suspend fun delete(ids: List<Long>) {
@@ -129,6 +130,39 @@ class ContactRepository(private val db: AppDatabase, val photos: PhotoStore, pri
         }
         val added = if (fresh.isEmpty()) 0 else importContacts(fresh)
         return CsvResult(added, updated, skipped + fresh.size - added)
+    }
+
+    // --- Backup ------------------------------------------------------------------------------------------------
+    suspend fun backupData(): BackupData = BackupData(
+        exportedAt = System.currentTimeMillis(),
+        groups = dao.groups().map { it.name },
+        contacts = exportData().contacts.map { (c, phones, groups) ->
+            BackupContact(
+                c.name, c.prefix, c.suffix, c.nickname, c.appointment, c.location, c.email, c.website, c.birthday, c.notes,
+                c.starred, c.avatarSeed, c.createdAt, c.updatedAt,
+                phones.map { BackupPhone(it.fullPhoneNumber, it.phoneNumber, it.countryCode, it.label) }, groups,
+                c.photoPath.takeIf { it.isNotEmpty() }?.let(photos::readBase64),
+            )
+        },
+    )
+
+    /** Adds what is missing, like an import, but keeps avatar, star and dates. Contacts whose numbers all exist are left alone. */
+    suspend fun restore(data: BackupData): Int {
+        data.groups.forEach { createGroup(it) } // first, so the group order survives
+        val known = dao.allFullNumbers().toHashSet()
+        var added = 0
+        for (b in data.contacts) {
+            val fresh = b.phones.filter { known.add(it.full) }
+            if (fresh.isEmpty()) continue
+            val contact = ContactEntity(
+                name = b.name, prefix = b.prefix, suffix = b.suffix, nickname = b.nickname, appointment = b.appointment, location = b.location,
+                email = b.email, website = b.website, birthday = b.birthday, notes = b.notes, starred = b.starred, avatarSeed = b.avatarSeed,
+                photoPath = b.photo?.let(photos::saveFromBase64) ?: "", createdAt = b.createdAt, updatedAt = b.updatedAt,
+            )
+            save(contact, fresh.map { PhoneEntity(contactId = 0, fullPhoneNumber = it.full, phoneNumber = it.national, countryCode = it.country, label = it.label) }, b.groups.map { createGroup(it) }, stamp = false)
+            added++
+        }
+        return added
     }
 
     // --- 2.x -> 3.0 one-time work after MIGRATION_4_5 -----------------------------------------------------------

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import android.text.format.DateUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -52,6 +53,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lulu786.alternate.BuildConfig
 import com.lulu786.alternate.data.AutoLock
+import com.lulu786.alternate.data.BackupFrequency
+import com.lulu786.alternate.data.BackupSettings
 import com.lulu786.alternate.data.ThemeMode
 import com.lulu786.alternate.ui.AppViewModel
 import com.lulu786.alternate.ui.components.ConfirmDialog
@@ -59,6 +62,7 @@ import com.lulu786.alternate.ui.components.IconSwitch
 import com.lulu786.alternate.ui.components.RoundedTitle
 import com.lulu786.alternate.ui.components.segmentedRowColors
 import com.lulu786.alternate.ui.lock.biometricAvailable
+import com.lulu786.alternate.util.BackupCrypto
 import com.lulu786.alternate.util.openWeb
 import com.lulu786.alternate.util.simCountry
 import kotlinx.coroutines.launch
@@ -83,6 +87,8 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/x-vcard")) { it?.let { u -> vm.exportTo(context, u) } }
     val exportCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { it?.let { u -> vm.exportTo(context, u, csv = true) } }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let { u -> vm.importFrom(context, u, context.simCountry()) } }
+    val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { it?.let { u -> vm.setBackupFolder(context, u) } }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(vm::openBackup) }
 
     Scaffold(Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = { LargeFlexibleTopAppBar(title = { RoundedTitle("Settings") }, scrollBehavior = scroll) }, containerColor = MaterialTheme.colorScheme.surface) { pad ->
         LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp, pad.calculateTopPadding(), 16.dp, 32.dp)) {
@@ -124,6 +130,16 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
                 ))
             }
             item {
+                val b = settings.backup
+                Group("Backup", listOf(
+                    Row0(Sym.Description, "Backup folder", b.folder.takeIf { it.isNotEmpty() }?.let { it.toUri().lastPathSegment ?: it } ?: "Not set", onClick = { folderLauncher.launch(null) }),
+                    Row0(Sym.Lock, "Encryption", when (b.key?.mode) { null -> "Not set up"; BackupCrypto.MODE_RECOVERY -> "Recovery key"; else -> "Password" }, onClick = { dialog = "backupKey" }),
+                    Row0(Sym.Timer, "Automatic backup", b.frequency.label, onClick = { dialog = "backupFreq" }),
+                    Row0(Sym.Upload, "Back up now", backupStatus(b), onClick = { vm.backupNow() }),
+                    Row0(Sym.Download, "Restore from backup", "Add contacts from a backup file", onClick = { restoreLauncher.launch(arrayOf("*/*")) }),
+                ))
+            }
+            item {
                 Group("About", listOf(
                     Row0(Sym.Info, "Version", BuildConfig.VERSION_NAME, onClick = {}),
                     Row0(Sym.Code, "Source on GitHub", REPO, onClick = { context.openWeb(REPO) }),
@@ -134,13 +150,23 @@ fun SettingsScreen(vm: AppViewModel, onSetup: () -> Unit, onSetPin: () -> Unit) 
         }
     }
 
+    vm.restoring?.let { RestoreDialog(it.mode, vm::cancelRestore) { secret -> vm.restore(secret) } }
+
     when (dialog) {
         "autoLock" -> ChoiceDialog("Auto-lock after", AutoLock.entries, settings.lock.autoLock, { it.label }, { dialog = null }) { scope.launch { vm.prefs.setAutoLock(it) }; dialog = null }
         "theme" -> ChoiceDialog("Theme", ThemeMode.entries, settings.theme, { it.label }, { dialog = null }) { scope.launch { vm.prefs.setTheme(it) }; dialog = null }
+        "backupKey" -> BackupKeyDialog({ dialog = null }) { mode, secret -> vm.setBackupKey(mode, secret); dialog = null }
+        "backupFreq" -> ChoiceDialog("Automatic backup", BackupFrequency.entries, settings.backup.frequency, { it.label }, { dialog = null }) { vm.setBackupFrequency(context, it); dialog = null }
         "removeLock" -> ConfirmDialog("Turn off app lock?", "Anyone who opens Alternate will see your contacts.", "Turn off", { scope.launch { vm.prefs.clearPin() }; dialog = null }, { dialog = null })
         "licenses" -> AlertDialog({ dialog = null }, confirmButton = { TextButton({ dialog = null }) { Text("Close") } }, title = { Text("Open-source licenses") },
             text = { Text("Alternate is built with AndroidX (Compose, Room, Navigation, DataStore, Biometric), Material Components for Android and Coil — all Apache License 2.0.") })
     }
+}
+
+private fun backupStatus(b: BackupSettings): String = when {
+    b.lastError.isNotEmpty() -> b.lastError
+    b.lastOk > 0 -> "Last backup " + DateUtils.getRelativeTimeSpanString(b.lastOk, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+    else -> "Never backed up"
 }
 
 private class Row0(val icon: ImageVector, val title: String, val subtitle: String?, val trailing: (@Composable () -> Unit)? = null, val onClick: () -> Unit)

@@ -2,6 +2,7 @@ package com.lulu786.alternate
 
 import android.app.Application
 import com.lulu786.alternate.data.AppDatabase
+import com.lulu786.alternate.data.BackupService
 import com.lulu786.alternate.data.ContactRepository
 import com.lulu786.alternate.data.LegacyMmkvImport
 import com.lulu786.alternate.data.PhotoStore
@@ -21,6 +22,7 @@ class AppContainer(app: Application) {
     val db by lazy { AppDatabase.get(app) }
     val photos = PhotoStore(app)
     val repo by lazy { ContactRepository(db, photos, prefs) }
+    val backups by lazy { BackupService(app, repo, prefs) }
 }
 
 class AlternateApp : Application() {

@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.lulu786.alternate.ui.ContactSort
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.encodeToString
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.security.MessageDigest
@@ -41,6 +42,7 @@ data class AppSettings(
     val lockResetNotice: Boolean = false,
     val lock: LockState = LockState(),
     val sort: ContactSort = ContactSort.NameAsc,
+    val backup: BackupSettings = BackupSettings(),
 )
 
 /**
@@ -64,6 +66,11 @@ class Prefs(private val context: Context) {
         val lastLock = longPreferencesKey("last_lock_time")
         val forceLocked = booleanPreferencesKey("force_locked")
         val sort = stringPreferencesKey("contact_sort")
+        val backupFolder = stringPreferencesKey("backup_folder")
+        val backupFreq = stringPreferencesKey("backup_frequency")
+        val backupKey = stringPreferencesKey("backup_key")
+        val backupOk = longPreferencesKey("backup_last_ok")
+        val backupError = stringPreferencesKey("backup_last_error")
         val legacyImported = booleanPreferencesKey("legacy_imported")
         val legacyPostDone = booleanPreferencesKey("legacy_post_done")
     }
@@ -75,6 +82,22 @@ class Prefs(private val context: Context) {
             setupDone = p[K.setupDone] ?: false,
             lockResetNotice = p[K.lockReset] ?: false,
             sort = p[K.sort]?.let { runCatching { ContactSort.valueOf(it) }.getOrNull() } ?: ContactSort.NameAsc,
+            backup = BackupSettings(
+                folder = p[K.backupFolder].orEmpty(),
+                frequency = p[K.backupFreq]?.let { runCatching { BackupFrequency.valueOf(it) }.getOrNull() } ?: BackupFrequency.Off,
+                key = p[K.backupKey]?.let { runCatching { BackupData.json.decodeFromString<BackupKey>(it) }.getOrNull() },
+                lastOk = p[K.backupOk] ?: 0,
+                lastError = p[K.backupError].orEmpty(),
+            ),
+            lock = LockState(
+                enabled = p[K.hash] != null,
+                biometric = p[K.biometric] ?: false,
+                autoLock = p[K.autoLock]?.let { runCatching { AutoLock.valueOf(it) }.getOrNull() } ?: AutoLock.M5,
+                failedAttempts = p[K.failed] ?: 0,
+                lockoutUntil = p[K.lockout] ?: 0,
+                lastLockTime = p[K.lastLock] ?: 0,
+                forceLocked = p[K.forceLocked] ?: false,
+            ),
         )
     }
 
@@ -83,6 +106,11 @@ class Prefs(private val context: Context) {
     suspend fun setTheme(t: ThemeMode) = ds.edit { it[K.theme] = t.name }
     suspend fun setDynamicColor(v: Boolean) = ds.edit { it[K.dynamic] = v }
     suspend fun setSort(v: ContactSort) = ds.edit { it[K.sort] = v.name }
+    suspend fun setBackupFolder(uri: String) = ds.edit { it[K.backupFolder] = uri }
+    suspend fun setBackupFrequency(v: BackupFrequency) = ds.edit { it[K.backupFreq] = v.name }
+    suspend fun setBackupKey(k: BackupKey) = ds.edit { it[K.backupKey] = BackupData.json.encodeToString(k) }
+    suspend fun markBackupOk(now: Long) = ds.edit { it[K.backupOk] = now; it.remove(K.backupError) }
+    suspend fun markBackupFailed(message: String) = ds.edit { it[K.backupError] = message }
     suspend fun setSetupDone() = ds.edit { it[K.setupDone] = true }
     suspend fun dismissLockResetNotice() = ds.edit { it[K.lockReset] = false }
     suspend fun setBiometric(v: Boolean) = ds.edit { it[K.biometric] = v }
